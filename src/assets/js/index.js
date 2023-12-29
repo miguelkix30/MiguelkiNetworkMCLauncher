@@ -29,9 +29,26 @@ class Splash {
 
     async startAnimation() {
         let splashes = [
-            { "message": "Je... vie...", "author": "Luuxis" },
-            { "message": "Salut je suis du code.", "author": "Luuxis" },
-            { "message": "Linux n'est pas un os, mais un kernel.", "author": "Luuxis" }
+            { "message": "Miguelki Network", "author": "Miguelki" },
+            { "message": "Das Leben ist nicht Schwäche verzeihen", "author": "Adolf Hitler" },
+            { "message": "1 de cada 2 personas son gays.", "author": "Miguelki" },
+            { "message": "Zzz", "author": "Miguelki" },
+            { "message": "Messi", "author": "Messi" },
+            { "message": "Aún va sin h miguel", "author": "Carmen" },
+            { "message": "Vaporeon puede tener relaciones con humanos", "author": " " },
+            { "message": "Tienes menos luces que una lampara", "author": "Miguelki" },
+            { "message": "Te llama tu madre", "author": "Miguelki" },
+            { "message": "Argentina ganó 🏳‍🌈. Ups bandera erronea", "author": "Miguelki" },
+            { "message": "Perdon por besar a tu madre", "author": "Miguelki" },
+            { "message": "Bese a tu novia. Ah perdon que no tienes", "author": "Miguelki" },
+            { "message": "Entrando en tu cerebro.", "author": "Miguelki" },
+            { "message": "13, cuanto más me la mamas más me crece.", "author": "Dixo" },
+            { "message": "🕸️🕷️🤘", "author": "Chiquicas" },
+            { "message": "Dixo es super maricón 🏳‍🌈👨🏿‍❤️‍💋‍👨🏿", "author": "Chiquicas" },
+            { "message": "Va llorah, Mateo?", "author": "Dixo" },
+            { "message": "Ayuda.... Foack. Ayuda.... Foack. Ayuda.... Foack.", "author": "Miguelki" },
+            { "message": "Milleurista???", "author": "Joako Puto" },
+            { "message": "Me aburro", "author": "Miguelki" }
         ];
         let splash = splashes[Math.floor(Math.random() * splashes.length)];
         this.splashMessage.textContent = splash.message;
@@ -51,14 +68,14 @@ class Splash {
 
     async checkUpdate() {
         if (dev) return this.startLauncher();
-        this.setStatus(`Recherche de mise à jour...`);
+        this.setStatus(`Buscando actualizaciones...`);
 
         ipcRenderer.invoke('update-app').then().catch(err => {
-            return this.shutdown(`erreur lors de la recherche de mise à jour :<br>${err.message}`);
+            return this.shutdown(`Error al buscar actualizaciones:<br>${err.message}`);
         });
 
         ipcRenderer.on('updateAvailable', () => {
-            this.setStatus(`Mise à jour disponible !`);
+            this.setStatus(`Actualización disponible`);
             ipcRenderer.send('start-update');
         })
 
@@ -73,7 +90,7 @@ class Splash {
         })
 
         ipcRenderer.on('update-not-available', () => {
-            console.error("Mise à jour non disponible");
+            console.error("Actualización no disponible");
             this.maintenanceCheck();
         })
     }
@@ -84,21 +101,21 @@ class Splash {
             this.startLauncher();
         }).catch(e => {
             console.error(e);
-            return this.shutdown("Aucune connexion internet détectée,<br>veuillez réessayer ultérieurement.");
+            return this.shutdown("No se ha detectado conexión a Internet.<br>por favor, inténtalo más tarde.");
         })
     }
 
     startLauncher() {
-        this.setStatus(`Démarrage du launcher`);
+        this.setStatus(`Iniciando launcher`);
         ipcRenderer.send('main-window-open');
         ipcRenderer.send('update-window-close');
     }
 
     shutdown(text) {
-        this.setStatus(`${text}<br>Arrêt dans 5s`);
+        this.setStatus(`${text}<br>Saliendo en 5s`);
         let i = 4;
         setInterval(() => {
-            this.setStatus(`${text}<br>Arrêt dans ${i--}s`);
+            this.setStatus(`${text}<br>Saliendo en ${i--}s`);
             if (i < 0) ipcRenderer.send('update-window-close');
         }, 1000);
     }
