@@ -1,46 +1,51 @@
 <?php
-$instance['hypixel'] = array_merge($instance['hypixel'], array(
+$instance['WWIIIMC'] = array_merge($instance['WWIIIMC'], array(
     "loadder" => array(
-        "minecraft_version" => "1.8.9",
+        "minecraft_version" => "1.16.5",
         "loadder_type" => "forge",
-        "loadder_version" => "latest"
+        "loadder_version" => "1.16.5-36.2.35"
     ),
     "verify" => true,
     "ignored" => array(
         'config',
-        'essential',
         'logs',
-        'resourcepacks',
         'saves',
         'screenshots',
-        'shaderpacks',
-        'W-OVERFLOW',
         'options.txt',
         'optionsof.txt'
     ),
     "whitelist" => array(),
     "whitelistActive" => false,
     "status" => array(
-        "nameServer" => "Hypixel",
+        "nameServer" => "WWIIIMC Server",
         "ip" => "mc.hypixel.net",
         "port" => 25565
     )
 ));
 
-$instance['PokeMoonX'] = array_merge($instance['PokeMoonX'], array(
+$instance['WWIIIMCADMIN'] = array_merge($instance['WWIIIMCADMIN'], array(
     "loadder" => array(
         "minecraft_version" => "1.16.5",
         "loadder_type" => "forge",
         "loadder_version" => "1.16.5-36.2.35"
     ),
-    "verify" => false,
-    "ignored" => array(),
-    "whitelist" => array(),
-    "whitelistActive" => false,
+    "verify" => true,
+    "ignored" => array(
+        'config',
+        'logs',
+        'saves',
+        'screenshots',
+        'options.txt',
+        'optionsof.txt'
+    ),
+    "whitelist" => array(
+        'MiguelkiX30'
+    ),
+    "whitelistActive" => true,
     "status" => array(
-        "nameServer" => "PokeMoonX",
-        "ip" => "178.32.106.234",
-        "port" => 25599
+        "nameServer" => "WWIIIMC Server",
+        "ip" => "mc.hypixel.net",
+        "port" => 25565
     )
 ));
 ?>
