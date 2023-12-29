@@ -70,12 +70,14 @@ class Login {
         loginOffline.style.display = 'block';
 
         connectOffline.addEventListener('click', async () => {
+            connectOffline.disabled = true;
             if (emailOffline.value.length < 3) {
                 popupLogin.openPopup({
                     title: 'Error',
                     content: 'Tu nombre de usuario debe tener al menos 3 caracteres.',
                     options: true
                 });
+                connectOffline.disabled = false;
                 return;
             }
 
@@ -85,6 +87,7 @@ class Login {
                     content: 'Su nombre de usuario no debe contener d\'espacios.',
                     options: true
                 });
+                connectOffline.disabled = false;
                 return;
             }
 
@@ -96,10 +99,12 @@ class Login {
                     content: MojangConnect.message,
                     options: true
                 });
+                connectOffline.disabled = false;
                 return;
             }
             await this.saveData(MojangConnect)
             popupLogin.closePopup();
+            connectOffline.disabled = false;
         });
     }
 
