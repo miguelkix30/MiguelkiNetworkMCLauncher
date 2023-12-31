@@ -130,6 +130,11 @@
     text-align: center;
 }
 
+.header-text .titlechangelog {
+    font-size: 1.8rem;
+    text-align: center;
+}
+
 .news-header .date {
     display: flex;
     flex-direction: column;

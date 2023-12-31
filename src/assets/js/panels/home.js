@@ -19,6 +19,12 @@ class Home {
     }
 
     async news() {
+
+        //get version from package.json and set the content of titlechangelog to "Miguelki Network MC Launcher" + version
+        let version = pkg.version
+        let titlechangelog = document.querySelector('.titlechangelog')
+        titlechangelog.innerHTML = `Miguelki Network MC Launcher ${version}`
+
         let newsElement = document.querySelector('.news-list');
         let news = await config.getNews().then(res => res).catch(err => false);
         if (news) {
@@ -78,7 +84,7 @@ class Home {
                         </div>
                         <div class="date">
                             <div class="day">1</div>
-                            <div class="month">Janvier</div>
+                            <div class="month">Enero</div>
                         </div>
                     </div>
                     <div class="news-content">
