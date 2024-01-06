@@ -4,38 +4,6 @@
  */
 import { config, database, logger, changePanel, appdata, setStatus, pkg, popup } from '../utils.js'
 
-// cambiar información de la actividad de discord en el launcher
-const clientId = '857169541708775445';
-const DiscordRPC = require('discord-rpc');
-const RPC = new DiscordRPC.Client({ transport: 'ipc' });
-DiscordRPC.register(clientId);
-
-async function setActivity() {
-    if (!RPC) return;
-    RPC.setActivity({
-        state: `En el launcher`,
-        startTimestamp: Date.now(),
-        largeImageKey: 'icon',
-        smallImageKey: 'verificado',
-        largeImageText: `Miguelki Network`,
-        instance: true,
-        buttons: [
-            {
-                label: `Discord`,
-                url: `https://discord.gg/7kPGjgJND7`,
-            }
-        ]
-    });
-};
-RPC.on('ready', async () => {
-    setActivity();
-
-    setInterval(() => {
-        setActivity();
-    }, 86400 * 1000);
-});
-RPC.login({ clientId }).catch(err => console.error(err));
-
 const { Launch } = require('minecraft-java-core')
 const { shell, ipcRenderer } = require('electron')
 
@@ -290,6 +258,7 @@ class Home {
 
         launch.on('extract', extract => {
             ipcRenderer.send('main-window-progress-load')
+            ipcRenderer.send('new-status-discord-jugando',  `Jugando a '${options.name}'`)
             console.log(extract);
         });
 
@@ -329,20 +298,6 @@ class Home {
             if (configClient.launcher_config.closeLauncher == 'close-launcher') {
                 ipcRenderer.send("main-window-hide")
             };
-            RPC.setActivity({
-                state: `Jugando a ${configClient.instance_selct}`,
-                startTimestamp: Date.now(),
-                largeImageKey: 'icon',
-                smallImageKey: 'verificado',
-                largeImageText: `Miguelki Network`,
-                instance: true,
-                buttons: [
-                    {
-                        label: `Discord`,
-                        url: `https://discord.gg/7kPGjgJND7`,
-                    }
-                ]
-            });
             new logger('Minecraft', '#36b030');
             ipcRenderer.send('main-window-progress-load')
             infoStarting.innerHTML = `Iniciando...`
@@ -359,20 +314,6 @@ class Home {
             infoStarting.innerHTML = `Cerrando...`
             new logger(pkg.name, '#7289da');
             console.log('Close');
-            RPC.setActivity({
-                state: `En el launcher`,
-                startTimestamp: Date.now(),
-                largeImageKey: 'icon',
-                smallImageKey: 'verificado',
-                largeImageText: `Miguelki Network`,
-                instance: true,
-                buttons: [
-                    {
-                        label: `Discord`,
-                        url: `https://discord.gg/7kPGjgJND7`,
-                    }
-                ]
-            });
         });
 
         launch.on('error', err => {
@@ -394,20 +335,6 @@ class Home {
             infoStarting.innerHTML = `Verificando...`
             new logger(pkg.name, '#7289da');
             console.log(err);
-            RPC.setActivity({
-                state: `En el launcher`,
-                startTimestamp: Date.now(),
-                largeImageKey: 'icon',
-                smallImageKey: 'verificado',
-                largeImageText: `Miguelki Network`,
-                instance: true,
-                buttons: [
-                    {
-                        label: `Discord`,
-                        url: `https://discord.gg/7kPGjgJND7`,
-                    }
-                ]
-            });
         });
     }
 
