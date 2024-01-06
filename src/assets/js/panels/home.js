@@ -258,6 +258,7 @@ class Home {
 
         launch.on('extract', extract => {
             ipcRenderer.send('main-window-progress-load')
+            ipcRenderer.send('new-status-discord-jugando',  `Jugando a '${options.name}'`)
             console.log(extract);
         });
 

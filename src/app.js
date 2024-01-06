@@ -72,6 +72,90 @@ ipcMain.handle('is-dark-theme', (_, theme) => {
 
 app.on('window-all-closed', () => app.quit());
 
+const rpc = require('discord-rpc');
+let client = new rpc.Client({ transport: 'ipc' });
+
+ipcMain.on('new-status-discord', async () => {
+    client.login({ clientId: '857169541708775445' });
+    client.on('ready', () => {
+        client.request('SET_ACTIVITY', {
+            pid: process.pid,
+            activity: {
+                details: 'En el launcher',
+                assets: {
+                    large_image: 'icon',
+                    large_text: 'Miguelki Network',
+                    small_image: 'verificado',
+                    small_text: 'Verificado'
+                },
+                buttons: [
+                    { label: 'Discord', url: "https://discord.gg/7kPGjgJND7" },
+                ],
+                instance: false,
+                timestamps: {
+                    start: startedAppTime
+                }
+            },
+        });
+    });
+});
+
+
+ipcMain.on('new-status-discord-jugando', async (event, status) => {
+    console.log(status)
+    if(client) await client.destroy();
+    client.login({ clientId: '857169541708775445' });
+    client.on('ready', () => {
+        client.request('SET_ACTIVITY', {
+            pid: process.pid,
+            activity: {
+                details: status,
+                assets: {
+                    large_image: 'icon',
+                    large_text: 'Miguelki Network',
+                    small_image: 'verificado',
+                    small_text: 'Verificado'
+                },
+                buttons: [
+                    { label: 'Discord', url: "https://discord.gg/7kPGjgJND7" },
+                ],
+                instance: false,
+                timestamps: {
+                    start: startedAppTime
+                }
+            },
+        });
+    });
+});
+
+ipcMain.on('delete-and-new-status-discord', async () => {
+    if(client) client.destroy();
+    client = new rpc.Client({ transport: 'ipc' });
+    client.login({ clientId: '857169541708775445' });
+    client.on('ready', () => {
+        client.request('SET_ACTIVITY', {
+            pid: process.pid,
+            activity: {
+                details: 'En el launcher',
+                assets: {
+                    large_image: 'icon',
+                    large_text: 'Miguelki Network',
+                    small_image: 'verificado',
+                    small_text: 'Verificado'
+                },
+                buttons: [
+                    { label: 'Discord', url: "https://discord.gg/7kPGjgJND7" },
+                ],
+                instance: false,
+                timestamps: {
+                    start: startedAppTime
+                }
+            },
+        });
+    });
+});
+
+
 autoUpdater.autoDownload = false;
 
 ipcMain.handle('update-app', async () => {
