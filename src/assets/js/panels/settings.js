@@ -233,7 +233,7 @@ class Settings {
     async launcher() {
         let configClient = await this.db.readData('configClient');
 
-        let maxDownloadFiles = configClient?.launcher_config?.download_multi || 5;
+        let maxDownloadFiles = configClient?.launcher_config?.download_multi || 3;
         let maxDownloadFilesInput = document.querySelector(".max-files");
         let maxDownloadFilesReset = document.querySelector(".max-files-reset");
         maxDownloadFilesInput.value = maxDownloadFiles;
