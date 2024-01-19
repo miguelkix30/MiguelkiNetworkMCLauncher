@@ -246,8 +246,8 @@ class Settings {
 
         maxDownloadFilesReset.addEventListener("click", async () => {
             let configClient = await this.db.readData('configClient')
-            maxDownloadFilesInput.value = 5
-            configClient.launcher_config.download_multi = 5;
+            maxDownloadFilesInput.value = 3
+            configClient.launcher_config.download_multi = 3;
             await this.db.updateData('configClient', configClient);
         })
 
