@@ -1,7 +1,7 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.0.4",
+    "version": "3.0.5",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
@@ -23,7 +23,7 @@
     },
     "dependencies": {
         "electron-updater": "^6.1.4",
-        "minecraft-java-core": "^3.8.2",
+        "minecraft-java-core": "^3.8.1",
         "node-bdd": "^2.0.3",
         "node-fetch": "^2.7.0",
         "xml-js": "^1.6.11",
