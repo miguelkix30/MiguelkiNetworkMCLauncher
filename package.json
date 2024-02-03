@@ -9,7 +9,7 @@
         "email": "admin@miguelkinetwork.fun",
         "url": "https://github.com/miguelkix30"
     },
-    "url": "https://mclauncher.miguelkinetwork.fun",
+    "url": "http://mclauncher.miguelkinetwork.fun",
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",
         "dev": "cross-env-shell DEV_TOOL=open nodemon --exec npm start",
