@@ -5,9 +5,9 @@
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
-        "name": "Miguelki",
-        "email": "admin@miguelkinetwork.fun",
-        "url": "https://github.com/miguelkix30"
+        "name": "luuxis, Inc.",
+        "email": "contact@luuxis.fr",
+        "url": "https://github.com/luuxis"
     },
     "url": "http://mclauncher.miguelkinetwork.fun",
     "scripts": {
