@@ -1,7 +1,7 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.0.5",
+    "version": "3.0.6",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
@@ -9,7 +9,7 @@
         "email": "contact@luuxis.fr",
         "url": "https://github.com/luuxis"
     },
-    "url": "http://mclauncher.miguelkinetwork.fun",
+    "url": "https://myblog-eebcw9k713.live-website.com/",
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",
         "dev": "cross-env-shell DEV_TOOL=open nodemon --exec npm start",
@@ -22,12 +22,12 @@
         "ignore": "**/test"
     },
     "dependencies": {
+        "discord-rpc": "^4.0.1",
         "electron-updater": "^6.1.4",
-        "minecraft-java-core": "^3.8.1",
+        "minecraft-java-core": "^3.8.3",
         "node-bdd": "^2.0.3",
         "node-fetch": "^2.7.0",
-        "xml-js": "^1.6.11",
-        "discord-rpc": "^4.0.1"
+        "xml-js": "^1.6.11"
     },
     "devDependencies": {
         "cross-env": "^7.0.3",
