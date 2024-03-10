@@ -38,19 +38,31 @@ RPC.login({ clientId }).catch(err => console.error(err));
 
 const { Launch } = require('minecraft-java-core')
 const { shell, ipcRenderer } = require('electron')
-
 class Home {
     static id = "home";
     async init(config) {
         this.config = config;
         this.db = new database();
         this.news()
+        this.showstore()
         this.socialLick()
         this.instancesSelect()
         document.querySelector('.settings-btn').addEventListener('click', e => changePanel('settings'))
         
     }
 
+    async showstore() {
+        try {
+            const response = await fetch('http://node1.miguelkinetwork.fun:1025/');
+            if (response.ok) {
+                document.querySelector('.news-blockshop').style.display = 'block';
+            } else {
+                document.querySelector('.news-blockshop').style.display = 'none';
+            }
+        } catch (error) {
+            document.querySelector('.news-blockshop').style.display = 'none';
+        }
+    }
     async news() {
 
         //get version from package.json and set the content of titlechangelog to "Miguelki Network MC Launcher" + version
