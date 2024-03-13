@@ -5,11 +5,11 @@
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
-        "name": "luuxis, Inc.",
-        "email": "contact@luuxis.fr",
-        "url": "https://github.com/luuxis"
+        "name": "Miguelki",
+        "email": "admin@miguelkinetwork.fun",
+        "url": "https://github.com/miguelkix30"
     },
-    "url": "https://myblog-eebcw9k713.live-website.com/",
+    "url": "http://node1.miguelkinetwork.fun:25565/",
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",
         "dev": "cross-env-shell DEV_TOOL=open nodemon --exec npm start",
