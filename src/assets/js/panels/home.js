@@ -53,7 +53,10 @@ class Home {
 
     async showstore() {
         try {
-            const response = await fetch('http://node1.miguelkinetwork.fun:1025/');
+            let storeurl = pkg.store_url;
+            let storeButton = document.querySelector('.storebutton');
+            storeButton.href = storeurl;
+            const response = await fetch(storeurl);
             if (response.ok) {
                 document.querySelector('.news-blockshop').style.display = 'block';
             } else {

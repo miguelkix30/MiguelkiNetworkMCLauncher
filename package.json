@@ -10,6 +10,7 @@
         "url": "https://github.com/miguelkix30"
     },
     "url": "http://node1.miguelkinetwork.fun:25565/",
+    "store_url": "http://node1.miguelkinetwork.fun:1025/",
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",
         "dev": "cross-env-shell DEV_TOOL=open nodemon --exec npm start",
