@@ -29,12 +29,12 @@ RPC.on('ready', async () => {
                 url: `https://discord.gg/7kPGjgJND7`,
             }
         ]
-    });
+    }).catch();
     setInterval(() => {
         setActivity();
     }, 86400 * 1000);
 });
-RPC.login({ clientId }).catch(err => console.error(err));
+RPC.login({ clientId }).catch(err => console.error('Servidor de Discord no detectado. Tranquilo, esto no es una crisis.'));
 
 const { Launch } = require('minecraft-java-core')
 const { shell, ipcRenderer } = require('electron')
@@ -53,12 +53,11 @@ class Home {
 
     async showstore() {
         try {
-            let storeurl = pkg.store_url;
-            let storeButton = document.querySelector('.storebutton');
-            storeButton.href = storeurl;
-            const response = await fetch(storeurl);
+            const response = await fetch(pkg.store_url).catch(err => console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda.'));
             if (response.ok) {
+                document.querySelector('.storebutton').setAttribute('href', pkg.store_url);
                 document.querySelector('.news-blockshop').style.display = 'block';
+
             } else {
                 document.querySelector('.news-blockshop').style.display = 'none';
             }
@@ -70,7 +69,10 @@ class Home {
 
         //get version from package.json and set the content of titlechangelog to "Miguelki Network MC Launcher" + version
         let version = pkg.version
+        let changelog = pkg.changelog
         let titlechangelog = document.querySelector('.titlechangelog')
+        let changelogcontent = document.querySelector('.bbWrapper')
+        changelogcontent.innerHTML = `<p>${changelog}</p>`
         titlechangelog.innerHTML = `Miguelki Network MC Launcher ${version}`
 
         let newsElement = document.querySelector('.news-list');
@@ -358,7 +360,7 @@ class Home {
                         url: `https://discord.gg/7kPGjgJND7`,
                     }
                 ]
-            });
+            })
             new logger('Minecraft', '#36b030');
             ipcRenderer.send('main-window-progress-load')
             infoStarting.innerHTML = `Iniciando...`
@@ -387,41 +389,64 @@ class Home {
                         url: `https://discord.gg/7kPGjgJND7`,
                     }
                 ]
-            });
+            }).catch();
         });
 
         launch.on('error', err => {
             let popupError = new popup()
+            if (typeof err.error === 'undefined') {
+                new logger(pkg.name, '#7289da');
+                console.warn('Ha occurrido un error en la descarga de algún archivo. Si el juego no inicia correctamente esto puede ser la causa.');
+                if (configClient.launcher_config.closeLauncher == 'close-launcher') {
+                    ipcRenderer.send("main-window-show")
+                };
+                RPC.setActivity({
+                    state: `En el launcher`,
+                    largeImageKey: 'icon',
+                    smallImageKey: 'verificado',
+                    largeImageText: `Miguelki Network`,
+                    instance: true,
+                    buttons: [
+                        {
+                            label: `Discord`,
+                            url: `https://discord.gg/7kPGjgJND7`,
+                        }
+                    ]
+                }).catch();
+            } else {
+                
 
-            popupError.openPopup({
-                title: 'Error',
-                content: err.error,
-                color: 'red',
-                options: true
-            })
+                popupError.openPopup({
+                    title: 'Error',
+                    content: err.error,
+                    color: 'red',
+                    options: true
+                })
+    
+                if (configClient.launcher_config.closeLauncher == 'close-launcher') {
+                    ipcRenderer.send("main-window-show")
+                };
+                ipcRenderer.send('main-window-progress-reset')
+                infoStartingBOX.style.display = "none"
+                playInstanceBTN.style.display = "flex"
+                infoStarting.innerHTML = `Verificando...`
+                new logger(pkg.name, '#7289da');
+                console.log(err);
+                RPC.setActivity({
+                    state: `En el launcher`,
+                    largeImageKey: 'icon',
+                    smallImageKey: 'verificado',
+                    largeImageText: `Miguelki Network`,
+                    instance: true,
+                    buttons: [
+                        {
+                            label: `Discord`,
+                            url: `https://discord.gg/7kPGjgJND7`,
+                        }
+                    ]
+                }).catch();
+            }
 
-            if (configClient.launcher_config.closeLauncher == 'close-launcher') {
-                ipcRenderer.send("main-window-show")
-            };
-            ipcRenderer.send('main-window-progress-reset')
-            infoStartingBOX.style.display = "none"
-            playInstanceBTN.style.display = "flex"
-            infoStarting.innerHTML = `Verificando...`
-            new logger(pkg.name, '#7289da');
-            console.log(err);
-            RPC.setActivity({
-                state: `En el launcher`,
-                largeImageKey: 'icon',
-                smallImageKey: 'verificado',
-                largeImageText: `Miguelki Network`,
-                instance: true,
-                buttons: [
-                    {
-                        label: `Discord`,
-                        url: `https://discord.gg/7kPGjgJND7`,
-                    }
-                ]
-            });
         });
     }
 
