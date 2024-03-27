@@ -19,8 +19,7 @@ Descarga la última versión para tu sistema operativo aquí.
  Sistema operativo | Descarga |
 | -------- | ---- |
 | Windows x64 | [Miguelki-Network-MC-Launcher-win-x64.exe](../../..//releases/latest/download/Miguelki-Network-MC-Launcher-win-x64.exe) |
-| macOS x64 | [Miguelki-Network-MC-Launcher-mac-x64.dmg](../../..//releases/latest/download/Miguelki-Network-MC-Launcher-mac-x64.dmg) |
-| macOS arm64/silicon | [Miguelki-Network-MC-Launcher-mac-arm64.dmg](../../..//releases/latest/download/Miguelki-Network-MC-Launcher-mac-arm64.dmg) |
+| macOS x64/arm64(silicon) | [Miguelki-Network-MC-Launcher-mac-universal.zip](../../..//releases/latest/download/Miguelki-Network-MC-Launcher-mac-universal.zip) |
 | Linux x64 | [Miguelki-Network-MC-Launcher-linux-x86_64.AppImage](../../..//releases/latest/download/Miguelki-Network-MC-Launcher-linux-x86_64.AppImage) |
 
 Otras opciones de descarga están también disponibles en las [releases de GitHub](../../../releases).
