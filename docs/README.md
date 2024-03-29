@@ -24,3 +24,4 @@ Descarga la última versión para tu sistema operativo aquí.
 
 Otras opciones de descarga están también disponibles en las [releases de GitHub](../../../releases).
 ---
+### **<ins><p>Bifurcado de [luuxis/SelvaniaLauncher](https://github.com/luuxis/Selvania-Launcher)</p>**
