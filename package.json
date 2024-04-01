@@ -1,8 +1,8 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.0.11",
-    "changelog": "Algunos apaños realizados al sistema de descarga y una pequeña infografía añadida a los errores de la consola. También se ha arreglado el inicio de sesión a través de Microsoft.",
+    "version": "3.0.12",
+    "changelog": "Cambiada la url de la tienda de Miguelki Network.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
@@ -11,7 +11,7 @@
         "url": "https://github.com/miguelkix30"
     },
     "url": "http://node1.miguelkinetwork.fun:25565/",
-    "store_url": "http://node1.miguelkinetwork.fun:1025/",
+    "store_url": "https://mcstore.miguelkinetwork.fun/",
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",
         "dev": "cross-env-shell DEV_TOOL=open nodemon --exec npm start",
