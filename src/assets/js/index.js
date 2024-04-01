@@ -76,7 +76,10 @@ class Splash {
 
         ipcRenderer.on('updateAvailable', () => {
             this.setStatus(`Actualización disponible`);
-            if (os.platform() == 'win32') ipcRenderer.send('start-update');
+            if (os.platform() == 'win32') {
+                this.toggleProgress();
+                ipcRenderer.send('start-update');
+            }
             else return this.dowloadUpdate();
         })
 
@@ -85,7 +88,6 @@ class Splash {
         })
 
         ipcRenderer.on('download-progress', (event, progress) => {
-            // this.toggleProgress();
             ipcRenderer.send('update-window-progress', { progress: progress.transferred, size: progress.total })
             this.setProgress(progress.transferred, progress.total);
         })
