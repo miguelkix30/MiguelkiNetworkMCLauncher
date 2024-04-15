@@ -1,8 +1,8 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.0.12",
-    "changelog": "Cambiada la url de la tienda de Miguelki Network.",
+    "version": "3.0.13",
+    "changelog": "Cambios a la interfaz grafica y mejoras en el rendimiento",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
