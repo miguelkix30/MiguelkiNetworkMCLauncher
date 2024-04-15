@@ -8,7 +8,7 @@ import Home from './panels/home.js';
 import Settings from './panels/settings.js';
 
 // import modules
-import { logger, config, changePanel, database, popup, setBackground, accountSelect, addAccount, pkg } from './utils.js';
+import { logger, config, changePanel, database, popup, setBackground, setVideoSource, accountSelect, addAccount, pkg } from './utils.js';
 const { AZauth, Microsoft, Mojang } = require('minecraft-java-core');
 
 // libs
@@ -19,8 +19,9 @@ class Launcher {
     async init() {
         this.initLog();
         console.log('Initializing Launcher...');
+        await setVideoSource();
         this.shortcut()
-        await setBackground()
+        await setBackground();
         if (process.platform == 'win32') this.initFrame();
         this.config = await config.GetConfig().then(res => res).catch(err => err);
         if (await this.config.error) return this.errorConnect()

@@ -16,26 +16,75 @@ import { skin2D } from './utils/skin.js';
 import slider from './utils/slider.js';
 
 async function setBackground(theme) {
-    if (typeof theme == 'undefined') {
-        let databaseLauncher = new database();
-        let configClient = await databaseLauncher.readData('configClient');
-        theme = configClient?.launcher_config?.theme || "auto"
-        theme = await ipcRenderer.invoke('is-dark-theme', theme).then(res => res)
-    }
+    theme = "dark";
     let background
     let body = document.body;
     body.className = theme ? 'dark global' : 'light global';
-    if (fs.existsSync(`${__dirname}/assets/images/background/easterEgg`) && Math.random() < 0.005) {
-        let backgrounds = fs.readdirSync(`${__dirname}/assets/images/background/easterEgg`);
+    let backgrounds = fs.readdirSync(`${__dirname}/assets/images/background/dark`);
         let Background = backgrounds[Math.floor(Math.random() * backgrounds.length)];
-        background = `url(./assets/images/background/easterEgg/${Background})`;
-    } else if (fs.existsSync(`${__dirname}/assets/images/background/${theme ? 'dark' : 'light'}`)) {
-        let backgrounds = fs.readdirSync(`${__dirname}/assets/images/background/${theme ? 'dark' : 'light'}`);
-        let Background = backgrounds[Math.floor(Math.random() * backgrounds.length)];
-        background = `linear-gradient(#00000080, #00000080), url(./assets/images/background/${theme ? 'dark' : 'light'}/${Background})`;
-    }
+        background = `linear-gradient(#00000080, #00000080), url(./assets/images/background/dark/${Background})`;
     body.style.backgroundImage = background ? background : theme ? '#000' : '#fff';
     body.style.backgroundSize = 'cover';
+}
+
+async function setVideoSource() {
+    const video = document.querySelector('.background-video');
+    const season = getSeason();
+
+    let source;
+    switch (season) {
+        case 'spring':
+            source = './assets/images/background/spring.mp4';
+            break;
+        case 'summer':
+            source = './assets/images/background/summer.mp4';
+            break;
+        case 'autumn':
+            source = './assets/images/background/autumn.mp4';
+            break;
+        case 'winter':
+            source = './assets/images/background/winter.mp4';
+            break;
+        default:
+            source = './assets/images/background/winter.mp4';
+            break;
+    }
+
+    video.src = source;
+}
+
+function getSeason() {
+    const now = new Date();
+    const month = now.getMonth() + 1; // January is 0
+    let season;
+
+    switch (month) {
+        case 3:
+        case 4:
+        case 5:
+            season = 'spring';
+            break;
+        case 6:
+        case 7:
+        case 8:
+            season = 'summer';
+            break;
+        case 9:
+        case 10:
+        case 11:
+            season = 'autumn';
+            break;
+        case 12:
+        case 1:
+        case 2:
+            season = 'winter';
+            break;
+        default:
+            season = '';
+            break;
+    }
+
+    return season;
 }
 
 async function changePanel(id) {
@@ -122,6 +171,7 @@ export {
     logger as logger,
     popup as popup,
     setBackground as setBackground,
+    setVideoSource as setVideoSource,
     skin2D as skin2D,
     addAccount as addAccount,
     accountSelect as accountSelect,

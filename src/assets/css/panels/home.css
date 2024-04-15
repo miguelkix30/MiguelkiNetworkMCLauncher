@@ -1,3 +1,14 @@
+* {
+    --icon-unselected: #707070;
+    --box: #1A1A1A;
+    --box-hover: #202020;
+    --box-button: #0078bd;
+    --box-button-hover: #053e8a;
+    --box-button-hover-2: #001f47;
+    --box-button-gradient-1: 	#00FFFF;
+    --box-button-gradient-2: 	#0096FF;
+}
+
 .home .container {
     display: flex;
     height: 100%;
@@ -27,7 +38,7 @@
     transition: all 0.2s;
     background: rgba( 0, 0, 0, 0.05 );
     border-radius: 10px;
-    box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+    
     border: 1px solid rgba( 255, 255, 255, 0.18 );
     backdrop-filter: blur( 15.5px );
     -webkit-backdrop-filter: blur( 15.5px );
@@ -97,12 +108,18 @@
     display:block;
     text-align:center;
     padding:.5em;
-    background-color: var(--element-color);
-    color:#fff;
-    border-radius:4px;
-    box-shadow:0 4px 6px rgba(50,50,93,.11), 0 1px 3px rgba(0,0,0,.08);
+    background-color: var(--box-button);
+    box-shadow: 0px 3px 6px #00000029;
+    border-radius: 25px;
+    color: #fff;
+    cursor: pointer;
+    z-index: 2;
+    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
     text-decoration:none;
     font-weight:bold;
+}
+.storebutton:hover {
+    background-color: var(--box-button-hover);
 }
 
 .new-tab {
@@ -282,7 +299,7 @@
     transition: all 0.2s;
     background: rgba( 0, 0, 0, 0.05 );
     border-radius: 10px;
-    box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+    
     border: 1px solid rgba( 255, 255, 255, 0.18 );
     backdrop-filter: blur( 8px );
     -webkit-backdrop-filter: blur( 5px );
@@ -325,10 +342,19 @@
     justify-content: space-between;
     align-items: center;
     position: relative;
-    border: solid 3px var(--element-color);
-    border-radius: 15px;
+    background-color: var(--box-button);
+    box-shadow: 0px 3px 6px #00000029;
+    border-radius: 25px;
+    color: var(--icon-unselected);
+    cursor: pointer;
+    z-index: 2;
+    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
     height: 3.2rem;
-    padding-right: 1.9rem;
+    padding-right: 2rem;
+}
+.play-instance:hover {
+    color: var(--icon-hover);
+    background-color: var(--box-button-hover);
 }
 
 .play-btn {
@@ -346,16 +372,23 @@
     display: flex;
     align-items: center;
     position: absolute;
-    right: -3;
-    top: -2;
-    color: var(--element-color);
+    background: transparent;
+    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+    -moz-border-radius: 100px;
+    -webkit-border-radius: 100px;
+    border-radius: 100px;
+    right: -2;
+    top: 0;
+    color: #fff;
     font-size: 1rem;
     height: calc(100% - 1px);
-    border: solid 3px var(--element-color);
     text-align: center;
-    border-radius: 15px;
-    padding: 0 0.5rem;
+    padding: 0 1rem;
     cursor: pointer;
+}
+.instance-select:hover {
+    background: var(--box-button-hover-2);
+    
 }
 
 .instance-select:before {
@@ -386,11 +419,19 @@
 }
 
 .settings-btn {
+    text-align: center;
     width: 3rem;
     height: 3rem;
     font-size: 3rem;
-    color: var(--element-color);
+    border-radius: 100px;
+    color: #fff;
+    cursor: pointer;
+    z-index: 2;
+    transition: color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
     margin: 0 1.5rem;
+}
+.settings-btn:hover {
+    color: var(--icon-unselected);
 }
 
 .instance-popup {
@@ -398,12 +439,18 @@
     display: none;
     width: 100%;
     height: 100%;
-    background: #000000b3;
     z-index: 10;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.5s;
+    background: rgba( 0, 0, 0, 0.05 );
+    
+    backdrop-filter: blur( 5px );
+    -webkit-backdrop-filter: blur( 5px );
 }
 
 .instances-tab {
@@ -411,6 +458,7 @@
     background: var(--background);
     border-radius: 10px;
     padding: 1rem 3rem;
+    transition: all 0.5s;
 }
 
 .close-popup {

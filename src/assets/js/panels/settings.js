@@ -251,7 +251,7 @@ class Settings {
             await this.db.updateData('configClient', configClient);
         })
 
-        let themeBox = document.querySelector(".theme-box");
+        /* let themeBox = document.querySelector(".theme-box");
         let theme = configClient?.launcher_config?.theme || "auto";
 
         if (theme == "auto") {
@@ -286,7 +286,7 @@ class Settings {
                 configClient.launcher_config.theme = theme;
                 await this.db.updateData('configClient', configClient);
             }
-        })
+        }) */
 
         let closeBox = document.querySelector(".close-box");
         let closeLauncher = configClient?.launcher_config?.closeLauncher || "close-launcher";

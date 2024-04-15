@@ -34,24 +34,32 @@
 }
 
 .nav-box #save {
-    border: solid 4px var(--background-element);
     margin: 3rem;
 }
 
 .nav-settings-btn {
     font-size: 50%;
-    border: solid 4px var(--element-color);
     padding: 5px 10px;
-    border-radius: 10px;
     width: 70%;
     text-align: center;
     margin: 0.5rem 0;
+    background-color: var(--box-button);
+    box-shadow: 0px 3px 6px #00000029;
+    border-radius: 25px;
+    color: #fff;
     cursor: pointer;
+    z-index: 2;
+    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+}
+
+.nav-settings-btn:hover {
+    background-color: var(--box-button-hover);
 }
 
 .active-settings-BTN {
-    background: var(--element-color);
+    background: var(--box-button-hover-2);
 }
+
 
 .container-settings {
     position: absolute;
@@ -67,11 +75,18 @@
 }
 
 .settings-elements-box {
-    background: var(--background-element);
     width: 80%;
-    border-radius: 10px;
     padding: 1.5rem 2rem;
     margin: 0.5rem;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba( 0, 0, 0, 0.05 );
+    border-radius: 10px;
+    
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    backdrop-filter: blur( 80px );
+    -webkit-backdrop-filter: blur( 80px );
 }
 
 .setting-text {
@@ -91,10 +106,16 @@
     font-size: 2rem;
     margin: 1.5rem 0;
     padding: 0.5rem 2rem;
-    border-radius: 2rem;
     text-align: center;
-    background: var(--background-transparent);
-    color: var(--color);
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba( 0, 0, 0, 0.05 );
+    border-radius: 100px;
+    
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    backdrop-filter: blur( 80px );
+    -webkit-backdrop-filter: blur( 80px );
 }
 
 .settings-elements {
@@ -126,19 +147,25 @@
 }
 
 .account {
-    background: var(--background-element);
-    border: solid 4px var(--background-element);
     display: flex;
     justify-content: space-around;
     align-items: center;
     width: calc(400px - 8px);
     height: calc(100px - 8px);
     margin: 1rem;
-    border-radius: 15px;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba( 0, 0, 0, 0.05 );
+    border-radius: 10px;
+    
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    backdrop-filter: blur( 80px );
+    -webkit-backdrop-filter: blur( 80px );
 }
 
 .account-select {
-    border: solid 4px var(--element-color);
+    border: solid 4px #fff;
 }
 
 .accounts-list #add {
@@ -198,7 +225,6 @@
 .delete-profile {
     width: 70px;
     height: 70px;
-    background: var(--background-transparent);
     border-radius: 15px;
     font-size: 3rem;
     display: flex;
@@ -206,6 +232,14 @@
     align-items: center;
     color: #ff2c2c;
     cursor: pointer;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba( 0, 0, 0, 0.05 );
+    
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    backdrop-filter: blur( 80px );
+    -webkit-backdrop-filter: blur( 80px );
 }
 
 .delete-profile-icon {
