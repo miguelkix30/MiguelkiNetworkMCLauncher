@@ -5,13 +5,20 @@
 
 .nav-settings {
     width: 20%;
-    height: 100%;
-    background: var(--background);
+    height: 99.5%;
     display: flex;
     align-items: center;
     flex-direction: column;
     justify-content: center;
     font-size: 2.5rem;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba( 0, 0, 0, 0.05 );
+    border-radius: 10px;
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    backdrop-filter: blur( 8px );
+    -webkit-backdrop-filter: blur( 5px );
 }
 
 .nav-settings p {

@@ -16,14 +16,21 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--background);
     width: 25rem;
     height: 3rem;
-    color: var(--color);
     border-radius: 10px;
     margin-top: 3rem;
     padding: 1rem;
     text-align: center;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba( 0, 0, 0, 0.05 );
+    border-radius: 10px;
+    box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    backdrop-filter: blur( 15.5px );
+    -webkit-backdrop-filter: blur( 15.5px );
 }
 
 .server-status-icon {
@@ -32,7 +39,7 @@
 
 .server-status-name {
     font-size: 1.5rem;
-    color: var(--color);
+    color:#fff;
 }
 
 .server-status-text {
@@ -106,15 +113,6 @@
     height: 100%;
 }
 
-.titre-tab-new {
-    margin-top: 1rem;
-    font-size: 2rem;
-    padding: 0.5rem 1rem;
-    border-radius: 2rem;
-    background: var(--background-transparent);
-    color: var(--color);
-}
-
 .news-list {
     width: 90%;
     height: 100%;
@@ -123,17 +121,31 @@
 }
 
 .news-block {
-    width: 100%;
+    width: 99%;
     margin: 0 0 1rem 0;
     border-radius: 10px;
-    background: var(--background-transparent);
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba( 0, 0, 0, 0.05 );
+    border-radius: 10px;
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    backdrop-filter: blur( 30px );
+    -webkit-backdrop-filter: blur( 15.5px );
 }
 
 .news-blockshop {
-    width: 100%;
+    width: 99%;
     margin: 0 0 1rem 0;
     border-radius: 10px;
-    background: var(--background-transparent);
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba( 0, 0, 0, 0.05 );
+    border-radius: 10px;
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    backdrop-filter: blur( 30px );
+    -webkit-backdrop-filter: blur( 15.5px );
 }
 
 .news-header {
@@ -148,43 +160,55 @@
     text-underline-offset: 3px;
     font-size: 1.2rem;
     text-align: center;
+    color:#fff;
 }
 
 .header-text .titlechangelog {
     font-size: 1.8rem;
-    padding: 0 0 0 7em;
+    padding: 0 0 0 12rem;
     text-align: center;
+    color:#fff;
 }
 
 .header-text .titleshop {
     font-size: 1.8rem;
-    padding: 0 0 0 9.5em;
+    padding: 0 0 0 16rem;
     text-align: center;
+    color:#fff;
+}
+
+.header-text .titlenews {
+    font-size: 1.8rem;
+    padding: 0 0 0 25rem;
+    text-align: center;
+    color:#fff;
 }
 
 .news-header .date {
     display: flex;
     flex-direction: column;
     align-items: center;
+    color:#fff;
 }
 
 .news-content .bbWrapper {
     padding: 0 1.5rem;
     padding-bottom: 1rem;
     font-size: 1.2rem;
-
+    color:#fff;
 }
 
 .news-content .bbWrapper p {
     font-weight: 100;
     margin: 0;
-
+    color:#fff;
 }
 
 .news-content .bbWrapper .news-author {
     margin-top: 1rem;
     text-align: end;
     font-size: 0.8rem;
+    color:#fff;
 }
 
 .news-content .bbWrapper .news-author span {
@@ -215,7 +239,6 @@
 
 .social-block {
     display: flex;
-    background: var(--background-transparent);
     width: 90px;
     height: 90px;
     margin-bottom: 1rem;
@@ -224,6 +247,14 @@
     cursor: pointer;
     align-items: center;
     justify-content: center;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba( 0, 0, 0, 0.05 );
+    border-radius: 10px;
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    backdrop-filter: blur( 8px );
+    -webkit-backdrop-filter: blur( 5px );
 }
 
 .social-block .icon-social {
@@ -244,9 +275,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100%;
+    width: 89%;
     height: 90px;
-    background: var(--background-transparent);
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba( 0, 0, 0, 0.05 );
+    border-radius: 10px;
+    box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    backdrop-filter: blur( 8px );
+    -webkit-backdrop-filter: blur( 5px );
 }
 
 .player-options {
@@ -296,7 +335,7 @@
     border: none;
     border-radius: 10px;
     background: none;
-    color: var(--color);
+    color:#fff;
     font-size: 2rem;
     font-weight: bolder;
     padding: 0 1.5rem;
