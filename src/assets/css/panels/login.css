@@ -1,17 +1,38 @@
+* {
+    --icon-unselected: #707070;
+    --box: #1A1A1A;
+    --box-hover: #202020;
+    --box-button: #0078bd;
+    --box-button-hover: #053e8a;
+    --box-button-hover-2: #001f47;
+    --box-button-gradient-1: 	#00FFFF;
+    --box-button-gradient-2: 	#0096FF;
+}
 .login .container {
     display: flex;
     align-items: center;
     justify-content: center;
     height: 100%;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.5s;
+    background: rgba( 0, 0, 0, 0.05 );
+    backdrop-filter: blur( 3px );
+    -webkit-backdrop-filter: blur( 5px );
 }
 
 .login-tabs {
     position: absolute;
     padding: 15px;
-    background: var(--background);
     border-radius: 15px;
     text-align: center;
     min-width: 40%;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba( 0, 0, 0, 0.5 );
+    border-radius: 10px;
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
 }
 
 .login-home,
@@ -27,14 +48,22 @@
 
 .connect,
 .cancel {
-    background: none;
-    color: var(--color);
-    border: solid 4px var(--element-color);
-    border-radius: 10px;
+    color: #fff;
     padding: 0.3rem 4rem;
     font-size: inherit;
     font-weight: bold;
     margin: 15px 10px;
+    background-color: var(--box-button);
+    box-shadow: 0px 3px 6px #00000029;
+    border-radius: 25px;
+    color: #fff;
+    cursor: pointer;
+    z-index: 2;
+    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+}
+.connect:hover,
+.cancel:hover {
+    background-color: var(--box-button-hover);
 }
 
 .input-login .email,

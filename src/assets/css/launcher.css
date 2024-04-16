@@ -107,9 +107,13 @@ input::-webkit-inner-spin-button {
 .popup-tab {
     width: 40%;
     padding: 15px;
-    background: var(--background);
-    border-radius: 15px;
     z-index: 10;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba( 0, 0, 0, 1 );
+    border-radius: 10px;
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
 }
 
 .popup-title {
