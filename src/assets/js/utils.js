@@ -29,7 +29,11 @@ async function setBackground(theme) {
 
 async function setVideoSource() {
     const video = document.querySelector('.background-video');
-    const season = getSeason();
+    config.GetConfig().then(res => {
+        if (res.custom_background.match(/^(http|https):\/\/[^ "]+$/)) {
+            document.querySelector('.background-video').src = res.custom_background;
+        } else {
+            const season = getSeason();
 
     let source;
     switch (season) {
@@ -51,6 +55,8 @@ async function setVideoSource() {
     }
 
     video.src = source;
+        }
+    })
 }
 
 function getSeason() {
