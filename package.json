@@ -1,8 +1,8 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.0.16",
-    "changelog": "Cambios a la interfaz grafica y mejoras en el rendimiento",
+    "version": "3.0.17",
+    "changelog": "Se ha arreglado una vulnerabilidad que provocaba que la descaga de archivos se viera interrumpida si se accedía a la tienda.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {

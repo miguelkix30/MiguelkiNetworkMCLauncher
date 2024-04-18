@@ -11,6 +11,7 @@ const RPC = new DiscordRPC.Client({ transport: 'ipc' });
 var startingTime = Date.now();
 DiscordRPC.register(clientId);
 
+var StoreAvailable = false;
 async function setActivity() {
     if (!RPC) return;
 };
@@ -57,12 +58,17 @@ class Home {
             if (response.ok) {
                 document.querySelector('.storebutton').setAttribute('href', pkg.store_url);
                 document.querySelector('.news-blockshop').style.display = 'block';
+                StoreAvailable = true;
 
             } else {
+                console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda.');
                 document.querySelector('.news-blockshop').style.display = 'none';
+                StoreAvailable = false;
             }
         } catch (error) {
+            console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda.');
             document.querySelector('.news-blockshop').style.display = 'none';
+            StoreAvailable = false;
         }
     }
     async news() {
@@ -301,6 +307,9 @@ class Home {
 
         launch.Launch(opt);
 
+        // si StoreAvailable es true, se realizará document.querySelector('.news-blockshop').style.display = 'none';
+        if (StoreAvailable) document.querySelector('.news-blockshop').style.display = 'none';
+
         playInstanceBTN.style.display = "none"
         infoStartingBOX.style.display = "block"
         progressBar.style.display = "";
@@ -374,6 +383,7 @@ class Home {
             ipcRenderer.send('main-window-progress-reset')
             infoStartingBOX.style.display = "none"
             playInstanceBTN.style.display = "flex"
+            if (StoreAvailable) document.querySelector('.news-blockshop').style.display = 'block';
             infoStarting.innerHTML = `Cerrando...`
             new logger(pkg.name, '#7289da');
             console.log('Close');
@@ -427,6 +437,7 @@ class Home {
                     ipcRenderer.send("main-window-show")
                 };
                 ipcRenderer.send('main-window-progress-reset')
+                if (StoreAvailable) document.querySelector('.news-blockshop').style.display = 'block';
                 infoStartingBOX.style.display = "none"
                 playInstanceBTN.style.display = "flex"
                 infoStarting.innerHTML = `Verificando...`
