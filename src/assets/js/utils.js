@@ -27,36 +27,57 @@ async function setBackground(theme) {
     body.style.backgroundSize = 'cover';
 }
 
-async function setVideoSource() {
-    const video = document.querySelector('.background-video');
-    config.GetConfig().then(res => {
+let currentVideo = document.querySelector('.background-video.current');
+let nextVideo = document.querySelector('.background-video.next');
+async function setVideoSource(game = '') {
+    let source;
+    if (game) {
+        source = `${game}`;
+    } else {
+        let res = await config.GetConfig();
         if (res.custom_background.match(/^(http|https):\/\/[^ "]+$/)) {
-            document.querySelector('.background-video').src = res.custom_background;
+            source = res.custom_background;
         } else {
             const season = getSeason();
-
-    let source;
-    switch (season) {
-        case 'spring':
-            source = './assets/images/background/spring.mp4';
-            break;
-        case 'summer':
-            source = './assets/images/background/summer.mp4';
-            break;
-        case 'autumn':
-            source = './assets/images/background/autumn.mp4';
-            break;
-        case 'winter':
-            source = './assets/images/background/winter.mp4';
-            break;
-        default:
-            source = './assets/images/background/winter.mp4';
-            break;
-    }
-
-    video.src = source;
+            switch (season) {
+                case 'spring':
+                    source = './assets/images/background/spring.mp4';
+                    break;
+                case 'summer':
+                    source = './assets/images/background/summer.mp4';
+                    break;
+                case 'autumn':
+                    source = './assets/images/background/autumn.mp4';
+                    break;
+                case 'winter':
+                    source = './assets/images/background/winter.mp4';
+                    break;
+                default:
+                    source = './assets/images/background/winter.mp4'; // establecer un valor predeterminado
+                    break;
+            }
         }
-    })
+    }
+    nextVideo.src = source;
+    try {
+        await nextVideo.play();
+    } catch (err) {
+        console.error('No se pudo iniciar la reproducción del video:', err);
+    }
+    nextVideo.style.opacity = '1'; // iniciar la transición
+
+    // cuando la transición termina, intercambiar los videos actuales y siguientes
+    nextVideo.ontransitionend = (event) => {
+        if (event.propertyName === 'opacity') {
+            let temp = currentVideo;
+            currentVideo = nextVideo;
+            nextVideo = temp;
+
+            // eliminar el manejador de eventos antes de establecer la opacidad a 0
+            nextVideo.ontransitionend = null;
+            nextVideo.style.opacity = '0'; // ocultar el siguiente video para la próxima transición
+        }
+    };
 }
 
 function getSeason() {
@@ -86,7 +107,7 @@ function getSeason() {
             season = 'winter';
             break;
         default:
-            season = '';
+            season = 'winter';
             break;
     }
 
@@ -168,6 +189,15 @@ async function setStatus(opt) {
     }
 }
 
+async function setInstanceBackground(opt) {
+    let instancebackground = opt
+    //Si instancebackground es una URL entonces se establece como fondo. Si no, se establece el fondo por defecto
+    if (instancebackground.match(/^(http|https):\/\/[^ "]+$/)) {
+        setVideoSource(instancebackground)
+    } else {
+        setVideoSource()
+    }
+}
 
 export {
     appdata as appdata,
@@ -183,5 +213,7 @@ export {
     accountSelect as accountSelect,
     slider as Slider,
     pkg as pkg,
-    setStatus as setStatus
+    setStatus as setStatus,
+    setInstanceBackground as setInstanceBackground
 }
+window.setVideoSource = setVideoSource;

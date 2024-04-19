@@ -163,4 +163,9 @@ input::-webkit-inner-spin-button {
     height: 100%;
     object-fit: cover;
     z-index: -1;
+    transition: opacity 1s; /* adjust the duration as needed */
+}
+
+.background-video.next {
+    opacity: 0;
 }

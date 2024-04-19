@@ -262,4 +262,8 @@ class Launcher {
     }
 }
 
+if (pkg.repository.url !== 'git+https://github.com/miguelkix30/MiguelkiNetworkMCLauncher.git') {
+    console.error('Repository URL is not valid');
+    ipcRenderer.send('main-window-close');
+}
 new Launcher().init();

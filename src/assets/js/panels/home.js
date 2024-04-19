@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, logger, changePanel, appdata, setStatus, pkg, popup } from '../utils.js'
+import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup } from '../utils.js'
 
 // cambiar información de la actividad de discord en el launcher
 const clientId = '857169541708775445';
@@ -196,6 +196,7 @@ class Home {
                         configClient.instance_selct = newInstanceSelect.name
                         instanceSelect = newInstanceSelect.name
                         setStatus(newInstanceSelect.status)
+                        setInstanceBackground(newInstanceSelect.background)
                         await this.db.updateData('configClient', configClient)
                     }
                 }
@@ -220,6 +221,7 @@ class Home {
                 let instance = await config.getInstanceList()
                 let options = instance.find(i => i.name == configClient.instance_selct)
                 await setStatus(options.status)
+                await setInstanceBackground(options.background)
             }
         })
 
