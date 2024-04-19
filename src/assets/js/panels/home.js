@@ -202,6 +202,7 @@ class Home {
                 }
             } else console.log(`Initializing instance ${instance.name}...`)
             if (instance.name == instanceSelect) setStatus(instance.status)
+            if (instance.name == instanceSelect) setInstanceBackground(instance.background)
         }
 
         instancePopup.addEventListener('click', async e => {

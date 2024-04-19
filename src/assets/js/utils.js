@@ -31,8 +31,10 @@ let currentVideo = document.querySelector('.background-video.current');
 let nextVideo = document.querySelector('.background-video.next');
 async function setVideoSource(game = '') {
     let source;
+    let sourcePromise = new Promise(async (resolve) => {
     if (game) {
         source = `${game}`;
+        resolve();
     } else {
         let res = await config.GetConfig();
         if (res.custom_background.match(/^(http|https):\/\/[^ "]+$/)) {
@@ -57,7 +59,13 @@ async function setVideoSource(game = '') {
                     break;
             }
         }
+        resolve();
     }
+});
+    let timeoutPromise = new Promise(resolve => setTimeout(resolve, 1000));
+    await Promise.all([sourcePromise, timeoutPromise]);
+
+    if (source) {
     nextVideo.src = source;
     try {
         await nextVideo.play();
@@ -78,6 +86,9 @@ async function setVideoSource(game = '') {
             nextVideo.style.opacity = '0'; // ocultar el siguiente video para la próxima transición
         }
     };
+} else {
+    console.error('No se pudo establecer la fuente del video: source está indefinida');
+}
 }
 
 function getSeason() {
