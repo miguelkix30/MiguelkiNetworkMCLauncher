@@ -392,6 +392,7 @@ class Home {
             console.log('Close');
             RPC.setActivity({
                 state: `En el launcher`,
+                startTimestamp: startingTime,
                 largeImageKey: 'icon',
                 smallImageKey: 'verificado',
                 largeImageText: `Miguelki Network`,
@@ -415,6 +416,7 @@ class Home {
                 };
                 RPC.setActivity({
                     state: `En el launcher`,
+                    startTimestamp: startingTime,
                     largeImageKey: 'icon',
                     smallImageKey: 'verificado',
                     largeImageText: `Miguelki Network`,
