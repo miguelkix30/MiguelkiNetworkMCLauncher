@@ -306,41 +306,60 @@ class Home {
         let infoStarting = document.querySelector(".info-starting-game-text")
         let progressBar = document.querySelector('.progress-bar')
 
-        let opt = {
-            url: options.url,
-            authenticator: authenticator,
-            timeout: 10000,
-            path: `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}`,
-            instance: options.name,
-            version: options.loadder.minecraft_version,
-            detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
-            downloadFileMultiple: configClient.launcher_config.download_multi,
-            intelEnabledMac: configClient.launcher_config.intelEnabledMac,
-
-            loader: {
-                type: options.loadder.loadder_type,
-                build: options.loadder.loadder_version,
-                enable: options.loadder.loadder_type == 'none' ? false : true
-            },
-
-            verify: options.verify,
-
-            ignored: [...options.ignored],
-
-            javaPath: configClient.java_config.java_path,
-
-            screen: {
-                width: configClient.game_config.screen_size.width,
-                height: configClient.game_config.screen_size.height
-            },
-
-            memory: {
-                min: `${configClient.java_config.java_memory.min * 1024}M`,
-                max: `${configClient.java_config.java_memory.max * 1024}M`
+        if (options.maintenance) {
+            let popupError = new popup()
+            if (options.maintenancemsg == '') {
+                popupError.openPopup({
+                    title: 'Error al iniciar el cliente',
+                    content: 'El cliente no se encuentra disponible.',
+                    color: 'red',
+                    options: true
+                })
+            } else {
+                popupError.openPopup({
+                    title: 'Error al iniciar el cliente',
+                    content: options.maintenancemsg,
+                    color: 'red',
+                    options: true
+                })
             }
-        }
+            
+        } else {
+            let opt = {
+                url: options.url,
+                authenticator: authenticator,
+                timeout: 10000,
+                path: `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}`,
+                instance: options.name,
+                version: options.loadder.minecraft_version,
+                detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
+                downloadFileMultiple: configClient.launcher_config.download_multi,
+                intelEnabledMac: configClient.launcher_config.intelEnabledMac,
+    
+                loader: {
+                    type: options.loadder.loadder_type,
+                    build: options.loadder.loadder_version,
+                    enable: options.loadder.loadder_type == 'none' ? false : true
+                },
+    
+                verify: options.verify,
+    
+                ignored: [...options.ignored],
+    
+                javaPath: configClient.java_config.java_path,
+    
+                screen: {
+                    width: configClient.game_config.screen_size.width,
+                    height: configClient.game_config.screen_size.height
+                },
+    
+                memory: {
+                    min: `${configClient.java_config.java_memory.min * 1024}M`,
+                    max: `${configClient.java_config.java_memory.max * 1024}M`
+                }
+            }
 
-        launch.Launch(opt);
+            launch.Launch(opt);
 
         // si StoreAvailable es true, se realizará document.querySelector('.news-blockshop').style.display = 'none';
         if (StoreAvailable) document.querySelector('.news-blockshop').style.display = 'none';
@@ -494,8 +513,10 @@ class Home {
                     ]
                 }).catch();
             }
-
+            
         });
+        }
+        
     }
 
     getdate(e) {

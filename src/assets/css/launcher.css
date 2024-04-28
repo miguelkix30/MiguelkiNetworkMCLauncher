@@ -130,14 +130,24 @@ input::-webkit-inner-spin-button {
 }
 
 .popup-button {
-    background: none;
-    color: var(--color);
-    border: solid 4px var(--element-color);
-    border-radius: 10px;
-    padding: 0.3rem 4rem;
     font-size: inherit;
     font-weight: bold;
+    height: 2rem;
+    width: auto;
+    min-width: 4rem;
+    padding: 0.3rem 4rem;
     margin: 15px 10px;
+    text-align: center;
+    margin: 0.5rem 0;
+    background-color: var(--box-button);
+    border-radius: 25px;
+    color: #fff;
+    cursor: pointer;
+    z-index: 2;
+    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+}
+.popup-button:hover {
+    background-color: var(--box-button-hover);
 }
 
 .panel {

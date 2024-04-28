@@ -1,7 +1,7 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.0.19",
+    "version": "3.0.20",
     "changelog": "Se ha mejorado la interfaz al lanzador y se ha actualizado el complemento de navegación para futuras actuallizaciones.", 
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
