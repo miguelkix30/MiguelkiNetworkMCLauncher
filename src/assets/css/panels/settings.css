@@ -71,7 +71,15 @@
     height: calc(100% - 26px);
     opacity: 0;
     pointer-events: none;
+    transform: translateX(100%); /* Se mueve a la izquierda fuera de la vista */
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; /* Aplicar la transición aquí */
+}
 
+.active-container-settings {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0); /* Se mueve a la posición original */
+    /* No es necesario aplicar la transición aquí */
 }
 
 .settings-elements-box {

@@ -125,10 +125,12 @@ function getSeason() {
     return season;
 }
 
-async function changePanel(id) {
+function changePanel(id) {
     let panel = document.querySelector(`.${id}`);
-    let active = document.querySelector(`.active`)
-    if (active) active.classList.toggle("active");
+    let active = document.querySelector(`.active`);
+    if (active) {
+        active.classList.remove("active");
+    }
     panel.classList.add("active");
 }
 

@@ -7,6 +7,10 @@
     --box-button-hover-2: #001f47;
     --box-button-gradient-1: 	#00FFFF;
     --box-button-gradient-2: 	#0096FF;
+    --notification-red: rgba(255, 0, 0, 0.25);
+    --notification-green: rgba(0, 255, 0, 0.25);
+    --notification-blue: rgba(0, 0, 255, 0.25);
+    --notification-yellow: rgba(255, 255, 0, 0.25);
 }
 
 .home .container {
@@ -14,6 +18,14 @@
     height: 100%;
     flex-direction: column;
     align-items: center;
+}
+/* topbar tiene todos los elementos alineados horizontalmente y en el centro */
+.topbar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 10rem;
 }
 
 /*******************************************************************************
@@ -23,7 +35,6 @@
  ******************************************************************************/
 
 .status-server {
-    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -499,4 +510,58 @@
 
 .active-instance {
     background: var(--element-color);
+}
+
+
+
+
+.message-container {
+    justify-content: flex-start;
+    width: auto;
+    min-width: 30rem;
+    max-width: 40rem;
+    height: 3rem;
+    border-radius: 10px;
+    margin-top: 3rem;
+    margin-right: 2rem;
+    padding: 1rem ;
+    text-align: left;
+    align-items: center;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: var(--notification-green);
+    border-radius: 10px;
+    display: flex;
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    backdrop-filter: blur( 15.5px );
+    -webkit-backdrop-filter: blur( 15.5px );
+}
+
+.message-title {
+    font-size: 1.2rem;
+    color:#fff;
+}
+.message-content {
+    font-size: 0.8rem;
+    color:#fff;
+}
+
+.message-icon {
+    justify-content: center;
+    height: 2.3rem;
+    width: 3.2rem;
+    margin-right: 1rem;
+    order: 1;
+}
+.message-icon, .message-text {
+    display: flex; /* Añade esto para hacer que los hijos de .message-icon y .message-text se muestren en línea */
+    flex-direction: column; /* Añade esto para hacer que los hijos se muestren en columna */
+}
+.message-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Alinea los elementos hijos al inicio (izquierda) */
+    justify-content: center;
+    order: 2; /* Cambia el orden de visualización para que aparezca antes del icono */
 }

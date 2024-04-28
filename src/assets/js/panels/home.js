@@ -46,10 +46,11 @@ class Home {
         this.db = new database();
         this.news()
         this.showstore()
+        this.notification()
         this.socialLick()
         this.instancesSelect()
         document.querySelector('.settings-btn').addEventListener('click', e => changePanel('settings'))
-        
+        /* document.querySelector('.custom-btn').addEventListener('click', e => changePanel('custom')) */
     }
 
     async showstore() {
@@ -71,6 +72,37 @@ class Home {
             StoreAvailable = false;
         }
     }
+
+    async notification() { 
+        // get enabled from 
+        let res = await config.GetConfig();
+        // if notification.enabled is true, get notification color, icon, title and content
+        if (res.notification.enabled) {
+            let notification = document.querySelector('.message-container');
+            let notificationIcon = document.querySelector('.message-icon');
+            let notificationTitle = document.querySelector('.message-title');
+            let notificationContent = document.querySelector('.message-content');
+
+            let colorRed = getComputedStyle(document.documentElement).getPropertyValue('--notification-red');
+            let colorGreen = getComputedStyle(document.documentElement).getPropertyValue('--notification-green');
+            let colorBlue = getComputedStyle(document.documentElement).getPropertyValue('--notification-blue');
+            let colorYellow = getComputedStyle(document.documentElement).getPropertyValue('--notification-yellow');
+
+            notification.style.display = 'flex';
+            notificationTitle.innerHTML = res.notification.title;
+            notificationContent.innerHTML = res.notification.content;
+            if (notificationContent.innerHTML.length > 160) {
+                notificationContent.style.fontSize = '0.75rem';
+                notificationTitle.style.fontSize = '1.0rem';
+            }
+
+            if (res.notification.color == 'red') notification.style.background = colorRed; else if (res.notification.color == 'green') notification.style.background = colorGreen; else if (res.notification.color == 'blue') notification.style.background = colorBlue; else if (res.notification.color == 'yellow') notification.style.background = colorYellow; else notification.style.background = res.notification.color;
+            if (res.notification.icon.match(/^(http|https):\/\/[^ "]+$/)) notificationIcon.src = res.notification.icon; else if (res.notification.icon == 'info') notificationIcon.src = 'assets/images/notification/info.png'; else if (res.notification.icon == 'warning') notificationIcon.src = 'assets/images/notification/exclamation2.png'; else if (res.notification.icon == 'error') notificationIcon.src = 'assets/images/notification/error.png'; else if (res.notification.icon == 'exclamation') notificationIcon.src = 'assets/images/notification/exclamation.png'; else notificationIcon.style.display = 'none';
+            
+            
+        }
+    }
+
     async news() {
 
         //get version from package.json and set the content of titlechangelog to "Miguelki Network MC Launcher" + version

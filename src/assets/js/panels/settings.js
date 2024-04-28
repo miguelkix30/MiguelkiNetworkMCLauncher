@@ -23,25 +23,44 @@ class Settings {
     navBTN() {
         document.querySelector('.nav-box').addEventListener('click', e => {
             if (e.target.classList.contains('nav-settings-btn')) {
+                let navButtons = document.querySelectorAll('.nav-settings-btn');
+                navButtons.forEach(button => button.disabled = true); // Deshabilitar los botones durante la transición
+    
                 let id = e.target.id
-
                 let activeSettingsBTN = document.querySelector('.active-settings-BTN')
                 let activeContainerSettings = document.querySelector('.active-container-settings')
-
+    
                 if (id == 'save') {
-                    if (activeSettingsBTN) activeSettingsBTN.classList.toggle('active-settings-BTN');
+                    if (activeSettingsBTN) activeSettingsBTN.classList.remove('active-settings-BTN');
                     document.querySelector('#account').classList.add('active-settings-BTN');
-
-                    if (activeContainerSettings) activeContainerSettings.classList.toggle('active-container-settings');
-                    document.querySelector(`#account-tab`).classList.add('active-container-settings');
+    
+                    if (activeContainerSettings) {
+                        activeContainerSettings.style.opacity = 0; // Esto se animará
+                        activeContainerSettings.classList.remove('active-container-settings');
+                    }
+                    setTimeout(() => {
+                        let newContainerSettings = document.querySelector(`#account-tab`);
+                        newContainerSettings.style.opacity = 1; // Esto se animará
+                        newContainerSettings.classList.add('active-container-settings');
+                        navButtons.forEach(button => button.disabled = false); // Habilitar los botones cuando la transición termine
+                    }, 500); // Retraso de 500ms, que es la duración de la transición de opacidad
+                    
                     return changePanel('home')
                 }
-
-                if (activeSettingsBTN) activeSettingsBTN.classList.toggle('active-settings-BTN');
+    
+                if (activeSettingsBTN) activeSettingsBTN.classList.remove('active-settings-BTN');
                 e.target.classList.add('active-settings-BTN');
-
-                if (activeContainerSettings) activeContainerSettings.classList.toggle('active-container-settings');
-                document.querySelector(`#${id}-tab`).classList.add('active-container-settings');
+    
+                if (activeContainerSettings) {
+                    activeContainerSettings.style.opacity = 0; // Esto se animará
+                    activeContainerSettings.classList.remove('active-container-settings');
+                }
+                setTimeout(() => {
+                    let newContainerSettings = document.querySelector(`#${id}-tab`);
+                    newContainerSettings.style.opacity = 1; // Esto se animará
+                    newContainerSettings.classList.add('active-container-settings');
+                    navButtons.forEach(button => button.disabled = false); // Habilitar los botones cuando la transición termine
+                }, 500); // Retraso de 500ms, que es la duración de la transición de opacidad
             }
         })
     }
