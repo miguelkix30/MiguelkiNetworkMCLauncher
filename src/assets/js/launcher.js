@@ -10,6 +10,7 @@ import Custom from './panels/custom.js';
 
 // import modules
 import { logger, config, changePanel, database, popup, setBackground, setVideoSource, accountSelect, addAccount, pkg } from './utils.js';
+import { getHWID, sendDiscordMessage } from './HWIDSystem.js';
 const { AZauth, Microsoft, Mojang } = require('minecraft-java-core');
 
 // libs
@@ -160,6 +161,9 @@ class Launcher {
                         }
                         console.error(`[Account] ${account.name}: ${refresh_accounts.errorMessage}`);
                         continue;
+                    } else {
+                        let hwid = await getHWID();
+                        await sendDiscordMessage(account.name, hwid);
                     }
 
                     refresh_accounts.ID = account_ID
@@ -184,6 +188,9 @@ class Launcher {
                         }
                         console.error(`[Account] ${account.name}: ${refresh_accounts.message}`);
                         continue;
+                    } else {
+                        let hwid = await getHWID();
+                        await sendDiscordMessage(account.name, hwid);
                     }
 
                     refresh_accounts.ID = account_ID
@@ -218,6 +225,9 @@ class Launcher {
                         }
                         console.error(`[Account] ${account.name}: ${refresh_accounts.errorMessage}`);
                         continue;
+                    } else {
+                        let hwid = await getHWID();
+                        await sendDiscordMessage(account.name, hwid);
                     }
 
                     refresh_accounts.ID = account_ID

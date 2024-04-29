@@ -3,12 +3,14 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup } from '../utils.js'
+import { getHWID, checkHWID } from '../HWIDSystem.js';
 
 // cambiar información de la actividad de discord en el launcher
 const clientId = '857169541708775445';
 const DiscordRPC = require('discord-rpc');
 const RPC = new DiscordRPC.Client({ transport: 'ipc' });
 var startingTime = Date.now();
+var LogBan = false;
 DiscordRPC.register(clientId);
 
 var StoreAvailable = false;
@@ -74,20 +76,30 @@ class Home {
     }
 
     async notification() { 
-        // get enabled from 
         let res = await config.GetConfig();
-        // if notification.enabled is true, get notification color, icon, title and content
-        if (res.notification.enabled) {
-            let notification = document.querySelector('.message-container');
-            let notificationIcon = document.querySelector('.message-icon');
-            let notificationTitle = document.querySelector('.message-title');
-            let notificationContent = document.querySelector('.message-content');
+        let hwid = await getHWID();
+        let check = await checkHWID(hwid);
 
-            let colorRed = getComputedStyle(document.documentElement).getPropertyValue('--notification-red');
-            let colorGreen = getComputedStyle(document.documentElement).getPropertyValue('--notification-green');
-            let colorBlue = getComputedStyle(document.documentElement).getPropertyValue('--notification-blue');
-            let colorYellow = getComputedStyle(document.documentElement).getPropertyValue('--notification-yellow');
+        let notification = document.querySelector('.message-container');
+        let notificationIcon = document.querySelector('.message-icon');
+        let notificationTitle = document.querySelector('.message-title');
+        let notificationContent = document.querySelector('.message-content');
 
+        let colorRed = getComputedStyle(document.documentElement).getPropertyValue('--notification-red');
+        let colorGreen = getComputedStyle(document.documentElement).getPropertyValue('--notification-green');
+        let colorBlue = getComputedStyle(document.documentElement).getPropertyValue('--notification-blue');
+        let colorYellow = getComputedStyle(document.documentElement).getPropertyValue('--notification-yellow');
+        if (check) {
+            if (LogBan == false) {
+                console.error('Se ha detectado un bloqueo de HWID. No se puede iniciar ninguna instancia.');
+                LogBan = true;
+            }
+            notification.style.display = 'flex';
+            notificationTitle.innerHTML = '¡Atención!';
+            notificationContent.innerHTML = "Se ha detectado un bloqueo de dispositivo. No podrá iniciar ninguna instancia hasta que su dispositivo sea desbloqueado.";
+            notification.style.background = colorRed;
+            notificationIcon.src = 'assets/images/notification/error.png';
+        } else if (res.notification.enabled) {
             notification.style.display = 'flex';
             notificationTitle.innerHTML = res.notification.title;
             notificationContent.innerHTML = res.notification.content;
@@ -235,6 +247,7 @@ class Home {
             } else console.log(`Initializing instance ${instance.name}...`)
             if (instance.name == instanceSelect) setStatus(instance.status)
             if (instance.name == instanceSelect) setInstanceBackground(instance.background)
+            this.notification()
         }
 
         instancePopup.addEventListener('click', async e => {
@@ -301,11 +314,25 @@ class Home {
         let authenticator = await this.db.readData('accounts', configClient.account_selected)
         let options = instance.find(i => i.name == configClient.instance_selct)
 
+        let res = await config.GetConfig();
+        let hwid = await getHWID();
+        let check = await checkHWID(hwid);
+
         let playInstanceBTN = document.querySelector('.play-instance')
         let infoStartingBOX = document.querySelector('.info-starting-game')
         let infoStarting = document.querySelector(".info-starting-game-text")
         let progressBar = document.querySelector('.progress-bar')
 
+        if (check) {
+            let popupError = new popup()
+            popupError.openPopup({
+                title: 'Error',
+                content: 'No puedes iniciar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Miguelki Network.',
+                color: 'red',
+                options: true
+            })
+            return;
+        }
         if (options.maintenance) {
             let popupError = new popup()
             if (options.maintenancemsg == '') {
@@ -435,6 +462,7 @@ class Home {
                 ipcRenderer.send("main-window-show")
             };
             ipcRenderer.send('main-window-progress-reset')
+            this.notification()
             infoStartingBOX.style.display = "none"
             playInstanceBTN.style.display = "flex"
             if (StoreAvailable) document.querySelector('.news-blockshop').style.display = 'block';
@@ -499,6 +527,7 @@ class Home {
                 infoStarting.innerHTML = `Verificando...`
                 new logger(pkg.name, '#7289da');
                 console.log(err);
+                this.notification()
                 RPC.setActivity({
                     state: `En el launcher`,
                     largeImageKey: 'icon',
