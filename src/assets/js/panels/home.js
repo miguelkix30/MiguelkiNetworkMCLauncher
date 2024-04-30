@@ -89,17 +89,28 @@ class Home {
         let colorGreen = getComputedStyle(document.documentElement).getPropertyValue('--notification-green');
         let colorBlue = getComputedStyle(document.documentElement).getPropertyValue('--notification-blue');
         let colorYellow = getComputedStyle(document.documentElement).getPropertyValue('--notification-yellow');
+        
+        notification.addEventListener('transitionend', function(event) {
+            if (event.propertyName === 'opacity' && window.getComputedStyle(this).opacity == '0') {
+                this.style.display = 'none';
+            } else if (event.propertyName === 'opacity' && window.getComputedStyle(this).opacity == '1') {
+                this.style.display = 'flex';
+            }
+        });
+
         if (check) {
             if (LogBan == false) {
                 console.error('Se ha detectado un bloqueo de HWID. No se puede iniciar ninguna instancia.');
                 LogBan = true;
             }
+            notification.classList.remove('hide');
             notification.style.display = 'flex';
             notificationTitle.innerHTML = '¡Atención!';
             notificationContent.innerHTML = "Se ha detectado un bloqueo de dispositivo. No podrá iniciar ninguna instancia hasta que su dispositivo sea desbloqueado.";
             notification.style.background = colorRed;
             notificationIcon.src = 'assets/images/notification/error.png';
         } else if (res.notification.enabled) {
+            notification.classList.remove('hide');
             notification.style.display = 'flex';
             notificationTitle.innerHTML = res.notification.title;
             notificationContent.innerHTML = res.notification.content;
@@ -112,7 +123,9 @@ class Home {
             if (res.notification.icon.match(/^(http|https):\/\/[^ "]+$/)) notificationIcon.src = res.notification.icon; else if (res.notification.icon == 'info') notificationIcon.src = 'assets/images/notification/info.png'; else if (res.notification.icon == 'warning') notificationIcon.src = 'assets/images/notification/exclamation2.png'; else if (res.notification.icon == 'error') notificationIcon.src = 'assets/images/notification/error.png'; else if (res.notification.icon == 'exclamation') notificationIcon.src = 'assets/images/notification/exclamation.png'; else notificationIcon.style.display = 'none';
             
             
-        } else notification.style.display = 'none';
+        } else {
+            notification.classList.add('hide');
+        }
     }
 
     async news() {
@@ -263,7 +276,8 @@ class Home {
                 configClient.instance_selct = newInstanceSelect
                 await this.db.updateData('configClient', configClient)
                 instanceSelect = instancesList.filter(i => i.name == newInstanceSelect)
-                instancePopup.style.display = 'none'
+                instancePopup.classList.remove('show');
+                this.notification()
                 let instance = await config.getInstanceList()
                 let options = instance.find(i => i.name == configClient.instance_selct)
                 await setStatus(options.status)
@@ -297,14 +311,17 @@ class Home {
                         }
                     }
                 }
+                instancePopup.classList.add('show');
 
-                instancePopup.style.display = 'flex'
             }
 
             if (!e.target.classList.contains('instance-select')) this.startGame()
         })
 
-        instanceCloseBTN.addEventListener('click', () => instancePopup.style.display = 'none')
+        instanceCloseBTN.addEventListener('click', () => {
+            instancePopup.classList.remove('show');
+            this.notification();
+        })
     }
 
     async startGame() {
