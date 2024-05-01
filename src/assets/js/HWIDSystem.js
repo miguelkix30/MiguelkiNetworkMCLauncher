@@ -41,9 +41,24 @@ async function sendDiscordMessage(username, hwid) {
     webhook.send(embed);
 }
 
+async function sendLogoutDiscordMessage(username) {
+    const hwid = await getHWID();
+    const embed = new MessageBuilder()
+    .setTitle('HWID Logout')
+    .setDescription('Un usuario ha cerrado el lanzador.')
+    .addField('Usuario:', username, true)
+    .addField('HWID:', hwid, true)
+    .setColor('#FFFF00')
+    .setFooter('Miguelki Network MC Launcher')
+    .setTimestamp();
+    webhook.send(embed);
+
+}
+
 export {
     getHWID as getHWID,
     checkHWID as checkHWID,
     fetchHWIDList as fetchHWIDList,
-    sendDiscordMessage as sendDiscordMessage
+    sendDiscordMessage as sendDiscordMessage,
+    sendLogoutDiscordMessage as sendLogoutDiscordMessage
 }

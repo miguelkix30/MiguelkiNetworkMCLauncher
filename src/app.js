@@ -69,8 +69,9 @@ ipcMain.handle('is-dark-theme', (_, theme) => {
     return nativeTheme.shouldUseDarkColors;
 })
 
-app.on('window-all-closed', () => app.quit());
-
+app.on('window-all-closed', () => {
+    app.quit();
+});
 autoUpdater.autoDownload = false;
 
 ipcMain.handle('update-app', async () => {

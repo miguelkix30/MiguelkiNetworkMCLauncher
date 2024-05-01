@@ -43,12 +43,14 @@ const { Launch } = require('minecraft-java-core')
 const { shell, ipcRenderer } = require('electron')
 class Home {
     static id = "home";
+    intervalId = null;
     async init(config) {
         this.config = config;
         this.db = new database();
         this.news()
         this.showstore()
         this.notification()
+        this.startNotificationCheck()
         this.socialLick()
         this.instancesSelect()
         document.querySelector('.settings-btn').addEventListener('click', e => changePanel('settings'))
@@ -89,29 +91,20 @@ class Home {
         let colorGreen = getComputedStyle(document.documentElement).getPropertyValue('--notification-green');
         let colorBlue = getComputedStyle(document.documentElement).getPropertyValue('--notification-blue');
         let colorYellow = getComputedStyle(document.documentElement).getPropertyValue('--notification-yellow');
-        
-        notification.addEventListener('transitionend', function(event) {
-            if (event.propertyName === 'opacity' && window.getComputedStyle(this).opacity == '0') {
-                this.style.display = 'none';
-            } else if (event.propertyName === 'opacity' && window.getComputedStyle(this).opacity == '1') {
-                this.style.display = 'flex';
-            }
-        });
 
         if (check) {
             if (LogBan == false) {
                 console.error('Se ha detectado un bloqueo de HWID. No se puede iniciar ninguna instancia.');
                 LogBan = true;
             }
-            notification.classList.remove('hide');
-            notification.style.display = 'flex';
+            //mostrar notificación
             notificationTitle.innerHTML = '¡Atención!';
             notificationContent.innerHTML = "Se ha detectado un bloqueo de dispositivo. No podrá iniciar ninguna instancia hasta que su dispositivo sea desbloqueado.";
             notification.style.background = colorRed;
             notificationIcon.src = 'assets/images/notification/error.png';
+            await this.showNotification();
         } else if (res.notification.enabled) {
-            notification.classList.remove('hide');
-            notification.style.display = 'flex';
+            //mostrar notificación
             notificationTitle.innerHTML = res.notification.title;
             notificationContent.innerHTML = res.notification.content;
             if (notificationContent.innerHTML.length > 160) {
@@ -121,13 +114,50 @@ class Home {
 
             if (res.notification.color == 'red') notification.style.background = colorRed; else if (res.notification.color == 'green') notification.style.background = colorGreen; else if (res.notification.color == 'blue') notification.style.background = colorBlue; else if (res.notification.color == 'yellow') notification.style.background = colorYellow; else notification.style.background = res.notification.color;
             if (res.notification.icon.match(/^(http|https):\/\/[^ "]+$/)) notificationIcon.src = res.notification.icon; else if (res.notification.icon == 'info') notificationIcon.src = 'assets/images/notification/info.png'; else if (res.notification.icon == 'warning') notificationIcon.src = 'assets/images/notification/exclamation2.png'; else if (res.notification.icon == 'error') notificationIcon.src = 'assets/images/notification/error.png'; else if (res.notification.icon == 'exclamation') notificationIcon.src = 'assets/images/notification/exclamation.png'; else notificationIcon.style.display = 'none';
-            
+            await this.showNotification();
             
         } else {
-            notification.classList.add('hide');
+            //ocultar notiificación
+            await this.hideNotification();
         }
     }
 
+    async showNotification() {
+        let notification = document.querySelector('.message-container');
+        notification.style.display = 'flex'; // Usa 'block' o cualquier otro valor que sea apropiado para tu layout
+        notification.style.visibility = 'visible';
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                notification.style.opacity = '1';
+            });
+        });
+
+    }
+    
+    async hideNotification() {
+        let notification = document.querySelector('.message-container');
+        notification.style.opacity = '0';
+        // Espera a que la transición de opacidad termine antes de ocultar el elemento
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Ajusta el tiempo de espera al tiempo de transición de tu CSS
+        notification.style.visibility = 'hidden';
+        notification.style.display = 'none';
+    }
+
+    startNotificationCheck() {
+        this.intervalId = setInterval(() => {
+            this.notification();
+        }, 60000); // Cambia este valor al intervalo de tiempo que desees
+        console.log('Scheduled notification check started.');
+    }
+
+    stopNotificationCheck() {
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+        }
+        console.log('Scheduled notification check stopped.');
+    }
+    
     async news() {
 
         //get version from package.json and set the content of titlechangelog to "Miguelki Network MC Launcher" + version
