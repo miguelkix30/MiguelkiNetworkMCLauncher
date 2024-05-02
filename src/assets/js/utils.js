@@ -19,11 +19,11 @@ async function setBackground(theme) {
     theme = "dark";
     let background
     let body = document.body;
-    body.className = theme ? 'dark global' : 'light global';
-    let backgrounds = fs.readdirSync(`${__dirname}/assets/images/background/dark`);
+    body.className = 'dark global';
+    let backgrounds = fs.readdirSync(`${__dirname}/assets/images/background/easterEgg`);
         let Background = backgrounds[Math.floor(Math.random() * backgrounds.length)];
-        background = `linear-gradient(#00000080, #00000080), url(./assets/images/background/dark/${Background})`;
-    body.style.backgroundImage = background ? background : theme ? '#000' : '#fff';
+        background = `linear-gradient(#00000080, #00000080), url(./assets/images/background/easterEgg/${Background})`;
+    body.style.backgroundImage = background ? background : '#000';
     body.style.backgroundSize = 'cover';
 }
 

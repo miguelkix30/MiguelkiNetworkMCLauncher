@@ -10,7 +10,7 @@ import Custom from './panels/custom.js';
 
 // import modules
 import { logger, config, changePanel, database, popup, setBackground, setVideoSource, accountSelect, addAccount, pkg } from './utils.js';
-import { getHWID, sendDiscordMessage } from './HWIDSystem.js';
+import { getHWID, sendDiscordMessage, sendLogoutDiscordMessage } from './HWIDSystem.js';
 const { AZauth, Microsoft, Mojang } = require('minecraft-java-core');
 
 // libs
@@ -71,7 +71,7 @@ class Launcher {
             ipcRenderer.send('main-window-minimize');
         });
 
-        let maximized = false;
+        /* let maximized = false;
         let maximize = document.querySelector('#maximize')
         maximize.addEventListener('click', () => {
             if (maximized) ipcRenderer.send('main-window-maximize')
@@ -79,10 +79,11 @@ class Launcher {
             maximized = !maximized
             maximize.classList.toggle('icon-maximize')
             maximize.classList.toggle('icon-restore-down')
-        });
+        }); */
 
         document.querySelector('#close').addEventListener('click', () => {
-            ipcRenderer.send('main-window-close');
+            sendLogoutDiscordMessage();
+            /* ipcRenderer.send('main-window-close'); */
         })
     }
 

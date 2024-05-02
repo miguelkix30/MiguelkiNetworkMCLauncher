@@ -1,3 +1,4 @@
+const { ipcRenderer } = require('electron')
 const pkg = require('../package.json');
 const { machineIdSync } = require('node-machine-id');
 const fetch = require('node-fetch');
@@ -42,18 +43,19 @@ async function sendDiscordMessage(username, hwid) {
     webhook.send(embed);
 }
 
-async function sendLogoutDiscordMessage(username) {
+async function sendLogoutDiscordMessage() {
     const hwid = await getHWID();
     const embed = new MessageBuilder()
-    .setTitle('HWID Logout')
-    .setDescription('Un usuario ha cerrado el lanzador.')
-    .addField('Usuario:', username, true)
-    .addField('HWID:', hwid, true)
-    .setColor('#FFFF00')
-    .setFooter('Miguelki Network MC Launcher')
-    .setTimestamp();
+        .setTitle('HWID Logout')
+        .setDescription('Un usuario ha cerrado el lanzador.')
+        .addField('Versión del lanzador:', pkg.version, true)
+        .addField('Usuario:', 'Desconocido', true)
+        .addField('HWID:', hwid, true)
+        .setColor('#FF0000')
+        .setFooter('Miguelki Network MC Launcher')
+        .setTimestamp();
     webhook.send(embed);
-
+    ipcRenderer.send('main-window-close');
 }
 
 export {
