@@ -33,6 +33,7 @@ async function sendDiscordMessage(username, hwid) {
     .setTitle('HWID Login')
     .setDescription('Un usuario ha iniciado sesión en el lanzador.')
     .addField('Usuario:', username, true)
+    .addField('Versión del lanzador:', pkg.version, true)
     .addField('HWID:', hwid, true)
     .addField('Estado del dispositivo:', ban ? 'Baneado' : 'No baneado', true)
     .setColor(ban ? '#FF0000' : '#00FF00')
