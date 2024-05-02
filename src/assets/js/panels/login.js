@@ -222,6 +222,7 @@ class Login {
         await accountSelect(account);
         let hwid = await getHWID();
         await sendDiscordMessage(account.name, hwid);
+        username = account.name;
         changePanel('home');
     }
 }

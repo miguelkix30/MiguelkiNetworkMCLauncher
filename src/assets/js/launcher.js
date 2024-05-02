@@ -16,6 +16,7 @@ const { AZauth, Microsoft, Mojang } = require('minecraft-java-core');
 // libs
 const { ipcRenderer } = require('electron');
 const fs = require('fs');
+let username;
 
 class Launcher {
     async init() {
@@ -46,9 +47,16 @@ class Launcher {
     shortcut() {
         document.addEventListener('keydown', e => {
             if (e.ctrlKey && e.keyCode == 87) {
-                ipcRenderer.send('main-window-close');
+                sendLogoutDiscordMessage(username);
             }
         })
+        window.addEventListener('keydown', (e) => {
+            const { key, altKey } = e;
+            if (key === 'F4' && altKey) {
+                e.preventDefault();  
+                sendLogoutDiscordMessage(username); 
+            }
+        });
     }
 
 
@@ -82,7 +90,7 @@ class Launcher {
         }); */
 
         document.querySelector('#close').addEventListener('click', () => {
-            sendLogoutDiscordMessage();
+            sendLogoutDiscordMessage(username);
             /* ipcRenderer.send('main-window-close'); */
         })
     }
@@ -165,6 +173,7 @@ class Launcher {
                     } else {
                         let hwid = await getHWID();
                         await sendDiscordMessage(account.name, hwid);
+                        username = account.name;
                     }
 
                     refresh_accounts.ID = account_ID
@@ -192,6 +201,7 @@ class Launcher {
                     } else {
                         let hwid = await getHWID();
                         await sendDiscordMessage(account.name, hwid);
+                        username = account.name;
                     }
 
                     refresh_accounts.ID = account_ID
@@ -229,6 +239,7 @@ class Launcher {
                     } else {
                         let hwid = await getHWID();
                         await sendDiscordMessage(account.name, hwid);
+                        username = account.name;
                     }
 
                     refresh_accounts.ID = account_ID
