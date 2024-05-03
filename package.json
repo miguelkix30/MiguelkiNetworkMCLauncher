@@ -1,8 +1,8 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.0.25",
-    "changelog": "Se ha arreglado un bug que provocaba que las notificaciones no se mostraran correctamente. También se ha añadido un pequeño easter egg al iniciar el lanzador.", 
+    "version": "3.0.26",
+    "changelog": "Se ha actualizado el anticheat del launcher.", 
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
