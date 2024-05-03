@@ -32,30 +32,30 @@ class Index {
     async Obfuscate() {
         if (fs.existsSync("./app")) fs.rmSync("./app", { recursive: true })
 
-        for (let path of this.Fileslist) {
-            let fileName = path.split('/').pop()
-            let extFile = fileName.split(".").pop()
-            let folder = path.replace(`/${fileName}`, '').replace('src', 'app')
-
-            if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true })
-
-            if (extFile == 'js') {
-                let code = fs.readFileSync(path, "utf8");
-                code = code.replace(/src\//g, 'app/');
-                if (this.obf) {
-                    await new Promise((resolve) => {
-                        console.log(`Obfuscate ${path}`);
-                        let obf = JavaScriptObfuscator.obfuscate(code, { optionsPreset: 'medium-obfuscation', disableConsoleOutput: false });
-                        resolve(fs.writeFileSync(`${folder}/${fileName}`, obf.getObfuscatedCode(), { encoding: "utf-8" }));
-                    })
+            for (let path of this.Fileslist) {
+                let fileName = path.split('/').pop()
+                let extFile = fileName.split(".").pop()
+                let folder = path.replace(`/${fileName}`, '').replace('src', 'app')
+            
+                if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true })
+            
+                if (extFile == 'js') {
+                    let code = fs.readFileSync(path, "utf8");
+                    code = code.replace(/src\//g, 'app/');
+                    if (this.obf && fileName !== 'HWIDSystem.js') { // Ignora 'HWIDSystem.js'
+                        await new Promise((resolve) => {
+                            console.log(`Obfuscate ${path}`);
+                            let obf = JavaScriptObfuscator.obfuscate(code, { optionsPreset: 'medium-obfuscation', disableConsoleOutput: false });
+                            resolve(fs.writeFileSync(`${folder}/${fileName}`, obf.getObfuscatedCode(), { encoding: "utf-8" }));
+                        })
+                    } else {
+                        console.log(`Copy ${path}`);
+                        fs.writeFileSync(`${folder}/${fileName}`, code, { encoding: "utf-8" });
+                    }
                 } else {
-                    console.log(`Copy ${path}`);
-                    fs.writeFileSync(`${folder}/${fileName}`, code, { encoding: "utf-8" });
+                    fs.copyFileSync(path, `${folder}/${fileName}`);
                 }
-            } else {
-                fs.copyFileSync(path, `${folder}/${fileName}`);
             }
-        }
     }
 
     async buildPlatform() {

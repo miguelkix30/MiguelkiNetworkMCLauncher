@@ -368,7 +368,95 @@ class Home {
     }
 
     async startGame() {
-const _0x303cda=_0x3242;function _0x5605(){const _0x505d3e=['account_selected','1309yIlOFl','491274TWkPlK','java_path','height','loadder','252240cIlnlP','launcher_config','.info-starting-game','.progress-bar','46743gizMFv','java_memory','width','querySelector','maintenance','minecraft_version','instance_selct','No\x20puedes\x20iniciar\x20ninguna\x20instancia\x20debido\x20al\x20bloqueo\x20de\x20dispositivo\x20presente.<br><br>Si\x20crees\x20que\x20esto\x20es\x20un\x20error,\x20abre\x20ticket\x20en\x20el\x20discord\x20de\x20Miguelki\x20Network.','96291xGmAur','darwin','.play-instance','intelEnabledMac','red','GetConfig','Launch','name','El\x20cliente\x20no\x20se\x20encuentra\x20disponible.','verify','find','openPopup','max','4449664VOBlDv','Error\x20al\x20iniciar\x20el\x20cliente','config','dataDirectory','.info-starting-game-text','getInstanceList','320CvMDoR','Error','none','12918LfApnn','accounts','maintenancemsg','java_config','min','ignored','1427925ffrKhd','readData','close-all','configClient','screen_size','128idWqqF','game_config','No\x20puedes\x20iniciar\x20ninguna\x20instancia\x20debido\x20a\x20que\x20no\x20se\x20ha\x20podido\x20conectar\x20con\x20el\x20anticheat.<br><br>Intentalo\x20de\x20nuevo\x20reiniciando\x20el\x20launcher\x20o\x20abre\x20ticket\x20en\x20el\x20discord\x20de\x20Miguelki\x20Network.'];_0x5605=function(){return _0x505d3e;};return _0x5605();}function _0x3242(_0x21872e,_0x2b8652){const _0x56053d=_0x5605();return _0x3242=function(_0x3242c7,_0xfd417d){_0x3242c7=_0x3242c7-0x7d;let _0x2e0fee=_0x56053d[_0x3242c7];return _0x2e0fee;},_0x3242(_0x21872e,_0x2b8652);}(function(_0x318017,_0x1a6a7e){const _0xcda0d6=_0x3242,_0x4470c5=_0x318017();while(!![]){try{const _0x78f947=parseInt(_0xcda0d6(0x88))/0x1+-parseInt(_0xcda0d6(0x84))/0x2+parseInt(_0xcda0d6(0x8c))/0x3*(-parseInt(_0xcda0d6(0x7f))/0x4)+parseInt(_0xcda0d6(0xb0))/0x5+-parseInt(_0xcda0d6(0xaa))/0x6*(parseInt(_0xcda0d6(0x83))/0x7)+parseInt(_0xcda0d6(0xa1))/0x8+parseInt(_0xcda0d6(0x94))/0x9*(parseInt(_0xcda0d6(0xa7))/0xa);if(_0x78f947===_0x1a6a7e)break;else _0x4470c5['push'](_0x4470c5['shift']());}catch(_0x163c17){_0x4470c5['push'](_0x4470c5['shift']());}}}(_0x5605,0x46b19));let launch=new Launch(),configClient=await this['db'][_0x303cda(0xb1)](_0x303cda(0x7d)),instance=await config[_0x303cda(0xa6)](),authenticator=await this['db']['readData'](_0x303cda(0xab),configClient[_0x303cda(0x82)]),options=instance[_0x303cda(0x9e)](_0x884bd8=>_0x884bd8[_0x303cda(0x9b)]==configClient[_0x303cda(0x92)]),res=await config[_0x303cda(0x99)](),hwid=await getHWID(),check=await checkHWID(hwid),playInstanceBTN=document[_0x303cda(0x8f)](_0x303cda(0x96)),infoStartingBOX=document[_0x303cda(0x8f)](_0x303cda(0x8a)),infoStarting=document['querySelector'](_0x303cda(0xa5)),progressBar=document['querySelector'](_0x303cda(0x8b));if(check){if(fetchError==![]){let popupError=new popup();popupError[_0x303cda(0x9f)]({'title':_0x303cda(0xa8),'content':_0x303cda(0x93),'color':'red','options':!![]});return;}else{let popupError=new popup();popupError[_0x303cda(0x9f)]({'title':_0x303cda(0xa8),'content':_0x303cda(0x81),'color':_0x303cda(0x98),'options':!![]});return;}}if(options[_0x303cda(0x90)]){let popupError=new popup();options[_0x303cda(0xac)]==''?popupError['openPopup']({'title':_0x303cda(0xa2),'content':_0x303cda(0x9c),'color':_0x303cda(0x98),'options':!![]}):popupError[_0x303cda(0x9f)]({'title':_0x303cda(0xa2),'content':options[_0x303cda(0xac)],'color':_0x303cda(0x98),'options':!![]});}else{let opt={'url':options['url'],'authenticator':authenticator,'timeout':0x2710,'path':await appdata()+'/'+(process['platform']==_0x303cda(0x95)?this[_0x303cda(0xa3)][_0x303cda(0xa4)]:'.'+this[_0x303cda(0xa3)][_0x303cda(0xa4)]),'instance':options['name'],'version':options[_0x303cda(0x87)][_0x303cda(0x91)],'detached':configClient[_0x303cda(0x89)]['closeLauncher']==_0x303cda(0xb2)?![]:!![],'downloadFileMultiple':configClient[_0x303cda(0x89)]['download_multi'],'intelEnabledMac':configClient[_0x303cda(0x89)][_0x303cda(0x97)],'loader':{'type':options[_0x303cda(0x87)]['loadder_type'],'build':options[_0x303cda(0x87)]['loadder_version'],'enable':options['loadder']['loadder_type']==_0x303cda(0xa9)?![]:!![]},'verify':options[_0x303cda(0x9d)],'ignored':[...options[_0x303cda(0xaf)]],'javaPath':configClient[_0x303cda(0xad)][_0x303cda(0x85)],'screen':{'width':configClient[_0x303cda(0x80)]['screen_size'][_0x303cda(0x8e)],'height':configClient[_0x303cda(0x80)][_0x303cda(0x7e)][_0x303cda(0x86)]},'memory':{'min':configClient[_0x303cda(0xad)][_0x303cda(0x8d)][_0x303cda(0xae)]*0x400+'M','max':configClient['java_config'][_0x303cda(0x8d)][_0x303cda(0xa0)]*0x400+'M'}};launch[_0x303cda(0x9a)](opt);
+        let launch = new Launch()
+        let configClient = await this.db.readData('configClient')
+        let instance = await config.getInstanceList()
+        let authenticator = await this.db.readData('accounts', configClient.account_selected)
+        let options = instance.find(i => i.name == configClient.instance_selct)
+
+        let hwid = await getHWID();
+        let check = await checkHWID(hwid);
+
+        let playInstanceBTN = document.querySelector('.play-instance')
+        let infoStartingBOX = document.querySelector('.info-starting-game')
+        let infoStarting = document.querySelector(".info-starting-game-text")
+        let progressBar = document.querySelector('.progress-bar')
+
+        if (check) {
+            if (fetchError == false) {
+                let popupError = new popup()
+            popupError.openPopup({
+                title: 'Error',
+                content: 'No puedes iniciar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Miguelki Network.',
+                color: 'red',
+                options: true
+            })
+            return;
+             } else {
+                let popupError = new popup()
+                popupError.openPopup({
+                    title: 'Error',
+                    content: 'No se ha podido conectar con el Anticheat de Miguelki Network y por lo tanto no se podrá jugar a ninguna instancia.',
+                    color: 'red',
+                    options: true
+                })
+                return;
+             }
+        }
+        if (options.maintenance) {
+            let popupError = new popup()
+            if (options.maintenancemsg == '') {
+                popupError.openPopup({
+                    title: 'Error al iniciar el cliente',
+                    content: 'El cliente no se encuentra disponible.',
+                    color: 'red',
+                    options: true
+                })
+            } else {
+                popupError.openPopup({
+                    title: 'Error al iniciar el cliente',
+                    content: options.maintenancemsg,
+                    color: 'red',
+                    options: true
+                })
+            }
+            
+        } else {
+            let opt = {
+                url: options.url,
+                authenticator: authenticator,
+                timeout: 10000,
+                path: `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}`,
+                instance: options.name,
+                version: options.loadder.minecraft_version,
+                detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
+                downloadFileMultiple: configClient.launcher_config.download_multi,
+                intelEnabledMac: configClient.launcher_config.intelEnabledMac,
+    
+                loader: {
+                    type: options.loadder.loadder_type,
+                    build: options.loadder.loadder_version,
+                    enable: options.loadder.loadder_type == 'none' ? false : true
+                },
+    
+                verify: options.verify,
+    
+                ignored: [...options.ignored],
+    
+                javaPath: configClient.java_config.java_path,
+    
+                screen: {
+                    width: configClient.game_config.screen_size.width,
+                    height: configClient.game_config.screen_size.height
+                },
+    
+                memory: {
+                    min: `${configClient.java_config.java_memory.min * 1024}M`,
+                    max: `${configClient.java_config.java_memory.max * 1024}M`
+                }
+            }
+
+            launch.Launch(opt);
         // si StoreAvailable es true, se realizará document.querySelector('.news-blockshop').style.display = 'none';
         if (StoreAvailable) document.querySelector('.news-blockshop').style.display = 'none';
 
