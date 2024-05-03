@@ -26,3 +26,7 @@ Otras opciones de descarga están también disponibles en las [releases de GitHu
 ---
  **<ins><p>Este launcher ha sido bifurcado de [luuxis/SelvaniaLauncher](https://github.com/luuxis/Selvania-Launcher) </p>**
  ---
+### **<ins><p align="center">Condiciones de uso</p>**
+Si deseas utilizar el código de este fork deberás:
+- Dar crédito tando a luuxis como a mi (Miguelki)
+- Bifurcar ESTE repositorio si se van a utilizar los cambios hechos en este repositorio o bifurcar el de luuxis para usar el código original
