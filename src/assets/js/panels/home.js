@@ -175,11 +175,12 @@ class Home {
 
         //get version from package.json and set the content of titlechangelog to "Miguelki Network MC Launcher" + version
         let version = pkg.version
+        let subversion = pkg.sub_version
         let changelog = pkg.changelog
         let titlechangelog = document.querySelector('.titlechangelog')
         let changelogcontent = document.querySelector('.bbWrapper')
         changelogcontent.innerHTML = `<p>${changelog}</p>`
-        titlechangelog.innerHTML = `Miguelki Network MC Launcher ${version}`
+        titlechangelog.innerHTML = `Miguelki Network MC Launcher ${version}${subversion ? `-${subversion}` : ''}`;
 
         let newsElement = document.querySelector('.news-list');
         let news = await config.getNews().then(res => res).catch(err => false);
