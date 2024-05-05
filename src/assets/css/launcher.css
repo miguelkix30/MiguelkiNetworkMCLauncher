@@ -185,3 +185,196 @@ input::-webkit-inner-spin-button {
 .background-video.next {
     opacity: 0;
 }
+
+.log-bg {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background-color: var(--sidebar);
+    background: rgba( 0, 0, 0, 0.05 );
+    transition: background-color 0.2s, opacity 0.2s;
+    backdrop-filter: blur( 5px );
+    -webkit-backdrop-filter: blur( 5px );
+    pointer-events: none;
+    user-select: none;
+    opacity: 0;
+    overflow-x: hidden;
+  }
+
+  *::-webkit-scrollbar {
+    display:none;
+  }
+  
+  .log-bg.show {
+    pointer-events: all;
+    user-select: text;
+    opacity: 1;
+    z-index: 7;
+  }
+  
+  .log {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    height: 75%;
+    background-color: var(--sidebar);
+    background: rgba( 0, 0, 0, 0.9 );
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    transition: background-color 0.2s, opacity 0.2s;
+    padding: 20px;
+    border-radius: 10px;
+    overflow-x: hidden;
+  }
+  
+  .log .log-close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    color: var(--text);
+    background-color: #00000000;
+    transition: color 0.2s, background-color 0.2s;
+    cursor: pointer;
+    z-index: 8;
+  }
+  
+  .log .log-close:hover {
+    background-color: var(--frame);
+  }
+  
+  .log .log-close:before {
+    position: relative;
+    top: 7.5px;
+    left: 7.5px;
+    width: 15px;
+    height: 15px;
+    font-size: 15px;
+  }
+  
+  .log .log-content {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+  }
+  
+  .log .log-content .titlev {
+    position: relative;
+    font: normal normal bold 20px/30px Poppins;
+    color: var(--text);
+    transition: color 0.2s;
+  }
+  
+  .log .log-content .logger {
+    position: relative;
+    margin-top: 12px;
+    width: 100%;
+    border-radius: 10px;
+    background-color: var(--box);
+    overflow-x: hidden;
+    word-wrap: break-word;
+  }
+  
+  .log .log-content .logger .header {
+    position: relative;
+    top: 0px;
+    left: 0px;
+    height: 70px;
+    width: 100%;
+    cursor: pointer;
+  }
+  
+  .log .log-content .logger .header .icon {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 30px;
+    height: 30px;
+    color: var(--text);
+    transition: color 0.2s;
+    pointer-events: none;
+  }
+  
+  .log .log-content .logger .header .icon:before {
+    width: 30px;
+    height: 30px;
+    font-size: 30px;
+  }
+  
+  .log .log-content .logger .header .type {
+    position: absolute;
+    top: 22px;
+    left: 70px;
+    font: normal normal bold 16px/26px Poppins;
+    color: var(--text);
+    transition: color 0.2s;
+    pointer-events: none;
+  }
+  
+  .log .log-content .logger .header .expand {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    transform: rotate(180deg);
+    color: var(--icon-unselected);
+    transition: color 0.2s, transform 0.2s;
+    pointer-events: none;
+  }
+  
+  .log .log-content .logger .header .expand:before {
+    width: 40px;
+    height: 40px;
+    font-size: 40px;
+  }
+  
+  .log .log-content .logger .content {
+    position: relative;
+    top: -8px;
+    padding: 0 20px 0 20px;
+    width: 100%;
+    transition: height 0.2s, top 0.2s;
+    pointer-events: none;
+    z-index: 0;
+    font: normal normal normal 16px/25px Consolas;
+    transition: color 0.2s, line-height 0.2s, opacity 0.2s;
+    line-height: 0px;
+    opacity: 0;
+    user-select: text;
+  }
+  
+  .log .log-content .logger .content .info {
+    color: var(--text);
+  }
+  
+  .log .log-content .logger .content .warn {
+    color: #f46800;
+  }
+  
+  .log .log-content .logger .content .debug {
+    color: #3dacee;
+  }
+  
+  .log .log-content .logger .content .error {
+    color: #a30000;
+  }
+  
+  .log .log-content .logger.open .header .expand {
+    transform: rotate(0deg);
+  }
+  
+  .log .log-content .logger.open .content {
+    top: 0px;
+    padding: 0 20px 20px 20px;
+    pointer-events: all;
+    z-index: 1;
+    line-height: 1.6em;
+    opacity: 1;
+  }

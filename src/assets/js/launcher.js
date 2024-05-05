@@ -7,6 +7,7 @@ import Login from './panels/login.js';
 import Home from './panels/home.js';
 import Settings from './panels/settings.js';
 import Custom from './panels/custom.js';
+import Logger2 from './loggerprod.js';
 
 // import modules
 import { logger, config, changePanel, database, popup, setBackground, setVideoSource, accountSelect, addAccount, pkg } from './utils.js';
@@ -16,11 +17,13 @@ const { AZauth, Microsoft, Mojang } = require('minecraft-java-core');
 // libs
 const { ipcRenderer } = require('electron');
 const fs = require('fs');
+let dev = process.env.NODE_ENV === 'dev';
 let username;
 
 class Launcher {
     async init() {
-        this.initLog();
+        if(dev) this.initLog(); else this.initWindow();
+        
         console.log('Initializing Launcher...');
         await setVideoSource();
         this.shortcut()
@@ -33,6 +36,41 @@ class Launcher {
         this.createPanels(Login, Home, Settings, Custom);
         this.startLauncher();
     }
+
+    initWindow(){
+        window.logger2 = {
+          launcher: new Logger2("Launcher", "#FF7F18"),
+          minecraft: new Logger2("Minecraft", "#43B581")
+        }
+    
+        this.initLogs();
+    
+        window.console = window.logger2.launcher;
+    
+        window.onerror = (message, source, lineno, colno, error) => {
+          console.error(error);
+          source = source.replace(`${window.location.origin}/app/`, "");
+          let stack = error.stack.replace(new RegExp(`${window.location.origin}/app/`.replace(/\//g, "\\/"), "g"), "").replace(/\n/g, "<br>").replace(/\x20/g, "&nbsp;");
+          popup.showPopup("Une erreur est survenue", `
+            <b>Erreur:</b> ${error.message}<br>
+            <b>Fichier:</b> ${source}:${lineno}:${colno}<br>
+            <b>Stacktrace:</b> ${stack}`, "warning",
+            {
+              value: "Relancer",
+              func: () => {
+                document.body.classList.add("hide");
+                win.reload()
+              }
+            }
+          );
+          document.body.classList.remove("hide");
+          return true;
+        };
+    
+        window.onclose = () => {
+          localStorage.removeItem("distribution");
+        }
+      }
 
     initLog() {
         document.addEventListener('keydown', e => {
@@ -283,6 +321,102 @@ class Launcher {
             changePanel('login');
         }
     }
+
+    initLogs(){
+        let logs = document.querySelector(".log-bg");
+    
+        let block = false;
+        document.addEventListener("keydown", (e) => {
+          if ((e.ctrlKey && e.shiftKey && e.keyCode == 73 || event.keyCode == 123) && !block) {
+            logs.classList.toggle("show");
+            block = true;
+          }
+        });
+    
+        document.addEventListener("keyup", (e) => {
+          if (e.ctrlKey && e.shiftKey && e.keyCode == 73 || event.keyCode == 123) block = false;
+        });
+    
+        let close = document.querySelector(".log-close");
+    
+        close.addEventListener("click", () => {
+          logs.classList.toggle("show");
+        })
+    
+        /* launcher logs */
+    
+        let launcher = document.querySelector("#launcher.logger");
+    
+        launcher.querySelector(".header").addEventListener("click", () => {
+          launcher.classList.toggle("open");
+        });
+    
+        let lcontent = launcher.querySelector(".content");
+    
+        logger2.launcher.on("info", (...args) => {
+          addLog(lcontent, "info", args);
+        });
+    
+        logger2.launcher.on("warn", (...args) => {
+          addLog(lcontent, "warn", args);
+        });
+    
+        logger2.launcher.on("debug", (...args) => {
+          addLog(lcontent, "debug", args);
+        });
+    
+        logger2.launcher.on("error", (...args) => {
+          addLog(lcontent, "error", args);
+        });
+    
+        /* minecraft logs */
+    
+        let minecraft = document.querySelector("#minecraft.logger");
+    
+        minecraft.querySelector(".header").addEventListener("click", () => {
+          minecraft.classList.toggle("open");
+        });
+    
+        let mcontent = minecraft.querySelector(".content");
+    
+        logger2.minecraft.on("info", (...args) => {
+          addLog(mcontent, "info", args);
+        });
+    
+        logger2.minecraft.on("warn", (...args) => {
+          addLog(mcontent, "warn", args);
+        });
+    
+        logger2.minecraft.on("debug", (...args) => {
+          addLog(mcontent, "debug", args);
+        });
+    
+        logger2.minecraft.on("error", (...args) => {
+          addLog(mcontent, "error", args);
+        });
+    
+        /* add log */
+    
+        function addLog(content, type, args){
+          let final = [];
+          for(let arg of args){
+            if(typeof arg == "string"){
+              final.push(arg);
+            } else if(arg instanceof Error) {
+              final.push(stack);
+            } else if(typeof arg == "object"){
+              final.push(JSON.stringify(arg));
+            } else {
+              final.push(arg);
+            }
+          }
+          let span = document.createElement("span");
+          span.classList.add(type);
+          span.innerHTML = `${final.join(" ")}<br>`.replace(/\x20/g, "&nbsp;").replace(/\n/g, "<br>");
+    
+          content.appendChild(span);
+        }
+      }
 }
 
 
