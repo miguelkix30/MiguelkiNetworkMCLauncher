@@ -1,9 +1,9 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.0.26",
-    "sub_version": "b",
-    "changelog": "Se ha actualizado el anticheat del launcher.", 
+    "version": "3.0.27",
+    "sub_version": "a",
+    "changelog": "Algunas librerías actualizadas.", 
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
@@ -26,8 +26,8 @@
     },
     "dependencies": {
         "discord-rpc": "^4.0.1",
-        "electron-updater": "^6.1.4",
-        "minecraft-java-core": "^3.9.1",
+        "electron-updater": "^6.1.8",
+        "minecraft-java-core": "^3.10.1",
         "node-bdd": "^2.0.3",
         "node-fetch": "^2.7.0",
         "xml-js": "^1.6.11",
@@ -36,11 +36,11 @@
     },
     "devDependencies": {
         "cross-env": "^7.0.3",
-        "electron": "^29.1.6",
-        "electron-builder": "^24.6.4",
+        "electron": "^30.0.2",
+        "electron-builder": "^24.13.3",
         "javascript-obfuscator": "^4.1.0",
-        "jimp": "^0.22.10",
-        "nodemon": "^3.0.1",
+        "jimp": "^0.22.12",
+        "nodemon": "^3.1.0",
         "png2icons": "^2.0.1"
     },
     "repository": {
