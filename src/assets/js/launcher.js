@@ -18,7 +18,7 @@ const { AZauth, Microsoft, Mojang } = require('minecraft-java-core');
 const { ipcRenderer } = require('electron');
 const fs = require('fs');
 let dev = process.env.NODE_ENV === 'dev';
-let username;
+export let username;
 
 class Launcher {
     async init() {

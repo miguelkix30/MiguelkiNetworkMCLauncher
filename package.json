@@ -1,9 +1,9 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.0.27",
-    "sub_version": "b",
-    "changelog": "Algunas librerías actualizadas y un sistema de consola mejorado.", 
+    "version": "3.0.28",
+    "sub_version": "",
+    "changelog": "Algunas librerías actualizadas y un sistema de consola mejorado.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
@@ -26,13 +26,13 @@
     },
     "dependencies": {
         "discord-rpc": "^4.0.1",
+        "discord-webhook-node": "^1.0.0",
         "electron-updater": "^6.1.8",
-        "minecraft-java-core": "^3.10.1",
+        "minecraft-java-core": "^3.10.2",
         "node-bdd": "^2.0.3",
         "node-fetch": "^2.7.0",
-        "xml-js": "^1.6.11",
         "node-machine-id": "^1.0.0",
-        "discord-webhook-node": "^1.0.0"
+        "xml-js": "^1.6.11"
     },
     "devDependencies": {
         "cross-env": "^7.0.3",

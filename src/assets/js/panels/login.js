@@ -7,6 +7,7 @@ const { ipcRenderer } = require('electron');
 
 import { popup, database, changePanel, accountSelect, addAccount, config, setStatus } from '../utils.js';
 import { getHWID, sendDiscordMessage } from '../HWIDSystem.js';
+import { username } from '../launcher.js';
 
 class Login {
     static id = "login";
