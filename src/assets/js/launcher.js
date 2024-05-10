@@ -10,7 +10,7 @@ import Custom from './panels/custom.js';
 import Logger2 from './loggerprod.js';
 
 // import modules
-import { logger, config, changePanel, database, popup, setBackground, setVideoSource, accountSelect, addAccount, pkg } from './utils.js';
+import { logger, config, changePanel, database, popup, setBackground, setVideoSource, accountSelect, addAccount, pkg, setUsername, getUsername } from './utils.js';
 import { getHWID, sendDiscordMessage, sendLogoutDiscordMessage } from './HWIDSystem.js';
 const { AZauth, Microsoft, Mojang } = require('minecraft-java-core');
 
@@ -18,7 +18,7 @@ const { AZauth, Microsoft, Mojang } = require('minecraft-java-core');
 const { ipcRenderer } = require('electron');
 const fs = require('fs');
 let dev = process.env.NODE_ENV === 'dev';
-export let username;
+let name = await getUsername();
 
 class Launcher {
     async init() {
@@ -85,14 +85,16 @@ class Launcher {
     shortcut() {
         document.addEventListener('keydown', e => {
             if (e.ctrlKey && e.keyCode == 87) {
-                sendLogoutDiscordMessage(username);
+                name = getUsername();
+                sendLogoutDiscordMessage(name);
             }
         })
         window.addEventListener('keydown', (e) => {
             const { key, altKey } = e;
             if (key === 'F4' && altKey) {
                 e.preventDefault();  
-                sendLogoutDiscordMessage(username); 
+                name = getUsername();
+                sendLogoutDiscordMessage(name); 
             }
         });
     }
@@ -128,7 +130,8 @@ class Launcher {
         }); */
 
         document.querySelector('#close').addEventListener('click', () => {
-            sendLogoutDiscordMessage(username);
+          name = getUsername();
+            sendLogoutDiscordMessage(name);
             /* ipcRenderer.send('main-window-close'); */
         })
     }
@@ -211,7 +214,7 @@ class Launcher {
                     } else {
                         let hwid = await getHWID();
                         await sendDiscordMessage(account.name, hwid);
-                        username = account.name;
+                        setUsername(account.name);
                     }
 
                     refresh_accounts.ID = account_ID
@@ -239,7 +242,7 @@ class Launcher {
                     } else {
                         let hwid = await getHWID();
                         await sendDiscordMessage(account.name, hwid);
-                        username = account.name;
+                        setUsername(account.name);
                     }
 
                     refresh_accounts.ID = account_ID
@@ -277,7 +280,7 @@ class Launcher {
                     } else {
                         let hwid = await getHWID();
                         await sendDiscordMessage(account.name, hwid);
-                        username = account.name;
+                        setUsername(account.name);
                     }
 
                     refresh_accounts.ID = account_ID

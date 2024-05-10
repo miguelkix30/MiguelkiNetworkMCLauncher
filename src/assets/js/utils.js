@@ -14,7 +14,7 @@ import logger from './utils/logger.js';
 import popup from './utils/popup.js';
 import { skin2D } from './utils/skin.js';
 import slider from './utils/slider.js';
-
+let username = '';
 async function setBackground(theme) {
     theme = "dark";
     let background
@@ -212,6 +212,13 @@ async function setInstanceBackground(opt) {
     }
 }
 
+async function getUsername() {
+    return username;
+}
+async function setUsername(name) {
+    username = name;
+}
+
 export {
     appdata as appdata,
     changePanel as changePanel,
@@ -227,6 +234,8 @@ export {
     slider as Slider,
     pkg as pkg,
     setStatus as setStatus,
-    setInstanceBackground as setInstanceBackground
+    setInstanceBackground as setInstanceBackground,
+    getUsername as getUsername,
+    setUsername as setUsername
 }
 window.setVideoSource = setVideoSource;
