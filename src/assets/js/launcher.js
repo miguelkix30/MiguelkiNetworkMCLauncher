@@ -10,7 +10,7 @@ import Custom from './panels/custom.js';
 import Logger2 from './loggerprod.js';
 
 // import modules
-import { logger, config, changePanel, database, popup, setBackground, setVideoSource, accountSelect, addAccount, pkg, setUsername, getUsername } from './utils.js';
+import { logger, config, changePanel, database, popup, setBackground, setVideoSource, accountSelect, addAccount, pkg, setUsername, getUsername, clickableHead } from './utils.js';
 import { getHWID, sendDiscordMessage, sendLogoutDiscordMessage } from './HWIDSystem.js';
 const { AZauth, Microsoft, Mojang } = require('minecraft-java-core');
 
@@ -83,18 +83,26 @@ class Launcher {
     }
 
     shortcut() {
-        document.addEventListener('keydown', e => {
+        document.addEventListener('keydown', async e => {
             if (e.ctrlKey && e.keyCode == 87) {
-                name = getUsername();
+              try {
+                name = await getUsername();
                 sendLogoutDiscordMessage(name);
+              } catch (error) {
+                sendLogoutDiscordMessage();
+            }
             }
         })
-        window.addEventListener('keydown', (e) => {
+        window.addEventListener('keydown', async (e) => {
             const { key, altKey } = e;
             if (key === 'F4' && altKey) {
                 e.preventDefault();  
-                name = getUsername();
-                sendLogoutDiscordMessage(name); 
+                try {
+                  name = await getUsername();
+                  sendLogoutDiscordMessage(name);
+                } catch (error) {
+                  sendLogoutDiscordMessage();
+              }
             }
         });
     }
@@ -129,9 +137,13 @@ class Launcher {
             maximize.classList.toggle('icon-restore-down')
         }); */
 
-        document.querySelector('#close').addEventListener('click', () => {
-          name = getUsername();
+        document.querySelector('#close').addEventListener('click', async () => {
+          try {
+            name = await getUsername();
             sendLogoutDiscordMessage(name);
+          } catch (error) {
+            sendLogoutDiscordMessage();
+        }
             /* ipcRenderer.send('main-window-close'); */
         })
     }
@@ -193,6 +205,7 @@ class Launcher {
                     continue
                 }
                 if (account.meta.type === 'Xbox') {
+                    /* clickableHead() */
                     console.log(`Account Type: ${account.meta.type} | Username: ${account.name}`);
                     popupRefresh.openPopup({
                         title: 'Conectando...',
@@ -222,6 +235,7 @@ class Launcher {
                     await addAccount(refresh_accounts)
                     if (account_ID == account_selected) accountSelect(refresh_accounts)
                 } else if (account.meta.type == 'AZauth') {
+                    clickableHead();
                     console.log(`Account Type: ${account.meta.type} | Username: ${account.name}`);
                     popupRefresh.openPopup({
                         title: 'Conectando...',

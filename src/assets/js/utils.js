@@ -139,7 +139,7 @@ async function appdata() {
 }
 
 async function addAccount(data) {
-    let skin = false
+    let skin = true
     if (data?.profile?.skins[0]?.base64) skin = await new skin2D().creatHeadTexture(data.profile.skins[0].base64);
     let div = document.createElement("div");
     div.classList.add("account");
@@ -169,6 +169,14 @@ async function accountSelect(data) {
 async function headplayer(skinBase64) {
     let skin = await new skin2D().creatHeadTexture(skinBase64);
     document.querySelector(".player-head").style.backgroundImage = `url(${skin})`;
+}
+
+async function clickableHead() {
+    /* console.log('clickableHead')
+    let playerHead = document.querySelector('.player-options');
+    playerHead.addEventListener('click', () => {
+        ipcRenderer.send('create-skin-window');
+    }); */
 }
 
 async function setStatus(opt) {
@@ -236,6 +244,7 @@ export {
     setStatus as setStatus,
     setInstanceBackground as setInstanceBackground,
     getUsername as getUsername,
-    setUsername as setUsername
+    setUsername as setUsername,
+    clickableHead as clickableHead
 }
 window.setVideoSource = setVideoSource;

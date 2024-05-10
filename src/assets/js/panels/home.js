@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup } from '../utils.js'
+import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickableHead } from '../utils.js'
 import { getHWID, checkHWID } from '../HWIDSystem.js';
 
 // cambiar información de la actividad de discord en el launcher
@@ -58,10 +58,11 @@ class Home {
     }
 
     async showstore() {
+        let storebutton = document.querySelector('.storebutton')
         try {
             const response = await fetch(pkg.store_url).catch(err => console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda.'));
             if (response.ok) {
-                document.querySelector('.storebutton').setAttribute('href', pkg.store_url);
+                /* document.querySelector('.storebutton').setAttribute('href', pkg.store_url); */
                 document.querySelector('.news-blockshop').style.display = 'block';
                 StoreAvailable = true;
 
@@ -75,6 +76,9 @@ class Home {
             document.querySelector('.news-blockshop').style.display = 'none';
             StoreAvailable = false;
         }
+        storebutton.addEventListener('click', e => {
+            ipcRenderer.send('create-store-window');
+        })
     }
 
     async notification() { 

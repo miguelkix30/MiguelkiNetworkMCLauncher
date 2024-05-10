@@ -3,9 +3,10 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 
-const { app, ipcMain, nativeTheme } = require('electron');
+const { app, ipcMain, nativeTheme, BrowserWindow } = require('electron');
 const { Microsoft } = require('minecraft-java-core');
 const { autoUpdater } = require('electron-updater')
+const pkg = require('../package.json');
 
 const path = require('path');
 const fs = require('fs');
@@ -58,6 +59,34 @@ ipcMain.on('main-window-maximize', () => {
 
 ipcMain.on('main-window-hide', () => MainWindow.getWindow().hide())
 ipcMain.on('main-window-show', () => MainWindow.getWindow().show())
+
+ipcMain.on('create-store-window', () => {
+    let storewin = new BrowserWindow({
+        width: 1280,
+        height: 795,
+        minimizable: false, // disable minimize button
+        maximizable: false, // disable maximize button
+        resizable: false, // disable resize
+        webPreferences: {
+            nodeIntegration: true,
+        }
+    })
+    storewin.loadURL(pkg.store_url)
+});
+
+ipcMain.on('create-skin-window', () => {
+    let skinwin = new BrowserWindow({
+        width: 500,
+        height: 800,
+        minimizable: false, // disable minimize button
+        maximizable: false, // disable maximize button
+        resizable: false, // disable resize
+        webPreferences: {
+            nodeIntegration: true,
+        }
+    })
+    skinwin.loadURL('https://mcstore.miguelkinetwork.fun/skin-api')
+});
 
 ipcMain.handle('Microsoft-window', async (_, client_id) => {
     return await new Microsoft(client_id).getAuth();
