@@ -88,6 +88,22 @@ ipcMain.on('create-skin-window', () => {
     skinwin.loadURL('https://mcstore.miguelkinetwork.fun/skin-api')
 });
 
+ipcMain.on('create-register-window', () => {
+    let registerWin = new BrowserWindow({
+        width: 500,
+        height: 800,
+        minimizable: false, // disable minimize button
+        maximizable: false, // disable maximize button
+        resizable: false, // disable resize
+        webPreferences: {
+            nodeIntegration: true,
+            partition: `persist:${Math.random()}` // unique session for each window
+        }
+    })
+
+    registerWin.loadURL('https://mcstore.miguelkinetwork.fun/user/register')
+});
+
 ipcMain.handle('Microsoft-window', async (_, client_id) => {
     return await new Microsoft(client_id).getAuth();
 })

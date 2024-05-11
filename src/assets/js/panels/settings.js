@@ -60,6 +60,8 @@ class Settings {
 
                     if (id == 'add') {
                         document.querySelector('.cancel-home').style.display = 'inline'
+                        document.querySelector('.cancel-AZauth').style.display = 'inline'
+                        document.querySelector('.cancel-offline').style.display = 'inline'
                         return changePanel('login')
                     }
 

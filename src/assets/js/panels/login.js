@@ -26,6 +26,17 @@ class Login {
             document.querySelector('.cancel-home').style.display = 'none'
             changePanel('settings')
         })
+        document.querySelector('.cancel-AZauth').addEventListener('click', () => {
+            document.querySelector('.cancel-AZauth').style.display = 'none'
+            changePanel('settings')
+        })
+        document.querySelector('.cancel-offline').addEventListener('click', () => {
+            document.querySelector('.cancel-offline').style.display = 'none'
+            changePanel('settings')
+        })
+        document.querySelector('.register-azauth').addEventListener('click', () => {
+            ipcRenderer.send('create-register-window');
+        });
     }
 
     async getMicrosoft() {
@@ -66,9 +77,36 @@ class Login {
         let popupLogin = new popup();
         let loginOffline = document.querySelector('.login-offline');
 
+        let microsoftcracked = document.querySelector('.connect-microsoftcracked');
+
         let emailOffline = document.querySelector('.email-offline');
         let connectOffline = document.querySelector('.connect-offline');
         loginOffline.style.display = 'block';
+
+        microsoftcracked.addEventListener('click', () => {
+            popupLogin.openPopup({
+                title: 'Iniciar sesión',
+                content: 'Conectando...',
+                color: 'var(--color)'
+            });
+
+            ipcRenderer.invoke('Microsoft-window', this.config.client_id).then(async account_connect => {
+                if (account_connect == 'cancel' || !account_connect) {
+                    popupLogin.closePopup();
+                    return;
+                } else {
+                    await this.saveData(account_connect)
+                    popupLogin.closePopup();
+                }
+
+            }).catch(err => {
+                popupLogin.openPopup({
+                    title: 'Error',
+                    content: err,
+                    options: true
+                });
+            });
+        });
 
         connectOffline.addEventListener('click', async () => {
             connectOffline.disabled = true;
@@ -115,6 +153,8 @@ class Login {
         let PopupLogin = new popup();
         let loginAZauth = document.querySelector('.login-AZauth');
         let loginAZauthA2F = document.querySelector('.login-AZauth-A2F');
+        let loginMicrosoftAzauth = document.querySelector('.connect-microsoftazauth');
+        let registerBtn = document.querySelector('.register-azauth');
 
         let AZauthEmail = document.querySelector('.email-AZauth');
         let AZauthPassword = document.querySelector('.password-AZauth');
@@ -124,6 +164,32 @@ class Login {
         let AZauthCancelA2F = document.querySelector('.cancel-AZauth-A2F');
 
         loginAZauth.style.display = 'block';
+        registerBtn.style.display = 'inline';
+
+        loginMicrosoftAzauth.addEventListener('click', () => {
+            PopupLogin.openPopup({
+                title: 'Iniciar sesión',
+                content: 'Conectando...',
+                color: 'var(--color)'
+            });
+
+            ipcRenderer.invoke('Microsoft-window', this.config.client_id).then(async account_connect => {
+                if (account_connect == 'cancel' || !account_connect) {
+                    PopupLogin.closePopup();
+                    return;
+                } else {
+                    await this.saveData(account_connect)
+                    PopupLogin.closePopup();
+                }
+
+            }).catch(err => {
+                PopupLogin.openPopup({
+                    title: 'Error',
+                    content: err,
+                    options: true
+                });
+            });
+        });
 
         AZauthConnectBTN.addEventListener('click', async () => {
             PopupLogin.openPopup({

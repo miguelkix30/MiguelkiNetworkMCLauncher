@@ -243,7 +243,30 @@ class Launcher {
                         color: 'var(--color)',
                         background: false
                     });
-                    let refresh_accounts = await new AZauth(this.config.online).verify(account);
+                    if (typeof this.config.online !== 'string') {
+                      console.error(`Invalid URL: ${this.config.online}`);
+                      this.db.deleteData('accounts', account_ID)
+                        if (account_ID == account_selected) {
+                            configClient.account_selected = null
+                            this.db.updateData('configClient', configClient)
+                        }
+                        console.error(`[Account] ${account.name}`);
+                        continue;
+                  }
+                  
+                  if (!this.config.online.startsWith('http://') && !this.config.online.startsWith('https://')) {
+                      console.error(`Invalid URL: ${this.config.online}`);
+                      this.db.deleteData('accounts', account_ID)
+                        if (account_ID == account_selected) {
+                            configClient.account_selected = null
+                            this.db.updateData('configClient', configClient)
+                        }
+                        console.error(`[Account] ${account.name}`);
+                        continue;
+                  }
+                  
+                  let refresh_accounts = await new AZauth(this.config.online).verify(account);
+                    
 
                     if (refresh_accounts.error) {
                         this.db.deleteData('accounts', account_ID)
