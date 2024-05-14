@@ -10,7 +10,7 @@ import Custom from './panels/custom.js';
 import Logger2 from './loggerprod.js';
 
 // import modules
-import { logger, config, changePanel, database, popup, setBackground, setVideoSource, accountSelect, addAccount, pkg, setUsername, getUsername, clickableHead } from './utils.js';
+import { logger, config, changePanel, database, popup, setBackground, setVideoSource, accountSelect, addAccount, pkg, setUsername, getUsername, clickableHead, unclickableHead } from './utils.js';
 import { getHWID, sendDiscordMessage, sendLogoutDiscordMessage } from './HWIDSystem.js';
 const { AZauth, Microsoft, Mojang } = require('minecraft-java-core');
 
@@ -205,7 +205,6 @@ class Launcher {
                     continue
                 }
                 if (account.meta.type === 'Xbox') {
-                    /* clickableHead() */
                     console.log(`Account Type: ${account.meta.type} | Username: ${account.name}`);
                     popupRefresh.openPopup({
                         title: 'Conectando...',
@@ -235,7 +234,6 @@ class Launcher {
                     await addAccount(refresh_accounts)
                     if (account_ID == account_selected) accountSelect(refresh_accounts)
                 } else if (account.meta.type == 'AZauth') {
-                    clickableHead();
                     console.log(`Account Type: ${account.meta.type} | Username: ${account.name}`);
                     popupRefresh.openPopup({
                         title: 'Conectando...',

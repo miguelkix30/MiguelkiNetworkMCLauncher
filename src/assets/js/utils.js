@@ -15,6 +15,7 @@ import popup from './utils/popup.js';
 import { skin2D } from './utils/skin.js';
 import slider from './utils/slider.js';
 let username = '';
+let headButton = false;
 async function setBackground(theme) {
     theme = "dark";
     let background
@@ -172,11 +173,23 @@ async function headplayer(skinBase64) {
 }
 
 async function clickableHead() {
-    /* console.log('clickableHead')
     let playerHead = document.querySelector('.player-options');
-    playerHead.addEventListener('click', () => {
+    playerHead.style.cursor = 'pointer';
+    if (!headButton) {
+        playerHead.addEventListener('click', () => {
+            ipcRenderer.send('create-skin-window');
+        });
+        headButton = true;
+    };
+}
+
+async function unclickableHead() {
+    let playerHead = document.querySelector('.player-options');
+    playerHead.style.cursor = 'default';
+    playerHead.removeEventListener('click', () => {
         ipcRenderer.send('create-skin-window');
-    }); */
+    });
+    headButton = false;
 }
 
 async function setStatus(opt) {
@@ -245,6 +258,7 @@ export {
     setInstanceBackground as setInstanceBackground,
     getUsername as getUsername,
     setUsername as setUsername,
-    clickableHead as clickableHead
+    clickableHead as clickableHead,
+    unclickableHead as unclickableHead,
 }
 window.setVideoSource = setVideoSource;

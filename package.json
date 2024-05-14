@@ -12,7 +12,7 @@
         "url": "https://github.com/miguelkix30"
     },
     "url": "http://node1.miguelkinetwork.fun:25565/",
-    "store_url": "https://mcstore.miguelkinetwork.fun/",
+    "store_url": "https://minecraft.miguelkinetwork.fun/",
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",
         "dev": "cross-env-shell DEV_TOOL=open nodemon --exec npm start",
@@ -28,7 +28,7 @@
         "discord-rpc": "^4.0.1",
         "discord-webhook-node": "^1.0.0",
         "electron-updater": "^6.1.8",
-        "minecraft-java-core": "^3.10.2",
+        "minecraft-java-core": "^3.10.4",
         "node-bdd": "^2.0.3",
         "node-fetch": "^2.7.0",
         "node-machine-id": "^1.0.0",

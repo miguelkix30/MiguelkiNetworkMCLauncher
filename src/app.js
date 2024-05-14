@@ -85,7 +85,7 @@ ipcMain.on('create-skin-window', () => {
             nodeIntegration: true,
         }
     })
-    skinwin.loadURL('https://mcstore.miguelkinetwork.fun/skin-api')
+    skinwin.loadURL(pkg.store_url + 'skin-api') // pkg.store_url + /skin-api
 });
 
 ipcMain.on('create-register-window', () => {
@@ -101,7 +101,7 @@ ipcMain.on('create-register-window', () => {
         }
     })
 
-    registerWin.loadURL('https://mcstore.miguelkinetwork.fun/user/register')
+    registerWin.loadURL(pkg.store_url + 'user/register')
 });
 
 ipcMain.handle('Microsoft-window', async (_, client_id) => {
