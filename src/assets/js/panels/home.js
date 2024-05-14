@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead } from '../utils.js'
+import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead } from '../utils.js'
 import { getHWID, checkHWID } from '../HWIDSystem.js';
 
 // cambiar información de la actividad de discord en el launcher
@@ -342,21 +342,22 @@ class Home {
             if (e.target.classList.contains('instance-select')) {
                 instancesListPopup.innerHTML = ''
                 for (let instance of instancesList) {
+                    let color = instance.mkid ? 'green' : 'red';
                     if (instance.whitelistActive) {
                         instance.whitelist.map(whitelist => {
                             if (whitelist == auth?.name) {
                                 if (instance.name == instanceSelect) {
-                                    instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements active-instance">${instance.name}</div>`
+                                    instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements active-instance">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
                                 } else {
-                                    instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements">${instance.name}</div>`
+                                    instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
                                 }
                             }
                         })
                     } else {
                         if (instance.name == instanceSelect) {
-                            instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements active-instance">${instance.name}</div>`
+                            instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements active-instance">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
                         } else {
-                            instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements">${instance.name}</div>`
+                            instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
                         }
                     }
                 }
@@ -428,6 +429,24 @@ class Home {
             }
             
         } else {
+            if (!options.mkid && getClickeableHead()) {
+                let popupInstance = new popup();
+            
+                let dialogResult = await new Promise(resolve => {
+                    popupInstance.openDialog({
+                        title: 'Instancia no compatible con MKNetworkID',
+                        content: 'Se ha detectado que estás intentando iniciar una instancia que no es compatible con MKNetworkID. ¿Deseas continuar?',
+                        options: true,
+                        callback: resolve
+                    });
+                });
+            
+                if (dialogResult === 'cancel') {
+                    return;
+                } else if (dialogResult === 'accept') {
+                    // Continue with your code
+                }
+            }
             let opt = {
                 url: options.url,
                 authenticator: authenticator,

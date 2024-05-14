@@ -188,6 +188,10 @@ async function clickableHead(condition) {
     }
 }
 
+async function getClickeableHead() {
+    return headButton;
+}
+
 async function clickHead() {
     if (headButton) {
         ipcRenderer.send('create-skin-window');
@@ -261,6 +265,7 @@ export {
     getUsername as getUsername,
     setUsername as setUsername,
     clickableHead as clickableHead,
-    clickHead as clickHead
+    clickHead as clickHead,
+    getClickeableHead as getClickeableHead
 }
 window.setVideoSource = setVideoSource;

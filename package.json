@@ -2,7 +2,7 @@
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
     "version": "3.0.30",
-    "sub_version": "a",
+    "sub_version": "b",
     "changelog": "Se ha arreglado un error critico que no permitía iniciar sesión con tu cuenta de Microsoft.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
@@ -12,7 +12,8 @@
         "url": "https://github.com/miguelkix30"
     },
     "url": "http://node1.miguelkinetwork.fun:25565/",
-    "store_url": "https://minecraft.miguelkinetwork.fun/",
+    "store_url": "https://minecraft.miguelkinetwork.fun/shop/",
+    "azuriom_url": "https://minecraft.miguelkinetwork.fun/",
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",
         "dev": "cross-env-shell DEV_TOOL=open nodemon --exec npm start",

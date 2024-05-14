@@ -85,7 +85,7 @@ ipcMain.on('create-skin-window', () => {
             nodeIntegration: true,
         }
     })
-    skinwin.loadURL(pkg.store_url + 'skin-api') // pkg.store_url + /skin-api
+    skinwin.loadURL(pkg.azuriom_url + 'skin-api') // pkg.store_url + /skin-api
 });
 
 ipcMain.on('create-register-window', () => {

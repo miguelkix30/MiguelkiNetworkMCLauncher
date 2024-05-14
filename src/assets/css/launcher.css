@@ -126,7 +126,8 @@ input::-webkit-inner-spin-button {
 .popup-options {
     display: none;
     align-items: end;
-    flex-direction: column;
+    flex-direction: row-reverse;
+    gap: 15px;
 }
 
 .popup-button {
