@@ -177,10 +177,12 @@ async function clickableHead(condition) {
     let playerHeadFrame = document.querySelector('.head-frame');
     if (condition) {
         playerHead.style.cursor = 'pointer';
+        playerHead.classList.add('hoverenabled');
         playerHeadFrame.classList.add('border-animation');
         headButton = true;
     } else {
         playerHead.style.cursor = 'default';
+        playerHead.classList.remove('hoverenabled');
         playerHeadFrame.classList.remove('border-animation');
         headButton = false;
     }

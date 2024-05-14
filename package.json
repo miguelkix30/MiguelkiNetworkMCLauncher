@@ -1,7 +1,7 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.0.29",
+    "version": "3.0.30",
     "sub_version": "a",
     "changelog": "Se ha arreglado un error critico que no permitía iniciar sesión con tu cuenta de Microsoft.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
