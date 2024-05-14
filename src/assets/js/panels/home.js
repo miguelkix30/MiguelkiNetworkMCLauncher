@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead } from '../utils.js'
+import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, clickableHead } from '../utils.js'
 import { getHWID, checkHWID } from '../HWIDSystem.js';
 
 // cambiar información de la actividad de discord en el launcher
@@ -429,7 +429,8 @@ class Home {
             }
             
         } else {
-            if (!options.mkid && getClickeableHead()) {
+            let clickHead = await getClickeableHead();
+            if (!options.mkid && clickHead) {
                 let popupInstance = new popup();
             
                 let dialogResult = await new Promise(resolve => {
@@ -447,6 +448,7 @@ class Home {
                     // Continue with your code
                 }
             }
+
             let opt = {
                 url: options.url,
                 authenticator: authenticator,
