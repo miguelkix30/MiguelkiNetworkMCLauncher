@@ -3,7 +3,7 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 
-import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, setBackground, clickableHead, unclickableHead } from '../utils.js'
+import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead } from '../utils.js'
 const { ipcRenderer } = require('electron');
 const os = require('os');
 
@@ -68,7 +68,7 @@ class Settings {
                     let account = await this.db.readData('accounts', id);
                     let configClient = await this.setInstance(account);
                     await accountSelect(account);
-                    if (account.meta.type == 'AZauth') clickableHead(); else unclickableHead();
+                    if (account.meta.type == 'AZauth') clickableHead(true); else clickableHead(false);
                     configClient.account_selected = account.ID;
                     return await this.db.updateData('configClient', configClient);
                 }

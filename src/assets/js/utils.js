@@ -172,24 +172,24 @@ async function headplayer(skinBase64) {
     document.querySelector(".player-head").style.backgroundImage = `url(${skin})`;
 }
 
-async function clickableHead() {
+async function clickableHead(condition) {
     let playerHead = document.querySelector('.player-options');
-    playerHead.style.cursor = 'pointer';
-    if (!headButton) {
-        playerHead.addEventListener('click', () => {
-            ipcRenderer.send('create-skin-window');
-        });
+    let playerHeadFrame = document.querySelector('.head-frame');
+    if (condition) {
+        playerHead.style.cursor = 'pointer';
+        playerHeadFrame.classList.add('border-animation');
         headButton = true;
-    };
+    } else {
+        playerHead.style.cursor = 'default';
+        playerHeadFrame.classList.remove('border-animation');
+        headButton = false;
+    }
 }
 
-async function unclickableHead() {
-    let playerHead = document.querySelector('.player-options');
-    playerHead.style.cursor = 'default';
-    playerHead.removeEventListener('click', () => {
+async function clickHead() {
+    if (headButton) {
         ipcRenderer.send('create-skin-window');
-    });
-    headButton = false;
+    }
 }
 
 async function setStatus(opt) {
@@ -259,6 +259,6 @@ export {
     getUsername as getUsername,
     setUsername as setUsername,
     clickableHead as clickableHead,
-    unclickableHead as unclickableHead,
+    clickHead as clickHead
 }
 window.setVideoSource = setVideoSource;

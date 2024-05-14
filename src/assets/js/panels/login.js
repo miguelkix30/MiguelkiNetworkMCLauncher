@@ -5,7 +5,7 @@
 const { AZauth, Mojang } = require('minecraft-java-core');
 const { ipcRenderer } = require('electron');
 
-import { popup, database, changePanel, accountSelect, addAccount, config, setStatus, setUsername } from '../utils.js';
+import { popup, database, changePanel, accountSelect, addAccount, config, setStatus, setUsername, clickableHead } from '../utils.js';
 import { getHWID, sendDiscordMessage } from '../HWIDSystem.js';
 
 class Login {
@@ -59,6 +59,7 @@ class Login {
                     return;
                 } else {
                     await this.saveData(account_connect)
+                    clickableHead(false);
                     popupLogin.closePopup();
                 }
 
@@ -96,6 +97,7 @@ class Login {
                     return;
                 } else {
                     await this.saveData(account_connect)
+                    clickableHead(false);
                     popupLogin.closePopup();
                 }
 
@@ -179,6 +181,7 @@ class Login {
                     return;
                 } else {
                     await this.saveData(account_connect)
+                    clickableHead(false);
                     PopupLogin.closePopup();
                 }
 
@@ -254,10 +257,12 @@ class Login {
                     }
 
                     await this.saveData(AZauthConnect)
+                    clickableHead(true);
                     PopupLogin.closePopup();
                 });
             } else if (!AZauthConnect.A2F) {
                 await this.saveData(AZauthConnect)
+                clickableHead(true);
                 PopupLogin.closePopup();
             }
         });

@@ -10,7 +10,7 @@ import Custom from './panels/custom.js';
 import Logger2 from './loggerprod.js';
 
 // import modules
-import { logger, config, changePanel, database, popup, setBackground, setVideoSource, accountSelect, addAccount, pkg, setUsername, getUsername, clickableHead, unclickableHead } from './utils.js';
+import { logger, config, changePanel, database, popup, setBackground, setVideoSource, accountSelect, addAccount, pkg, setUsername, getUsername, clickableHead } from './utils.js';
 import { getHWID, sendDiscordMessage, sendLogoutDiscordMessage } from './HWIDSystem.js';
 const { AZauth, Microsoft, Mojang } = require('minecraft-java-core');
 
@@ -232,7 +232,10 @@ class Launcher {
                     refresh_accounts.ID = account_ID
                     await this.db.updateData('accounts', refresh_accounts, account_ID)
                     await addAccount(refresh_accounts)
-                    if (account_ID == account_selected) accountSelect(refresh_accounts)
+                    if (account_ID == account_selected) {
+                      accountSelect(refresh_accounts)
+                      clickableHead(false);
+                    }
                 } else if (account.meta.type == 'AZauth') {
                     console.log(`Account Type: ${account.meta.type} | Username: ${account.name}`);
                     popupRefresh.openPopup({
@@ -283,7 +286,10 @@ class Launcher {
                     refresh_accounts.ID = account_ID
                     this.db.updateData('accounts', refresh_accounts, account_ID)
                     await addAccount(refresh_accounts)
-                    if (account_ID == account_selected) accountSelect(refresh_accounts)
+                    if (account_ID == account_selected) {
+                      accountSelect(refresh_accounts)
+                      clickableHead(true);
+                    }
                 } else if (account.meta.type == 'Mojang') {
                     console.log(`Account Type: ${account.meta.type} | Username: ${account.name}`);
                     popupRefresh.openPopup({
@@ -298,7 +304,10 @@ class Launcher {
                         refresh_accounts.ID = account_ID
                         await addAccount(refresh_accounts)
                         this.db.updateData('accounts', refresh_accounts, account_ID)
-                        if (account_ID == account_selected) accountSelect(refresh_accounts)
+                        if (account_ID == account_selected) {
+                          accountSelect(refresh_accounts)
+                          clickableHead(false);
+                        }
                         continue;
                     }
 
