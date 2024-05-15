@@ -101,7 +101,7 @@ ipcMain.on('create-register-window', () => {
         }
     })
 
-    registerWin.loadURL(pkg.store_url + 'user/register')
+    registerWin.loadURL(pkg.azuriom_url + 'user/register')
 });
 
 ipcMain.handle('Microsoft-window', async (_, client_id) => {
