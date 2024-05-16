@@ -6,7 +6,7 @@
 import Login from './panels/login.js';
 import Home from './panels/home.js';
 import Settings from './panels/settings.js';
-import Custom from './panels/custom.js';
+import Mods from './panels/mods.js';
 import Logger2 from './loggerprod.js';
 
 // import modules
@@ -33,7 +33,7 @@ class Launcher {
         if (await this.config.error) return this.errorConnect()
         this.db = new database();
         await this.initConfigClient();
-        this.createPanels(Login, Home, Settings, Custom);
+        this.createPanels(Login, Home, Settings, Mods);
         this.startLauncher();
     }
 
@@ -156,6 +156,7 @@ class Launcher {
             await this.db.createData('configClient', {
                 account_selected: null,
                 instance_selct: null,
+                mods_enabled: [],
                 java_config: {
                     java_path: null,
                     java_memory: {

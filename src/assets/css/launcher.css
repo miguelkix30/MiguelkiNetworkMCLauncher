@@ -3,6 +3,7 @@
 @import 'panels/login.css';
 @import 'panels/home.css';
 @import 'panels/settings.css';
+@import 'panels/mods.css';
 
 body {
     margin: 0;

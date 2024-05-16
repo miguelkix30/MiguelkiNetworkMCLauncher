@@ -437,6 +437,11 @@
     border-radius: 10px;
 }
 
+.button-container {
+    display: flex;
+    justify-content: space-between; /* Optional: Adds space between the buttons */
+}
+
 .settings-btn {
     text-align: center;
     width: 3rem;
@@ -450,6 +455,21 @@
     margin: 0 1.5rem;
 }
 .settings-btn:hover {
+    color: var(--icon-unselected);
+}
+
+.mods-btn {
+    text-align: center;
+    width: 3rem;
+    height: 3rem;
+    font-size: 3rem;
+    border-radius: 100px;
+    color: #fff;
+    cursor: pointer;
+    z-index: 3;
+    transition: color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+}
+.mods-btn:hover {
     color: var(--icon-unselected);
 }
 

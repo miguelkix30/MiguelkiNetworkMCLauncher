@@ -55,7 +55,7 @@ class Home {
         this.instancesSelect()
         document.querySelector('.settings-btn').addEventListener('click', e => changePanel('settings'))
         document.querySelector('.player-options').addEventListener('click', e => clickHead())
-        /* document.querySelector('.custom-btn').addEventListener('click', e => changePanel('custom')) */
+        this.startModsButton()
     }
 
     async showstore() {
@@ -174,6 +174,16 @@ class Home {
             this.intervalId = null;
         }
         console.log('Scheduled notification check stopped.');
+    }
+
+    async startModsButton() {
+        let res = await config.GetConfig();
+        if (res.modsBeta) {
+            document.querySelector('.mods-btn').style.display = 'block';
+            document.querySelector('.mods-btn').addEventListener('click', e => changePanel('mods'))
+        } else {
+            document.querySelector('.mods-btn').style.display = 'none';
+        }
     }
     
     async news() {
