@@ -14,6 +14,12 @@ jobs:
         id: publish_status
         run: echo "::set-output name=status::$(jq -r .publish package.json)"
 
+      - name: Cancel workflow if publish is false
+        uses: styfle/cancel-workflow-action@0.9.1
+        if: steps.publish_status.outputs.status == 'false'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Get version
         if: steps.publish_status.outputs.status == 'true'
         run: echo "version=$(jq -r .version package.json)" >> $GITHUB_ENV
