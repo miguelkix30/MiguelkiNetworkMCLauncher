@@ -6,7 +6,6 @@
 const { app, BrowserWindow, Menu, screen } = require("electron");
 const path = require("path");
 const os = require("os");
-const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 const pkg = require("../../../../package.json");
 const proportionWidth = 1280 / 1920;
 const proportionHeight = 795 / 1080;
@@ -15,13 +14,6 @@ let mainWindow = undefined;
 let windowWidth, windowHeight;
 
 function getWindow() {
-    if (width <= 1280 && height <= 720) {
-        windowWidth = Math.floor(width * proportionWidth);
-        windowHeight = Math.floor(height * proportionHeight);
-    } else {
-        windowWidth = 1280;
-        windowHeight = 795;
-    }
     return mainWindow;
 }
 
@@ -33,6 +25,14 @@ function destroyWindow() {
 
 function createWindow() {
     destroyWindow();
+    const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+    if (width <= 1280 && height <= 720) {
+        windowWidth = Math.floor(width * proportionWidth);
+        windowHeight = Math.floor(height * proportionHeight);
+    } else {
+        windowWidth = 1280;
+        windowHeight = 795;
+    }
     mainWindow = new BrowserWindow({
         title: pkg.preductname,
         width: windowWidth,
@@ -40,6 +40,7 @@ function createWindow() {
         minWidth: 980,
         minHeight: 500,
         resizable: false,
+        maximizable: false,
         icon: `./src/assets/images/icon.${os.platform() === "win32" ? "ico" : "png"}`,
         frame: os.platform() !== 'win32',
         show: false,
