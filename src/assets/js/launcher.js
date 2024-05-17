@@ -178,6 +178,34 @@ class Launcher {
                 }
             })
         }
+        //if mods_enabled doesn't exist, wipe configClient and recreate it
+        if (!configClient.mods_enabled) {
+            await this.db.deleteData('configClient')
+            await this.db.createData('configClient', {
+                account_selected: null,
+                instance_selct: null,
+                mods_enabled: [],
+                java_config: {
+                    java_path: null,
+                    java_memory: {
+                        min: 2,
+                        max: 4
+                    }
+                },
+                game_config: {
+                    screen_size: {
+                        width: 854,
+                        height: 480
+                    }
+                },
+                launcher_config: {
+                    download_multi: 5,
+                    theme: 'auto',
+                    closeLauncher: 'close-launcher',
+                    intelEnabledMac: true
+                }
+            })
+        }
     }
 
     createPanels(...panels) {
