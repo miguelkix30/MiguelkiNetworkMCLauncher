@@ -57,7 +57,7 @@ async function setVideoSource(game = '') {
                     source = './assets/images/background/winter.mp4';
                     break;
                 default:
-                    source = './assets/images/background/winter.mp4'; // establecer un valor predeterminado
+                    source = './assets/images/background/winter.mp4';
                     break;
             }
         }
@@ -74,18 +74,18 @@ async function setVideoSource(game = '') {
     } catch (err) {
         console.error('No se pudo iniciar la reproducción del video:', err);
     }
-    nextVideo.style.opacity = '1'; // iniciar la transición
+    nextVideo.style.opacity = '1'; 
 
-    // cuando la transición termina, intercambiar los videos actuales y siguientes
+    
     nextVideo.ontransitionend = (event) => {
         if (event.propertyName === 'opacity') {
             let temp = currentVideo;
             currentVideo = nextVideo;
             nextVideo = temp;
 
-            // eliminar el manejador de eventos antes de establecer la opacidad a 0
+            
             nextVideo.ontransitionend = null;
-            nextVideo.style.opacity = '0'; // ocultar el siguiente video para la próxima transición
+            nextVideo.style.opacity = '0'; 
         }
     };
 } else {
@@ -95,7 +95,7 @@ async function setVideoSource(game = '') {
 
 function getSeason() {
     const now = new Date();
-    const month = now.getMonth() + 1; // January is 0
+    const month = now.getMonth() + 1; 
     let season;
 
     switch (month) {
@@ -232,7 +232,6 @@ async function setStatus(opt) {
 
 async function setInstanceBackground(opt) {
     let instancebackground = opt
-    //Si instancebackground es una URL entonces se establece como fondo. Si no, se establece el fondo por defecto
     if (instancebackground.match(/^(http|https):\/\/[^ "]+$/)) {
         setVideoSource(instancebackground)
     } else {
@@ -294,17 +293,17 @@ async function toggleMod(modFile, instanceName, isActive) {
     const activeModPath = `${modPath}.jar`;
     const disabledModPath = `${modPath}.disabled`;
     
-    // If neither the .jar nor the .disabled file exists, print a message and return
+
     if (!fs.existsSync(activeModPath) && !fs.existsSync(disabledModPath)) {
         console.warn(`No se ha encontrado el mod opcional a modificar, Saltando... Mod: ${modFile}`);
         return;
     }
     
-    // If the mod should be active but is currently disabled, enable it
+
     if (isActive && fs.existsSync(disabledModPath)) {
         fs.renameSync(disabledModPath, activeModPath);
     }
-    // If the mod should not be active but is currently enabled, disable it
+
     else if (!isActive && fs.existsSync(activeModPath)) {
         fs.renameSync(activeModPath, disabledModPath);
     }

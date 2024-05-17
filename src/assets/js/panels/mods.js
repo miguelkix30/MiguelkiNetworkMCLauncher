@@ -56,10 +56,8 @@ class Mods {
 
         const filteredInstances = instances.filter(instance => {
             if (instance.whitelistActive) {
-                // Si whitelistActive es verdadero, verifica si el usuario está en la lista blanca
                 return instance.whitelist.includes(auth?.name);
             } else {
-                // Si whitelistActive es falso, incluye la instancia
                 return true;
             }
         });
@@ -76,13 +74,13 @@ class Mods {
                 const modItem = document.createElement('div');
                 modItem.className = 'mod-item'; 
     
-                const modImg = document.createElement('img'); // Crea un nuevo elemento img para la imagen del mod
-                modImg.src = mod.img; // Establece el atributo 'src' de la imagen en 'mod.img'
-                modItem.appendChild(modImg); // Agrega la imagen del mod al div
+                const modImg = document.createElement('img');
+                modImg.src = mod.img; 
+                modItem.appendChild(modImg); 
     
-                const modName = document.createElement('span'); // Crea un nuevo elemento span para el nombre del mod
-                modName.textContent = mod.name; // Accede a la propiedad 'name' del mod
-                modItem.appendChild(modName); // Agrega el nombre del mod al div
+                const modName = document.createElement('span'); 
+                modName.textContent = mod.name; 
+                modItem.appendChild(modName); 
     
                 const modSwitch = document.createElement('input');
                 modSwitch.type = 'checkbox';

@@ -9,6 +9,7 @@ import { getHWID, checkHWID } from '../HWIDSystem.js';
 const clientId = '857169541708775445';
 const DiscordRPC = require('discord-rpc');
 const RPC = new DiscordRPC.Client({ transport: 'ipc' });
+var rpcActive = true;
 var startingTime = Date.now();
 var LogBan = false;
 DiscordRPC.register(clientId);
@@ -37,7 +38,10 @@ RPC.on('ready', async () => {
         setActivity();
     }, 86400 * 1000);
 });
-RPC.login({ clientId }).catch(err => console.error('Servidor de Discord no detectado. Tranquilo, esto no es una crisis.'));
+RPC.login({ clientId }).catch(err => {
+    console.error('Servidor de Discord no detectado. Tranquilo, esto no es una crisis.')
+    rpcActive = false;
+});
 
 const { Launch } = require('minecraft-java-core')
 const { shell, ipcRenderer } = require('electron')
@@ -544,20 +548,22 @@ class Home {
             if (configClient.launcher_config.closeLauncher == 'close-launcher') {
                 ipcRenderer.send("main-window-hide")
             };
-            RPC.setActivity({
-                state: `Jugando a ${configClient.instance_selct}`,
-                startTimestamp: startingTime,
-                largeImageKey: 'icon',
-                smallImageKey: 'verificado',
-                largeImageText: `Miguelki Network`,
-                instance: true,
-                buttons: [
-                    {
-                        label: `Discord`,
-                        url: `https://discord.gg/7kPGjgJND7`,
-                    }
-                ]
-            })
+            if (rpcActive) {
+                RPC.setActivity({
+                    state: `Jugando a ${configClient.instance_selct}`,
+                    startTimestamp: startingTime,
+                    largeImageKey: 'icon',
+                    smallImageKey: 'verificado',
+                    largeImageText: `Miguelki Network`,
+                    instance: true,
+                    buttons: [
+                        {
+                            label: `Discord`,
+                            url: `https://discord.gg/7kPGjgJND7`,
+                        }
+                    ]
+                })
+            }
             new logger('Minecraft', '#36b030');
             ipcRenderer.send('main-window-progress-load')
             infoStarting.innerHTML = `Iniciando...`
@@ -576,6 +582,7 @@ class Home {
             infoStarting.innerHTML = `Cerrando...`
             new logger(pkg.name, '#7289da');
             console.log('Close');
+            if (rpcActive) {
             RPC.setActivity({
                 state: `En el launcher`,
                 startTimestamp: startingTime,
@@ -590,7 +597,9 @@ class Home {
                     }
                 ]
             }).catch();
+        }
         });
+        
 
         launch.on('error', err => {
             let popupError = new popup()
@@ -600,6 +609,7 @@ class Home {
                 if (configClient.launcher_config.closeLauncher == 'close-launcher') {
                     ipcRenderer.send("main-window-show")
                 };
+                if (rpcActive) {
                 RPC.setActivity({
                     state: `En el launcher`,
                     startTimestamp: startingTime,
@@ -614,6 +624,7 @@ class Home {
                         }
                     ]
                 }).catch();
+            }
             } else {
                 
 
@@ -635,6 +646,7 @@ class Home {
                 new logger(pkg.name, '#7289da');
                 console.log(err);
                 this.notification()
+                if (rpcActive) {
                 RPC.setActivity({
                     state: `En el launcher`,
                     largeImageKey: 'icon',
@@ -648,6 +660,7 @@ class Home {
                         }
                     ]
                 }).catch();
+            }
             }
             
         });
