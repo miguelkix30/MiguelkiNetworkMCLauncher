@@ -71,15 +71,19 @@ class Mods {
                 const modItem = document.createElement('div');
                 modItem.className = 'mod-item'; 
     
+                const modImg = document.createElement('img'); // Crea un nuevo elemento img para la imagen del mod
+                modImg.src = mod.img; // Establece el atributo 'src' de la imagen en 'mod.img'
+                modItem.appendChild(modImg); // Agrega la imagen del mod al div
+    
                 const modName = document.createElement('span'); // Crea un nuevo elemento span para el nombre del mod
-                modName.textContent = mod;
-                modItem.appendChild(modName); // Agrega el nombre del mod al span, no al div
+                modName.textContent = mod.name; // Accede a la propiedad 'name' del mod
+                modItem.appendChild(modName); // Agrega el nombre del mod al div
     
                 const modSwitch = document.createElement('input');
                 modSwitch.type = 'checkbox';
                 modSwitch.className = 'checkbox';
     
-                const modId = `${instance.name}-${mod}`;
+                const modId = `${instance.name}-${mod.name}`;
                 modSwitch.id = modId;
     
                 const modSwitchStyled = document.createElement('label');
@@ -95,7 +99,9 @@ class Mods {
                 modItem.appendChild(modSwitch);
 
                 modSwitch.addEventListener('change', async () => {
-                    console.log("Mods activos antes del cambio: ", configClient.mods_enabled);
+                    if (!configClient.mods_enabled) {
+                        configClient.mods_enabled = [];
+                    }
                     if (modSwitch.checked) {
                         if (!configClient.mods_enabled.includes(modId)) {
                             configClient.mods_enabled.push(modId);
@@ -107,7 +113,6 @@ class Mods {
                         }
                     }
     
-                    const updatedConfigClient = { ...configClient, mods_enabled: configClient.mods_enabled };
                     await this.db.updateData('configClient', configClient);
     
                     configClient = await this.db.readData('configClient');
@@ -118,7 +123,7 @@ class Mods {
                 modsPanel.appendChild(modItem);
             });
         } else {
-            modsPanel.textContent = 'No optional mods for this instance.';
+            modsPanel.textContent = 'No hay mods opcionales disponibles para este cliente.';
         }
     }
 }

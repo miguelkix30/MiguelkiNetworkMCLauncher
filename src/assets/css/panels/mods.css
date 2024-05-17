@@ -66,23 +66,24 @@
     border: 1px solid rgba( 255, 255, 255, 0.18 );
     backdrop-filter: blur( 80px );
     -webkit-backdrop-filter: blur( 80px );
+    font-size: 30px;
 }
 
-/* Asume que .dropdown-container es el contenedor del .dropdown-instance-select */
+
 .mods-dropdown {
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* Estilo general del dropdown */
+
 .dropdown-instance-select {
     margin-left: auto;
     margin-right: auto;
     width: 50%;
 }
 
-/* Estilo del botón del dropdown */
+
 .dropdown-instance-select button {
     background-color: #4CAF50;
     color: white;
@@ -113,13 +114,7 @@
     transition: transform 0.3s ease-in-out;
 }
 
-.rotated {
-    transform: rotate(180deg);
-    transition: transform 0.3s ease-in-out;
-}
 
-
-/* Estilo del contenido del dropdown (oculto por defecto) */
 .dropdown-instance-select-content {
     max-height: 0;
     width: 50%;
@@ -133,7 +128,7 @@
     border-radius: 10px;
 }
 
-/* Estilo de los items del dropdown */
+
 .dropdown-instance-select-content a {
     color: black;
     font-size: 25px;
@@ -145,19 +140,19 @@
     display: block;
 }
 
-/* Cambiar el color de fondo de los items del dropdown al pasar el mouse */
+
 .dropdown-instance-select-content a:hover {
     background-color: #ddd;
     transition: all 0.5s;
 }
 
-/* Mostrar el contenido del dropdown al pasar el mouse */
+
 .dropdown-instance-select:hover .dropdown-instance-select-content {
     display: block;
     transition: all 0.5s;
 }
 
-/* Cambiar el color de fondo del botón del dropdown al pasar el mouse */
+
 .dropdown-instance-select:hover button {
     background-color: #3e8e41;
     transition: all 0.5s;
@@ -184,19 +179,28 @@
     transition: all 0.3s;
   }
 
-  .mod-item {
+.mod-item {
     display: flex;
     align-items: center;
 }
 
 .mod-item span {
-    margin-right: 10px; /* Añade espaciado a la derecha del texto */
-    font-size: 30px; /* Aumenta el tamaño del texto */
+    margin-right: 10px; 
+    font-size: 30px; 
+}
+
+.mod-item img {
+    border-radius: 10px; 
+    width: 50px; 
+    height: 50px;
+    margin-right: 15px;
+    margin-bottom: 15px;
+    margin-top: 15px;
 }
 
 .checkbox + .switch {
-    width: 56px; /* Aumenta el ancho de la checkbox */
-    height: 30px; /* Aumenta la altura de la checkbox */
+    width: 56px; 
+    height: 30px; 
 }
 
 .checkbox:checked + .switch::after {
