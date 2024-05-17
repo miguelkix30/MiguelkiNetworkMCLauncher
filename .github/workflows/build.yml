@@ -1,36 +1,20 @@
+# module du helios launcher
 name: Launcher Build
 on:
   push:
     branches: [ master ]
 
 jobs:
-  check-publish:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Get publish status
-        id: publish_status
-        run: echo "::set-output name=status::$(jq -r .publish package.json)"
-
-      - name: Fail if publish is false
-        run: exit 1
-        if: steps.publish_status.outputs.status == 'false'
-
   create-release:
-    needs: check-publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Get version
-        if: steps.publish_status.outputs.status == 'true'
         run: echo "version=$(jq -r .version package.json)" >> $GITHUB_ENV
       
       - name: Create Release
-        if: steps.publish_status.outputs.status == 'true'
         id: create_release
         uses: actions/create-release@v1
         env:
