@@ -6,6 +6,7 @@
 const { ipcRenderer } = require('electron')
 const { Status } = require('minecraft-java-core')
 const fs = require('fs');
+const path = require('path');
 const pkg = require('../package.json');
 
 import config from './utils/config.js';
@@ -246,6 +247,62 @@ async function setUsername(name) {
     username = name;
 }
 
+
+async function toggleModsForInstance(instanceName) {
+    const instances = await config.getInstanceList();
+    const instance = instances.find(i => i.name === instanceName);
+    const db = new database();
+
+    if (instance) {
+        instance.optionalMods.forEach(async mod => {
+            let configClient = await db.readData('configClient')
+            const activeModsForInstance = configClient.mods_enabled.filter(modId => {
+                const [modIdInstanceName, modIdModName] = modId.split('-');
+                return modIdInstanceName === instanceName;
+            }).map(modId => {
+                const [, modIdModName] = modId.split('-');
+                return modIdModName;
+            });
+
+            const modFile = instance.optionalMods.find(m => m.name === mod.name).file;
+            const modIsActiveInConfig = activeModsForInstance.includes(mod.name);
+            toggleMod(modFile, instanceName, modIsActiveInConfig);
+        });
+    } else {
+        console.error(`Instance with name ${instanceName} not found`);
+    }
+}
+
+async function toggleMod(modFile, instanceName, isActive) {
+    console.log(modFile);
+    console.log(instanceName);
+    console.log(isActive);
+    const db = new database();
+    let configClient = await db.readData('configClient')
+    let res = await config.GetConfig();
+    const appdataPath = await appdata();
+    const modPath = path.join(
+        appdataPath,
+        process.platform == 'darwin' ? await res.dataDirectory : `.${await res.dataDirectory}`,
+        'instances',
+        instanceName,
+        'mods',
+        modFile
+    );
+    console.log(modPath);
+    const activeModPath = `${modPath}.jar`;
+    const disabledModPath = `${modPath}.disabled`;
+
+    // If the mod should be active but is currently disabled, enable it
+    if (isActive && fs.existsSync(disabledModPath)) {
+        fs.renameSync(disabledModPath, activeModPath);
+    }
+    // If the mod should not be active but is currently enabled, disable it
+    else if (!isActive && fs.existsSync(activeModPath)) {
+        fs.renameSync(activeModPath, disabledModPath);
+    }
+}
+
 export {
     appdata as appdata,
     changePanel as changePanel,
@@ -266,6 +323,7 @@ export {
     setUsername as setUsername,
     clickableHead as clickableHead,
     clickHead as clickHead,
-    getClickeableHead as getClickeableHead
+    getClickeableHead as getClickeableHead,
+    toggleModsForInstance as toggleModsForInstance
 }
 window.setVideoSource = setVideoSource;
