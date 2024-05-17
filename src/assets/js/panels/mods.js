@@ -20,6 +20,7 @@ class Mods {
             dropdownItem.textContent = instance.name;
             dropdownItem.addEventListener('click', () => {
                 this.selectInstance(instance, modsPanel);
+                document.querySelector('.dropdown-instance-select button a').innerHTML = instance.name;
                 dropdown.style.maxHeight = null;
             });
             dropdown.appendChild(dropdownItem);
@@ -29,7 +30,11 @@ class Mods {
         const dropdownSpan = dropdownButton.querySelector('span');
         dropdownSpan.textContent = '\u25BC';
 
-        document.querySelector('.back-btn').addEventListener('click', e => changePanel('home'))
+        document.querySelector('.back-btn').addEventListener('click', e => {
+            document.querySelector('.mods-list').innerHTML = '';
+            document.querySelector('.dropdown-instance-select button a').innerHTML = 'Seleccionar cliente...';
+            changePanel('home')
+        })
         dropdownButton.addEventListener('click', function() {
 
             var content = this.nextElementSibling;

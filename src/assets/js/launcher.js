@@ -241,7 +241,7 @@ class Launcher {
                     console.log(`Account Type: ${account.meta.type} | Username: ${account.name}`);
                     popupRefresh.openPopup({
                         title: 'Conectando...',
-                        content: `Plataforma: ${account.meta.type} | Usuario: ${account.name}`,
+                        content: `Plataforma: MKNetworkID | Usuario: ${account.name}`,
                         color: 'var(--color)',
                         background: false
                     });

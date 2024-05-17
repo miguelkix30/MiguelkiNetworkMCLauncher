@@ -254,7 +254,7 @@ async function toggleModsForInstance(instanceName) {
     const db = new database();
 
     if (instance) {
-        instance.optionalMods.forEach(async mod => {
+        for (const mod of instance.optionalMods) {
             let configClient = await db.readData('configClient')
             const activeModsForInstance = configClient.mods_enabled.filter(modId => {
                 const [modIdInstanceName, modIdModName] = modId.split('-');
@@ -266,17 +266,19 @@ async function toggleModsForInstance(instanceName) {
 
             const modFile = instance.optionalMods.find(m => m.name === mod.name).file;
             const modIsActiveInConfig = activeModsForInstance.includes(mod.name);
-            toggleMod(modFile, instanceName, modIsActiveInConfig);
-        });
+            await toggleMod(modFile, instanceName, modIsActiveInConfig);
+        }
     } else {
         console.error(`Instance with name ${instanceName} not found`);
     }
 }
 
 async function toggleMod(modFile, instanceName, isActive) {
-    console.log(modFile);
-    console.log(instanceName);
-    console.log(isActive);
+    if (isActive) {
+        console.log(`Activando mod opcional, Mod: ${modFile} Instancia: ${instanceName}`);
+    } else {
+        console.log(`Desactivando mod opcional, Mod: ${modFile} Instancia: ${instanceName}`);
+    }
     const db = new database();
     let res = await config.GetConfig();
     const appdataPath = await appdata();

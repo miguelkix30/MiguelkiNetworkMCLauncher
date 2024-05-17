@@ -519,6 +519,7 @@ class Home {
             ipcRenderer.send('main-window-progress', { progress, size })
             progressBar.value = progress;
             progressBar.max = size;
+            toggleModsForInstance(options.name);
         });
 
         launch.on('estimated', (time) => {
