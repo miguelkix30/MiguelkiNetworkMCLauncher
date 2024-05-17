@@ -4,7 +4,7 @@ on:
     branches: [ master ]
 
 jobs:
-  create-release:
+  check-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -14,11 +14,16 @@ jobs:
         id: publish_status
         run: echo "::set-output name=status::$(jq -r .publish package.json)"
 
-      - name: Cancel workflow if publish is false
-        uses: styfle/cancel-workflow-action@0.9.1
+      - name: Fail if publish is false
+        run: exit 1
         if: steps.publish_status.outputs.status == 'false'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  create-release:
+    needs: check-publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - name: Get version
         if: steps.publish_status.outputs.status == 'true'
