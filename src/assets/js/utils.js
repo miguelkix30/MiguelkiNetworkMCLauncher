@@ -278,7 +278,6 @@ async function toggleMod(modFile, instanceName, isActive) {
     console.log(instanceName);
     console.log(isActive);
     const db = new database();
-    let configClient = await db.readData('configClient')
     let res = await config.GetConfig();
     const appdataPath = await appdata();
     const modPath = path.join(
@@ -292,7 +291,13 @@ async function toggleMod(modFile, instanceName, isActive) {
     console.log(modPath);
     const activeModPath = `${modPath}.jar`;
     const disabledModPath = `${modPath}.disabled`;
-
+    
+    // If neither the .jar nor the .disabled file exists, print a message and return
+    if (!fs.existsSync(activeModPath) && !fs.existsSync(disabledModPath)) {
+        console.warn(`No se ha encontrado el mod opcional a modificar, Saltando... Mod: ${modFile}`);
+        return;
+    }
+    
     // If the mod should be active but is currently disabled, enable it
     if (isActive && fs.existsSync(disabledModPath)) {
         fs.renameSync(disabledModPath, activeModPath);
