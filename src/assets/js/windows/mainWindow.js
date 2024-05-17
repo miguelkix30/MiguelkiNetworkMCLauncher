@@ -3,14 +3,25 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 
-const { app, BrowserWindow, Menu } = require("electron");
+const { app, BrowserWindow, Menu, screen } = require("electron");
 const path = require("path");
 const os = require("os");
+const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 const pkg = require("../../../../package.json");
+const proportionWidth = 1280 / 1920;
+const proportionHeight = 795 / 1080;
 let dev = process.env.DEV_TOOL === 'open';
 let mainWindow = undefined;
+let windowWidth, windowHeight;
 
 function getWindow() {
+    if (width <= 1280 && height <= 720) {
+        windowWidth = Math.floor(width * proportionWidth);
+        windowHeight = Math.floor(height * proportionHeight);
+    } else {
+        windowWidth = 1280;
+        windowHeight = 795;
+    }
     return mainWindow;
 }
 
@@ -24,10 +35,10 @@ function createWindow() {
     destroyWindow();
     mainWindow = new BrowserWindow({
         title: pkg.preductname,
-        width: 1280,
-        height: 795,
+        width: windowWidth,
+        height: windowHeight,
         minWidth: 980,
-        minHeight: 795,
+        minHeight: 500,
         resizable: false,
         icon: `./src/assets/images/icon.${os.platform() === "win32" ? "ico" : "png"}`,
         frame: os.platform() !== 'win32',
