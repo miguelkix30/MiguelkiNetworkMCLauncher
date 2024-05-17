@@ -6,6 +6,7 @@
 const { ipcRenderer } = require('electron')
 const { Status } = require('minecraft-java-core')
 const fs = require('fs');
+const path = require('path');
 const pkg = require('../package.json');
 
 import config from './utils/config.js';
@@ -56,7 +57,7 @@ async function setVideoSource(game = '') {
                     source = './assets/images/background/winter.mp4';
                     break;
                 default:
-                    source = './assets/images/background/winter.mp4'; // establecer un valor predeterminado
+                    source = './assets/images/background/winter.mp4';
                     break;
             }
         }
@@ -73,18 +74,18 @@ async function setVideoSource(game = '') {
     } catch (err) {
         console.error('No se pudo iniciar la reproducción del video:', err);
     }
-    nextVideo.style.opacity = '1'; // iniciar la transición
+    nextVideo.style.opacity = '1'; 
 
-    // cuando la transición termina, intercambiar los videos actuales y siguientes
+    
     nextVideo.ontransitionend = (event) => {
         if (event.propertyName === 'opacity') {
             let temp = currentVideo;
             currentVideo = nextVideo;
             nextVideo = temp;
 
-            // eliminar el manejador de eventos antes de establecer la opacidad a 0
+            
             nextVideo.ontransitionend = null;
-            nextVideo.style.opacity = '0'; // ocultar el siguiente video para la próxima transición
+            nextVideo.style.opacity = '0'; 
         }
     };
 } else {
@@ -94,7 +95,7 @@ async function setVideoSource(game = '') {
 
 function getSeason() {
     const now = new Date();
-    const month = now.getMonth() + 1; // January is 0
+    const month = now.getMonth() + 1; 
     let season;
 
     switch (month) {
@@ -231,7 +232,6 @@ async function setStatus(opt) {
 
 async function setInstanceBackground(opt) {
     let instancebackground = opt
-    //Si instancebackground es una URL entonces se establece como fondo. Si no, se establece el fondo por defecto
     if (instancebackground.match(/^(http|https):\/\/[^ "]+$/)) {
         setVideoSource(instancebackground)
     } else {
@@ -244,6 +244,69 @@ async function getUsername() {
 }
 async function setUsername(name) {
     username = name;
+}
+
+
+async function toggleModsForInstance(instanceName) {
+    const instances = await config.getInstanceList();
+    const instance = instances.find(i => i.name === instanceName);
+    const db = new database();
+
+    if (instance) {
+        for (const mod of instance.optionalMods) {
+            let configClient = await db.readData('configClient')
+            const activeModsForInstance = configClient.mods_enabled.filter(modId => {
+                const [modIdInstanceName, modIdModName] = modId.split('-');
+                return modIdInstanceName === instanceName;
+            }).map(modId => {
+                const [, modIdModName] = modId.split('-');
+                return modIdModName;
+            });
+
+            const modFile = instance.optionalMods.find(m => m.name === mod.name).file;
+            const modIsActiveInConfig = activeModsForInstance.includes(mod.name);
+            await toggleMod(modFile, instanceName, modIsActiveInConfig);
+        }
+    } else {
+        console.error(`Instance with name ${instanceName} not found`);
+    }
+}
+
+async function toggleMod(modFile, instanceName, isActive) {
+    if (isActive) {
+        console.log(`Activando mod opcional, Mod: ${modFile} Instancia: ${instanceName}`);
+    } else {
+        console.log(`Desactivando mod opcional, Mod: ${modFile} Instancia: ${instanceName}`);
+    }
+    const db = new database();
+    let res = await config.GetConfig();
+    const appdataPath = await appdata();
+    const modPath = path.join(
+        appdataPath,
+        process.platform == 'darwin' ? await res.dataDirectory : `.${await res.dataDirectory}`,
+        'instances',
+        instanceName,
+        'mods',
+        modFile
+    );
+    console.log(modPath);
+    const activeModPath = `${modPath}.jar`;
+    const disabledModPath = `${modPath}.disabled`;
+    
+
+    if (!fs.existsSync(activeModPath) && !fs.existsSync(disabledModPath)) {
+        console.warn(`No se ha encontrado el mod opcional a modificar, Saltando... Mod: ${modFile}`);
+        return;
+    }
+    
+
+    if (isActive && fs.existsSync(disabledModPath)) {
+        fs.renameSync(disabledModPath, activeModPath);
+    }
+
+    else if (!isActive && fs.existsSync(activeModPath)) {
+        fs.renameSync(activeModPath, disabledModPath);
+    }
 }
 
 export {
@@ -266,6 +329,7 @@ export {
     setUsername as setUsername,
     clickableHead as clickableHead,
     clickHead as clickHead,
-    getClickeableHead as getClickeableHead
+    getClickeableHead as getClickeableHead,
+    toggleModsForInstance as toggleModsForInstance
 }
 window.setVideoSource = setVideoSource;

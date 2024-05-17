@@ -2,13 +2,14 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, clickableHead } from '../utils.js'
+import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance } from '../utils.js'
 import { getHWID, checkHWID } from '../HWIDSystem.js';
 
 // cambiar información de la actividad de discord en el launcher
 const clientId = '857169541708775445';
 const DiscordRPC = require('discord-rpc');
 const RPC = new DiscordRPC.Client({ transport: 'ipc' });
+var rpcActive = true;
 var startingTime = Date.now();
 var LogBan = false;
 DiscordRPC.register(clientId);
@@ -37,7 +38,10 @@ RPC.on('ready', async () => {
         setActivity();
     }, 86400 * 1000);
 });
-RPC.login({ clientId }).catch(err => console.error('Servidor de Discord no detectado. Tranquilo, esto no es una crisis.'));
+RPC.login({ clientId }).catch(err => {
+    console.error('Servidor de Discord no detectado. Tranquilo, esto no es una crisis.')
+    rpcActive = false;
+});
 
 const { Launch } = require('minecraft-java-core')
 const { shell, ipcRenderer } = require('electron')
@@ -55,7 +59,7 @@ class Home {
         this.instancesSelect()
         document.querySelector('.settings-btn').addEventListener('click', e => changePanel('settings'))
         document.querySelector('.player-options').addEventListener('click', e => clickHead())
-        /* document.querySelector('.custom-btn').addEventListener('click', e => changePanel('custom')) */
+        this.startModsButton()
     }
 
     async showstore() {
@@ -174,6 +178,16 @@ class Home {
             this.intervalId = null;
         }
         console.log('Scheduled notification check stopped.');
+    }
+
+    async startModsButton() {
+        let res = await config.GetConfig();
+        if (res.modsBeta) {
+            document.querySelector('.mods-btn').style.display = 'block';
+            document.querySelector('.mods-btn').addEventListener('click', e => changePanel('mods'))
+        } else {
+            document.querySelector('.mods-btn').style.display = 'none';
+        }
     }
     
     async news() {
@@ -509,6 +523,7 @@ class Home {
             ipcRenderer.send('main-window-progress', { progress, size })
             progressBar.value = progress;
             progressBar.max = size;
+            toggleModsForInstance(options.name);
         });
 
         launch.on('estimated', (time) => {
@@ -533,20 +548,22 @@ class Home {
             if (configClient.launcher_config.closeLauncher == 'close-launcher') {
                 ipcRenderer.send("main-window-hide")
             };
-            RPC.setActivity({
-                state: `Jugando a ${configClient.instance_selct}`,
-                startTimestamp: startingTime,
-                largeImageKey: 'icon',
-                smallImageKey: 'verificado',
-                largeImageText: `Miguelki Network`,
-                instance: true,
-                buttons: [
-                    {
-                        label: `Discord`,
-                        url: `https://discord.gg/7kPGjgJND7`,
-                    }
-                ]
-            })
+            if (rpcActive) {
+                RPC.setActivity({
+                    state: `Jugando a ${configClient.instance_selct}`,
+                    startTimestamp: startingTime,
+                    largeImageKey: 'icon',
+                    smallImageKey: 'verificado',
+                    largeImageText: `Miguelki Network`,
+                    instance: true,
+                    buttons: [
+                        {
+                            label: `Discord`,
+                            url: `https://discord.gg/7kPGjgJND7`,
+                        }
+                    ]
+                })
+            }
             new logger('Minecraft', '#36b030');
             ipcRenderer.send('main-window-progress-load')
             infoStarting.innerHTML = `Iniciando...`
@@ -565,6 +582,7 @@ class Home {
             infoStarting.innerHTML = `Cerrando...`
             new logger(pkg.name, '#7289da');
             console.log('Close');
+            if (rpcActive) {
             RPC.setActivity({
                 state: `En el launcher`,
                 startTimestamp: startingTime,
@@ -579,7 +597,9 @@ class Home {
                     }
                 ]
             }).catch();
+        }
         });
+        
 
         launch.on('error', err => {
             let popupError = new popup()
@@ -589,6 +609,7 @@ class Home {
                 if (configClient.launcher_config.closeLauncher == 'close-launcher') {
                     ipcRenderer.send("main-window-show")
                 };
+                if (rpcActive) {
                 RPC.setActivity({
                     state: `En el launcher`,
                     startTimestamp: startingTime,
@@ -603,6 +624,7 @@ class Home {
                         }
                     ]
                 }).catch();
+            }
             } else {
                 
 
@@ -624,6 +646,7 @@ class Home {
                 new logger(pkg.name, '#7289da');
                 console.log(err);
                 this.notification()
+                if (rpcActive) {
                 RPC.setActivity({
                     state: `En el launcher`,
                     largeImageKey: 'icon',
@@ -637,6 +660,7 @@ class Home {
                         }
                     ]
                 }).catch();
+            }
             }
             
         });

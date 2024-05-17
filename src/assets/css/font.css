@@ -55,6 +55,8 @@
 .icon-account-add:before { font-family: "Icons"; content: "\e901"; }
 .icon-account-delete:before { font-family: "Icons"; content: "\e902"; }
 .icon-settings:before { font-family: "Icons"; content: "\e909"; }
+.icon-mods:before { font-family: "Icons"; content: "\e90f"; }
+.icon-back:before { font-family: "Icons"; content: "\e903"; }
 .icon-monitor:before { font-family: "Icons"; content: "\e90a"; }
 .icon-arrow:before { font-family: "Social-icons"; content: "\e002"; }
 
