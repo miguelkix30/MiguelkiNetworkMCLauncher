@@ -1,9 +1,9 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.1.1",
+    "version": "3.1.2",
     "sub_version": "a",
-    "changelog": "Se ha implementado un sistema de Mods opcionales que estará disponible en BETA próximamente.",
+    "changelog": "Se ha implementado un sistema de Mods opcionales que estará disponible en BETA próximamente.<br>También se han añadido nuevas frases de inicio y se han arreglado un par de bugs.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {

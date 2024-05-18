@@ -47,9 +47,17 @@ class Splash {
             { "message": "🕸️🕷️🤘", "author": "Chiquicas" },
             { "message": "Dixo es super maricón 🏳‍🌈👨🏿‍❤️‍💋‍👨🏿", "author": "Chiquicas" },
             { "message": "Va llorah, Mateo?", "author": "Dixo" },
-            { "message": "Ayuda.... Foack. Ayuda.... Foack. Ayuda.... Foack.", "author": "Miguelki" },
+            { "message": "Ayuda.... Foack. Ayuda.... Foack. Ayuda.... Foack.", "author": " " },
             { "message": "Milleurista???", "author": "Joako Puto" },
-            { "message": "Me aburro", "author": "Miguelki" }
+            { "message": "Me aburro", "author": "Miguelki" },
+            { "message": "Yo con Dixo no juego", "author": "El Josefa de Castefa" },
+            { "message": "*Abre war thunder", "author": "El Josefa de Castefa" },
+            { "message": "Me voy al burguer king...", "author": "El Josefa de Castefa" },
+            { "message": "Miguelki Music sessions", "author": "Miguelki" },
+            { "message": "Je parle français pour le plaisir", "author": "Miguelki" },
+            { "message": "Roblox es una plataforma donde usuarios crean EXPERIENCIAS", "author": "Miguelki" },
+            { "message": "Cuidaoo", "author": "Miguelillo el impostor" },
+            { "message": "No dejes que el miedo se interponga en tu camino", "author": "Dixo (autista mode)" }
         ];
         let splash = splashes[Math.floor(Math.random() * splashes.length)];
         this.splashMessage.textContent = splash.message;

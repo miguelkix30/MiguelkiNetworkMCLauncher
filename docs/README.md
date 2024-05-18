@@ -30,3 +30,18 @@ Otras opciones de descarga están también disponibles en las [releases de GitHu
 Si deseas utilizar el código de este fork deberás:
 - Dar crédito tando a luuxis como a mi (Miguelki)
 - Bifurcar ESTE repositorio si se van a utilizar los cambios hechos en este repositorio o bifurcar el de luuxis para usar el código original
+
+### **<ins><p align="center">AVISO IMPORTANTE</p>**
+No se dará ningún tipo de soporte a cualquier repositorio bifurcado de este tanto en mi discord como en el de Sauncher Support de Luuxis.
+
+Este programa utiliza archivos web modificados que no están disponibles públicamente. 
+
+Este programa no funcionará correctamente si no es implementado correctamente para tu uso.
+
+Al utilizar este programa aceptas que se envíen los siguientes datos del sistema a Miguelki con el fin de proteger a los jugadores:
+- Nombre de usuario
+- Versión del programa
+- HWID
+- IP Pública
+
+Estos datos no serán compartidos con terceros, si deseas que tus datos sean eliminados por favor contacta por soporte en el discord de Miguelki Network: https://dsc.gg/miguelkinetwork
