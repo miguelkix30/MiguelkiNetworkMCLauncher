@@ -193,7 +193,6 @@ class Home {
     
     async news() {
 
-        //get version from package.json and set the content of titlechangelog to "Miguelki Network MC Launcher" + version
         let version = pkg.version
         let subversion = pkg.sub_version
         let changelog = pkg.changelog
@@ -459,8 +458,6 @@ class Home {
             
                 if (dialogResult === 'cancel') {
                     return;
-                } else if (dialogResult === 'accept') {
-                    // Continue with your code
                 }
             }
 
@@ -499,8 +496,6 @@ class Home {
             }
 
             launch.Launch(opt);
-        // si StoreAvailable es true, se realizará document.querySelector('.news-blockshop').style.display = 'none';
-        if (StoreAvailable) document.querySelector('.news-blockshop').style.display = 'none';
 
         playInstanceBTN.style.display = "none"
         infoStartingBOX.style.display = "block"
@@ -579,7 +574,6 @@ class Home {
             this.notification()
             infoStartingBOX.style.display = "none"
             playInstanceBTN.style.display = "flex"
-            if (StoreAvailable) document.querySelector('.news-blockshop').style.display = 'block';
             infoStarting.innerHTML = `Cerrando...`
             new logger(pkg.name, '#7289da');
             console.log('Close');
@@ -640,7 +634,6 @@ class Home {
                     ipcRenderer.send("main-window-show")
                 };
                 ipcRenderer.send('main-window-progress-reset')
-                if (StoreAvailable) document.querySelector('.news-blockshop').style.display = 'block';
                 infoStartingBOX.style.display = "none"
                 playInstanceBTN.style.display = "flex"
                 infoStarting.innerHTML = `Verificando...`
