@@ -9,6 +9,7 @@ import { getHWID, checkHWID } from '../HWIDSystem.js';
 const clientId = '857169541708775445';
 const DiscordRPC = require('discord-rpc');
 const RPC = new DiscordRPC.Client({ transport: 'ipc' });
+let dev = process.env.NODE_ENV === 'dev';
 var rpcActive = true;
 var startingTime = Date.now();
 var LogBan = false;
@@ -182,7 +183,7 @@ class Home {
 
     async startModsButton() {
         let res = await config.GetConfig();
-        if (res.modsBeta) {
+        if (res.modsBeta  || dev) {
             document.querySelector('.mods-btn').style.display = 'block';
             document.querySelector('.mods-btn').addEventListener('click', e => changePanel('mods'))
         } else {
