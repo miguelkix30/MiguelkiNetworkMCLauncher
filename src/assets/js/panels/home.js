@@ -3,7 +3,7 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance } from '../utils.js'
-import { getHWID, checkHWID } from '../HWIDSystem.js';
+import { getHWID, checkHWID, getFetchError } from '../HWIDSystem.js';
 
 // cambiar información de la actividad de discord en el launcher
 const clientId = '857169541708775445';
@@ -91,6 +91,7 @@ class Home {
         let res = await config.GetConfig();
         let hwid = await getHWID();
         let check = await checkHWID(hwid);
+        let fetchError = await getFetchError();
 
         let notification = document.querySelector('.message-container');
         let notificationIcon = document.querySelector('.message-icon');
@@ -397,6 +398,7 @@ class Home {
 
         let hwid = await getHWID();
         let check = await checkHWID(hwid);
+        let fetchError = await getFetchError();
 
         let playInstanceBTN = document.querySelector('.play-instance')
         let infoStartingBOX = document.querySelector('.info-starting-game')
