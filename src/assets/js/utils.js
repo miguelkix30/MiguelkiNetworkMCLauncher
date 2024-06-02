@@ -164,7 +164,7 @@ async function accountSelect(data) {
     let activeAccount = document.querySelector('.account-select')
 
     if (activeAccount) activeAccount.classList.toggle('account-select');
-    account.classList.add('account-select');
+    if (account) account.classList.add('account-select');
     if (data?.profile?.skins[0]?.base64) headplayer(data.profile.skins[0].base64);
 }
 
