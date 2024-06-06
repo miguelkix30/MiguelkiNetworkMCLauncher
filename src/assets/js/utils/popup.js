@@ -35,6 +35,7 @@ export default class popup {
         if (this.popupOptions.style.display !== 'none') {
             this.okButton.addEventListener('click', () => {
                 if (info.exit) return ipcRenderer.send('main-window-close');
+                info.callback();
                 this.closePopup();
             })
         }

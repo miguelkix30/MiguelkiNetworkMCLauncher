@@ -1,9 +1,9 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.1.5",
+    "version": "3.1.6",
     "sub_version": "",
-    "changelog": "Añadidas algunas correcciones con el sistema de cuentas.",
+    "changelog": "Añadida la verificación de Discord.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
