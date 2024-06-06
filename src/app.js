@@ -9,10 +9,9 @@ const express = require('express');
 
 const UpdateWindow = require("./assets/js/windows/updateWindow.js");
 const MainWindow = require("./assets/js/windows/mainWindow.js");
-const tokenPath = path.join(__dirname, '/auth/token.txt');
 let dev = process.env.NODE_ENV === 'dev';
-
 let server;
+let authToken;
 var config = {
     "clientId": "857169541708775445",
     "clientSecret": "RTmN1F_2Qt8X6LzmjgFy3nVe8cRbhQny",
@@ -39,7 +38,7 @@ var config = {
         .then(json => {
             // Guardar token
             const token = json.access_token;
-            fs.writeFileSync(tokenPath, token), 'utf8';
+            authToken = token;
             console.log("Token de Discord:", token);
             response.send(`<script>window.close();</script>`);
             server.close();
@@ -156,14 +155,17 @@ ipcMain.on('create-register-window', () => {
 
 ipcMain.handle('open-discord-auth', async () => {
     return new Promise((resolve, reject) => {
-        fs.writeFileSync(tokenPath, ''), 'utf8';
+        authToken = null;
         startServer();
 
         const discordWin = new BrowserWindow({
             width: 650,
             height: 700,
+            minimizable: false,
+            maximizable: false,
+            resizable: false,
             webPreferences: {
-                nodeIntegration: false,
+                nodeIntegration: true,
                 contextIsolation: true,
             }
         });
@@ -172,11 +174,11 @@ ipcMain.handle('open-discord-auth', async () => {
 
         discordWin.on('closed', () => {
             console.log("Ventana de Discord cerrada");
-            const accessToken = fs.readFileSync(tokenPath, 'utf8');
+            const accessToken = authToken;
             //si el contenido del archivo token esta vacio o no existe se rechaza la promesa
             if (!accessToken) {
                 stopServer();
-                reject("Token no recibido");
+                reject(null);
             } else if (accessToken !== "") {
                 stopServer();
                 resolve(accessToken);

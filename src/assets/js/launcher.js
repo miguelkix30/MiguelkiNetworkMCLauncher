@@ -24,6 +24,8 @@ import {
   setUsername,
   getUsername,
   clickableHead,
+  setDiscordUsername,
+  getDiscordUsername
 } from "./utils.js";
 import {
   getHWID,
@@ -38,6 +40,7 @@ const fs = require("fs");
 const path = require("path");
 let dev = process.env.NODE_ENV === "dev";
 let name = await getUsername();
+let dname = await getDiscordUsername();
 
 class Launcher {
   async init() {
@@ -127,7 +130,8 @@ class Launcher {
       if (e.ctrlKey && e.keyCode == 87) {
         try {
           name = await getUsername();
-          sendLogoutDiscordMessage(name);
+          dname = await getDiscordUsername();
+          sendLogoutDiscordMessage(name, dname);
         } catch (error) {
           sendLogoutDiscordMessage();
         }
@@ -139,7 +143,8 @@ class Launcher {
         e.preventDefault();
         try {
           name = await getUsername();
-          sendLogoutDiscordMessage(name);
+          dname = await getDiscordUsername();
+          sendLogoutDiscordMessage(name, dname);
         } catch (error) {
           sendLogoutDiscordMessage();
         }
@@ -179,7 +184,8 @@ class Launcher {
     document.querySelector("#close").addEventListener("click", async () => {
       try {
         name = await getUsername();
-        sendLogoutDiscordMessage(name);
+        dname = await getDiscordUsername();
+        sendLogoutDiscordMessage(name, dname);
       } catch (error) {
         sendLogoutDiscordMessage();
       }
@@ -196,6 +202,7 @@ class Launcher {
         account_selected: null,
         instance_selct: null,
         mods_enabled: [],
+        discord_token: null,
         java_config: {
           java_path: null,
           java_memory: {
@@ -245,6 +252,34 @@ class Launcher {
         },
       });
     }
+    if (!configClient.discord_token) {
+      await this.db.deleteData("configClient");
+      await this.db.createData("configClient", {
+        account_selected: null,
+        instance_selct: null,
+        mods_enabled: [],
+        discord_token: null,
+        java_config: {
+          java_path: null,
+          java_memory: {
+            min: 2,
+            max: 4,
+          },
+        },
+        game_config: {
+          screen_size: {
+            width: 854,
+            height: 480,
+          },
+        },
+        launcher_config: {
+          download_multi: 5,
+          theme: "auto",
+          closeLauncher: "close-launcher",
+          intelEnabledMac: true,
+        },
+      });
+    }
   }
 
   createPanels(...panels) {
@@ -263,7 +298,7 @@ class Launcher {
   }
 
   async verifyDiscordAccount() {
-    const tokenPath = path.join(__dirname, "/auth/token.txt");
+    let configClient = await this.db.readData("configClient");
     let token;
     let isMember;
     let isTokenValid;
@@ -285,7 +320,8 @@ class Launcher {
       });
 
       if (dialogResult === "cancel") {
-        fs.writeFileSync(tokenPath, ''), 'utf8';
+        configClient.discord_token = null;
+        await this.db.updateData('configClient', configClient);
         await this.verifyDiscordAccount();
         return;
       } else {
@@ -310,9 +346,11 @@ class Launcher {
           ipcRenderer.send('main-window-close');
         } else {
           token = await ipcRenderer.invoke('open-discord-auth');
+          configClient.discord_token = token;
+          await this.db.updateData('configClient', configClient);
         }
     } else {
-      token = fs.readFileSync(tokenPath, "utf8");
+      token = configClient.discord_token;
     }
     isMember = (await this.isUserInGuild(token, "761943171801415692")).isInGuild;
     if (!isMember) {
@@ -342,9 +380,9 @@ class Launcher {
   }
 
   async checkTokenValidity() {
-    const tokenPath = path.join(__dirname, "/auth/token.txt");
-    let token = fs.readFileSync(tokenPath, "utf8");
-    if (!token || token == "") return false;
+    let configClient = await this.db.readData("configClient");
+    let token = configClient.discord_token;
+    if (!token || token == "" || token == null) return false;
     try {
       const response = await fetch("https://discord.com/api/users/@me", {
         headers: {
@@ -373,12 +411,26 @@ class Launcher {
         if (!response.ok) {
             throw new Error('Failed to fetch guilds');
         }
+        const userResponse = await fetch('https://discord.com/api/users/@me', {
+          headers: {
+              Authorization: `Bearer ${accessToken}`
+          }
+      });
+      let username = "Desconocido";
+      if (!userResponse.ok) {
+          throw new Error('Failed to fetch user info');
+      } else {
+        const user = await userResponse.json();
+        username = user.username;
+        setDiscordUsername(username);
+      }
+
 
         const guilds = await response.json();
         
         // Verificar si el usuario está en el servidor específico
         const isInGuild = guilds.some(guild => guild.id === guildId);
-        
+
         return { isInGuild };
     } catch (error) {
         // Error al hacer la solicitud
@@ -427,7 +479,8 @@ class Launcher {
             continue;
           } else {
             let hwid = await getHWID();
-            await sendDiscordMessage(account.name, hwid);
+            dname = await getDiscordUsername();
+            await sendDiscordMessage(account.name, hwid, dname);
             setUsername(account.name);
           }
 
@@ -489,7 +542,8 @@ class Launcher {
             continue;
           } else {
             let hwid = await getHWID();
-            await sendDiscordMessage(account.name, hwid);
+            dname = await getDiscordUsername();
+            await sendDiscordMessage(account.name, hwid, dname);
             setUsername(account.name);
           }
 
@@ -537,7 +591,8 @@ class Launcher {
             continue;
           } else {
             let hwid = await getHWID();
-            await sendDiscordMessage(account.name, hwid);
+            dname = await getDiscordUsername();
+            await sendDiscordMessage(account.name, hwid, dname);
             setUsername(account.name);
           }
 

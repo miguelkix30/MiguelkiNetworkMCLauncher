@@ -16,6 +16,7 @@ import popup from './utils/popup.js';
 import { skin2D } from './utils/skin.js';
 import slider from './utils/slider.js';
 let username = '';
+let DiscordUsername = '';
 let headButton = false;
 async function setBackground(theme) {
     theme = "dark";
@@ -246,6 +247,12 @@ async function setUsername(name) {
     username = name;
 }
 
+async function getDiscordUsername() {
+    return DiscordUsername;
+}
+async function setDiscordUsername(name) {
+    DiscordUsername = name;
+}
 
 async function toggleModsForInstance(instanceName) {
     const instances = await config.getInstanceList();
@@ -309,21 +316,6 @@ async function toggleMod(modFile, instanceName, isActive) {
     }
 }
 
-async function verifyDiscordMembership(token) {
-    const userGuildsResponse = await fetch('https://discord.com/api/users/@me/guilds', {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-
-    const userGuilds = await userGuildsResponse.json();
-
-    // Cambia esto al ID de tu servidor
-    const requiredGuildId = '761943171801415692';
-
-    return userGuilds.some(guild => guild.id === requiredGuildId);
-}
-
 export {
     appdata as appdata,
     changePanel as changePanel,
@@ -346,6 +338,7 @@ export {
     clickHead as clickHead,
     getClickeableHead as getClickeableHead,
     toggleModsForInstance as toggleModsForInstance,
-    verifyDiscordMembership as verifyDiscordMembership
+    getDiscordUsername as getDiscordUsername,
+    setDiscordUsername as setDiscordUsername
 }
 window.setVideoSource = setVideoSource;
