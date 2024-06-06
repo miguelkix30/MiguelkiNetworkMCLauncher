@@ -309,6 +309,21 @@ async function toggleMod(modFile, instanceName, isActive) {
     }
 }
 
+async function verifyDiscordMembership(token) {
+    const userGuildsResponse = await fetch('https://discord.com/api/users/@me/guilds', {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+
+    const userGuilds = await userGuildsResponse.json();
+
+    // Cambia esto al ID de tu servidor
+    const requiredGuildId = '761943171801415692';
+
+    return userGuilds.some(guild => guild.id === requiredGuildId);
+}
+
 export {
     appdata as appdata,
     changePanel as changePanel,
@@ -330,6 +345,7 @@ export {
     clickableHead as clickableHead,
     clickHead as clickHead,
     getClickeableHead as getClickeableHead,
-    toggleModsForInstance as toggleModsForInstance
+    toggleModsForInstance as toggleModsForInstance,
+    verifyDiscordMembership as verifyDiscordMembership
 }
 window.setVideoSource = setVideoSource;

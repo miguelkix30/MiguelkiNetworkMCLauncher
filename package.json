@@ -28,7 +28,9 @@
     "dependencies": {
         "discord-rpc": "^4.0.1",
         "discord-webhook-node": "^1.0.0",
+        "electron-store": "^9.0.0",
         "electron-updater": "^6.1.8",
+        "express": "^4.19.2",
         "minecraft-java-core": "^3.10.4",
         "node-bdd": "^2.0.4",
         "node-fetch": "^2.7.0",

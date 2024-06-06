@@ -34,7 +34,7 @@ class Launcher {
         this.db = new database();
         await this.initConfigClient();
         this.createPanels(Login, Home, Settings, Mods);
-        this.startLauncher();
+        await this.verifyDiscordAccount();
     }
 
     initWindow(){
@@ -220,6 +220,54 @@ class Launcher {
         }
     }
 
+    async verifyDiscordAccount() {
+      let token;
+      let isMember;
+      try {
+          token = await ipcRenderer.invoke('open-discord-auth');
+          isMember = false;
+      } catch (error) {
+        let discorderrdialog = new popup();
+            
+        let dialogResult = await new Promise(resolve => {
+          discorderrdialog.openDialog({
+                title: 'Error de autenticación',
+                content: 'No se ha podido verificar la sesión de Discord quieres volver a intentarlo?',
+                options: true,
+                callback: resolve
+            });
+        });
+    
+        if (dialogResult === 'cancel') {
+          ipcRenderer.send('main-window-close');
+        } else {
+          await this.verifyDiscordAccount();
+        }
+        ipcRenderer.send('main-window-close');
+      }
+
+      if (!isMember) {
+        let discorderrdialog = new popup();
+            
+        let dialogResult = await new Promise(resolve => {
+          discorderrdialog.openDialog({
+                title: 'Error al verificar la cuenta de Discord',
+                content: 'No se ha detectado que seas miembro del servidor de Discord. Por favor, unete e intentalo de nuevo. <br>Quieres volver a intentarlo?',
+                options: true,
+                callback: resolve
+            });
+        });
+    
+        if (dialogResult === 'cancel') {
+          ipcRenderer.send('main-window-close');
+        } else {
+          await this.verifyDiscordAccount();
+        }
+        ipcRenderer.send('main-window-close');
+    } else {
+      await this.startLauncher();
+    }
+  }
     async startLauncher() {
         let accounts = await this.db.readAllData('accounts')
         let configClient = await this.db.readData('configClient')
