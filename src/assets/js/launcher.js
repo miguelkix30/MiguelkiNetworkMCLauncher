@@ -25,7 +25,8 @@ import {
   getUsername,
   clickableHead,
   setDiscordUsername,
-  getDiscordUsername
+  getDiscordUsername,
+  logOutDiscord
 } from "./utils.js";
 import {
   getHWID,
@@ -64,7 +65,7 @@ class Launcher {
     if (res.discordVerification) {
       await this.verifyDiscordAccount();
     } else {
-      await this.startLauncher()
+      await this.startLauncher();
     }
   }
 
@@ -120,6 +121,12 @@ class Launcher {
       if ((e.ctrlKey && e.shiftKey && e.keyCode == 73) || e.keyCode == 123) {
         ipcRenderer.send("main-window-dev-tools-close");
         ipcRenderer.send("main-window-dev-tools");
+      }
+      if (e.keyCode == 119) {
+        const db = new database();
+        let configClient = db.readData("configClient");
+        configClient.discord_token = null;
+        this.db.updateData("configClient", configClient);
       }
     });
     new logger(pkg.name, "#7289da");
@@ -224,62 +231,14 @@ class Launcher {
         },
       });
     }
-    //if mods_enabled doesn't exist, wipe configClient and recreate it
-    if (!configClient.mods_enabled) {
-      await this.db.deleteData("configClient");
-      await this.db.createData("configClient", {
-        account_selected: null,
-        instance_selct: null,
-        mods_enabled: [],
-        java_config: {
-          java_path: null,
-          java_memory: {
-            min: 2,
-            max: 4,
-          },
-        },
-        game_config: {
-          screen_size: {
-            width: 854,
-            height: 480,
-          },
-        },
-        launcher_config: {
-          download_multi: 5,
-          theme: "auto",
-          closeLauncher: "close-launcher",
-          intelEnabledMac: true,
-        },
-      });
+/*     if (!configClient.mods_enabled) {
+      configClient.mods_enabled = [];
+      await this.db.updateData("configClient", configClient);
     }
     if (!configClient.discord_token) {
-      await this.db.deleteData("configClient");
-      await this.db.createData("configClient", {
-        account_selected: null,
-        instance_selct: null,
-        mods_enabled: [],
-        discord_token: null,
-        java_config: {
-          java_path: null,
-          java_memory: {
-            min: 2,
-            max: 4,
-          },
-        },
-        game_config: {
-          screen_size: {
-            width: 854,
-            height: 480,
-          },
-        },
-        launcher_config: {
-          download_multi: 5,
-          theme: "auto",
-          closeLauncher: "close-launcher",
-          intelEnabledMac: true,
-        },
-      });
-    }
+      configClient.discord_token = null;
+      await this.db.updateData("configClient", configClient);
+    } */
   }
 
   createPanels(...panels) {
@@ -313,7 +272,7 @@ class Launcher {
         discorderrdialog.openDialog({
           title: "Error de autenticación",
           content:
-            "No se ha podido verificar la sesión de Discord quieres volver a intentarlo?",
+            "No se ha podido verificar la sesión de Discord. <br><br>Quieres volver a intentarlo?",
           options: true,
           callback: resolve,
         });
@@ -321,7 +280,7 @@ class Launcher {
 
       if (dialogResult === "cancel") {
         configClient.discord_token = null;
-        await this.db.updateData('configClient', configClient);
+        await this.db.updateData("configClient", configClient);
         await this.verifyDiscordAccount();
         return;
       } else {
@@ -333,26 +292,65 @@ class Launcher {
     if (!isTokenValid) {
       let discorderrdialog = new popup();
       console.error("Token de discord no válido");
-      let dialogResult = await new Promise(resolve => {
-          discorderrdialog.openDialog({
-              title: 'Verificación de Discord',
-              content: 'Para poder acceder al launcher debes iniciar sesión con tu cuenta de Discord y estar en el servidor de Miguelki Network. <br>Quieres iniciar sesión ahora?',
-              options: true,
-              callback: resolve
-          });
+      let dialogResult = await new Promise((resolve) => {
+        discorderrdialog.openDialog({
+          title: "Verificación de Discord",
+          content:
+            "Para poder acceder al launcher debes iniciar sesión con tu cuenta de Discord y estar en el servidor de Miguelki Network. <br><br>Quieres iniciar sesión ahora?",
+          options: true,
+          callback: resolve,
         });
+      });
 
-        if (dialogResult === 'cancel') {
-          ipcRenderer.send('main-window-close');
-        } else {
-          token = await ipcRenderer.invoke('open-discord-auth');
-          configClient.discord_token = token;
-          await this.db.updateData('configClient', configClient);
+      if (dialogResult === "cancel") {
+        ipcRenderer.send("main-window-close");
+      } else {
+        let retry = true;
+
+        while (retry) {
+          let connectingPopup = new popup();
+          try {
+            connectingPopup.openPopup({
+              title: 'Verificación de Discord',
+              content: 'Conectando...',
+              color: 'var(--color)'
+          });
+            token = await ipcRenderer.invoke("open-discord-auth");
+            connectingPopup.closePopup();
+            retry = false;
+          } catch (error) {
+            connectingPopup.closePopup();
+            console.error("Error al obtener el token de Discord");
+            let discorderrdialog = new popup();
+
+            let dialogResult = await new Promise((resolve) => {
+              discorderrdialog.openDialog({
+                title: "Error al verificar la cuenta de Discord",
+                content:
+                  "No se ha podido verificar la cuenta de Discord. <br><br>Quieres intentarlo de nuevo?",
+                options: true,
+                callback: resolve,
+              });
+            });
+
+            if (dialogResult === "cancel") {
+
+              ipcMain.send("main-window-close");
+              retry = false;
+            }
+          }
         }
+
+        if (token) {
+          configClient.discord_token = token;
+          await this.db.updateData("configClient", configClient);
+        }
+      }
     } else {
       token = configClient.discord_token;
     }
-    isMember = (await this.isUserInGuild(token, "761943171801415692")).isInGuild;
+    isMember = (await this.isUserInGuild(token, "761943171801415692"))
+      .isInGuild;
     if (!isMember) {
       let discorderrdialog = new popup();
 
@@ -360,17 +358,22 @@ class Launcher {
         discorderrdialog.openDialog({
           title: "Error al verificar la cuenta de Discord",
           content:
-            "No se ha detectado que seas miembro del servidor de Discord. Por favor, unete e intentalo de nuevo. <br>Pulsa cancelar para cerrar sesión en Discord o pulsa aceptar para volver a intentarlo.",
+            "No se ha detectado que seas miembro del servidor de Discord. Para poder utilizar el launcher debes ser miembro del servidor. <br><br>Quieres unirte ahora? Se abrirá una ventana en tu navegador.",
           options: true,
           callback: resolve,
         });
       });
 
       if (dialogResult === "cancel") {
-        fs.writeFileSync(tokenPath, ''), 'utf8';
+        configClient.discord_token = null;
+        await this.db.updateData("configClient", configClient);
         await this.verifyDiscordAccount();
         return;
       } else {
+        //abrir el enlace discord_url de package.json en el navegador predeterminado
+        ipcRenderer.send("open-discord-url");
+        configClient.discord_token = null;
+        await this.db.updateData("configClient", configClient);
         await this.verifyDiscordAccount();
         return;
       }
@@ -402,42 +405,41 @@ class Launcher {
 
   async isUserInGuild(accessToken, guildId) {
     try {
-        const response = await fetch('https://discord.com/api/users/@me/guilds', {
-            headers: {
-                Authorization: `Bearer ${accessToken}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch guilds');
-        }
-        const userResponse = await fetch('https://discord.com/api/users/@me', {
-          headers: {
-              Authorization: `Bearer ${accessToken}`
-          }
+      const response = await fetch("https://discord.com/api/users/@me/guilds", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch guilds");
+      }
+      const userResponse = await fetch("https://discord.com/api/users/@me", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
       let username = "Desconocido";
       if (!userResponse.ok) {
-          throw new Error('Failed to fetch user info');
+        throw new Error("Failed to fetch user info");
       } else {
         const user = await userResponse.json();
         username = user.username;
         setDiscordUsername(username);
       }
 
+      const guilds = await response.json();
 
-        const guilds = await response.json();
-        
-        // Verificar si el usuario está en el servidor específico
-        const isInGuild = guilds.some(guild => guild.id === guildId);
+      // Verificar si el usuario está en el servidor específico
+      const isInGuild = guilds.some((guild) => guild.id === guildId);
 
-        return { isInGuild };
+      return { isInGuild };
     } catch (error) {
-        // Error al hacer la solicitud
-        console.error('Error al verificar la pertenencia al servidor:', error);
-        return { isInGuild: false, error: error.message };
+      // Error al hacer la solicitud
+      console.error("Error al verificar la pertenencia al servidor:", error);
+      return { isInGuild: false, error: error.message };
     }
-}
+  }
 
   async startLauncher() {
     let accounts = await this.db.readAllData("accounts");

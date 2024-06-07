@@ -285,7 +285,6 @@ async function toggleMod(modFile, instanceName, isActive) {
     } else {
         console.log(`Desactivando mod opcional, Mod: ${modFile} Instancia: ${instanceName}`);
     }
-    const db = new database();
     let res = await config.GetConfig();
     const appdataPath = await appdata();
     const modPath = path.join(
@@ -316,6 +315,34 @@ async function toggleMod(modFile, instanceName, isActive) {
     }
 }
 
+async function discordAccount() {
+    let discordLogoutBtn = document.querySelector('.discord-logout-btn');
+    let discordLogoutWarning = document.querySelector('.discord-logout-warning');
+    let discordUsername = await getDiscordUsername();
+    let discordUsernameText = document.querySelector('.discord-username-text');
+
+    if (discordUsername !== '') {
+        discordUsernameText.textContent = `Cuenta de discord vinculada: ${discordUsername}`;
+        discordLogoutBtn.addEventListener('click', async () => {
+            discordLogoutBtn.style.display = 'none';
+            logOutDiscord();
+        });
+    } else {
+        discordLogoutBtn.style.display = 'none';
+        discordLogoutWarning.style.display = 'none';
+    }
+}
+
+async function logOutDiscord() {
+    const db = new database();
+    let configClient = await db.readData('configClient')
+    await setDiscordUsername('');
+    configClient.discord_token = null;
+    await db.updateData('configClient', configClient);
+    ipcRenderer.send('app-restart');
+
+}
+
 export {
     appdata as appdata,
     changePanel as changePanel,
@@ -339,6 +366,8 @@ export {
     getClickeableHead as getClickeableHead,
     toggleModsForInstance as toggleModsForInstance,
     getDiscordUsername as getDiscordUsername,
-    setDiscordUsername as setDiscordUsername
+    setDiscordUsername as setDiscordUsername,
+    discordAccount as discordAccount,
+    logOutDiscord as logOutDiscord
 }
 window.setVideoSource = setVideoSource;

@@ -153,6 +153,15 @@ ipcMain.on('create-register-window', () => {
     registerWin.loadURL(pkg.azuriom_url + 'user/register');
 });
 
+ipcMain.on('open-discord-url', () => {
+    require('electron').shell.openExternal(pkg.discord_url);
+});
+
+ipcMain.on('app-restart', () => {
+    app.relaunch();
+    app.quit();
+});
+
 ipcMain.handle('open-discord-auth', async () => {
     return new Promise((resolve, reject) => {
         authToken = null;
@@ -174,16 +183,12 @@ ipcMain.handle('open-discord-auth', async () => {
 
         discordWin.on('closed', () => {
             console.log("Ventana de Discord cerrada");
-            const accessToken = authToken;
-            //si el contenido del archivo token esta vacio o no existe se rechaza la promesa
-            if (!accessToken) {
-                stopServer();
-                reject(null);
-            } else if (accessToken !== "") {
-                stopServer();
-                resolve(accessToken);
-            }
             stopServer();
+            if (!authToken || authToken === "" || authToken === null) {
+                reject(new Error('No se recibió un token de Discord.'));
+            } else {
+                resolve(authToken);
+            }
         });
     });
 });

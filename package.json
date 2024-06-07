@@ -2,7 +2,7 @@
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
     "version": "3.1.6",
-    "sub_version": "",
+    "sub_version": "b",
     "changelog": "Añadida la verificación de Discord. Ahora se pedirá ser miembro de el servidor de Miguelki Network para poder jugar.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
@@ -14,6 +14,7 @@
     "url": "http://node1.miguelkinetwork.fun:25565/",
     "store_url": "https://minecraft.miguelkinetwork.fun/shop/",
     "azuriom_url": "https://minecraft.miguelkinetwork.fun/",
+    "discord_url": "https://dsc.gg/miguelkinetwork",
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",
         "dev": "cross-env-shell DEV_TOOL=open nodemon --exec npm start",

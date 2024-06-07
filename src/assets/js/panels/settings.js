@@ -3,7 +3,7 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 
-import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead } from '../utils.js'
+import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead, getDiscordUsername } from '../utils.js'
 const { ipcRenderer } = require('electron');
 const os = require('os');
 

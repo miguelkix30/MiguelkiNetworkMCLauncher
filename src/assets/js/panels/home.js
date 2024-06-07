@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance } from '../utils.js'
+import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount } from '../utils.js'
 import { getHWID, checkHWID, getFetchError } from '../HWIDSystem.js';
 
 // cambiar información de la actividad de discord en el launcher
@@ -58,7 +58,7 @@ class Home {
         this.startNotificationCheck()
         this.socialLick()
         this.instancesSelect()
-        document.querySelector('.settings-btn').addEventListener('click', e => changePanel('settings'))
+        document.querySelector('.settings-btn').addEventListener('click', e => discordAccount() && changePanel('settings'))
         document.querySelector('.player-options').addEventListener('click', e => clickHead())
         this.startModsButton()
     }
