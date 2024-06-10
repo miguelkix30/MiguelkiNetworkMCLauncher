@@ -349,8 +349,16 @@ class Launcher {
     } else {
       token = configClient.discord_token;
     }
+    let verifypopup = new popup();
+    verifypopup.openPopup({
+      title: "Verificando cuenta de Discord...",
+      content: "Por favor, espera un momento...",
+      color: "var(--color)",
+      background: false,
+    });
     isMember = (await this.isUserInGuild(token, "761943171801415692"))
       .isInGuild;
+      verifypopup.closePopup();
     if (!isMember) {
       let discorderrdialog = new popup();
 

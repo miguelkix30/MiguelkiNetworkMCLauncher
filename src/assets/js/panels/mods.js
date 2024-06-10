@@ -1,5 +1,4 @@
-import { config, database, logger, changePanel, setInstanceBackground, pkg, popup } from '../utils.js'
-const { ipcRenderer } = require('electron');
+import { config, database, logger, changePanel} from '../utils.js'
 
 class Mods {
     static id = "mods";
@@ -8,7 +7,6 @@ class Mods {
         this.db = new database();
         const dropdownButton = document.querySelector('.dropdown-instance-select button');
         const dropdown = document.querySelector('.dropdown-instance-select-content');
-        const modsPanel = document.querySelector('.mods-panel .mods-list');
         const dropdownSpan = dropdownButton.querySelector('span');
         
         dropdownSpan.textContent = '\u25BC';
@@ -20,23 +18,20 @@ class Mods {
         })
 
         dropdownButton.addEventListener('click', async () => {
-            // Limpiar el contenido del dropdown
             dropdown.innerHTML = '';
 
-            // Cargar las instancias
             const instances = await this.getInstancesWithOptionalMods();
             instances.forEach(instance => {
                 const dropdownItem = document.createElement('a');
                 dropdownItem.textContent = instance.name;
                 dropdownItem.addEventListener('click', () => {
-                    this.selectInstance(instance, modsPanel);
+                    this.selectInstance(instance);
                     document.querySelector('.dropdown-instance-select button a').innerHTML = instance.name;
                     dropdown.style.maxHeight = null;
                 });
                 dropdown.appendChild(dropdownItem);
             });
 
-            // Alternar la visibilidad del dropdown
             if (dropdown.style.maxHeight){
                 dropdown.style.maxHeight = null;
                 dropdownSpan.style.transform = 'rotate(0deg)';
@@ -63,7 +58,8 @@ class Mods {
         return filteredInstances;
     }
 
-    async selectInstance(instance, modsPanel) {
+    async selectInstance(instance) {
+        let modsPanel = document.querySelector('.mods-panel .mods-list');
         modsPanel.innerHTML = '';
         let configClient = await this.db.readData('configClient')
     
