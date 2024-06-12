@@ -26,7 +26,6 @@ import {
   clickableHead,
   setDiscordUsername,
   getDiscordUsername,
-  logOutDiscord
 } from "./utils.js";
 import {
   getHWID,
@@ -489,7 +488,7 @@ class Launcher {
             continue;
           } else {
             let hwid = await getHWID();
-            dname = await getDiscordUsername();
+            let dname = await getDiscordUsername();
             await sendDiscordMessage(account.name, hwid, dname);
             setUsername(account.name);
           }
@@ -500,6 +499,10 @@ class Launcher {
           if (account_ID == account_selected) {
             accountSelect(refresh_accounts);
             clickableHead(false);
+            let hwid = await getHWID();
+              let dname = await getDiscordUsername();
+              await sendDiscordMessage(account.name, hwid, dname);
+              setUsername(account.name);
           }
         } else if (account.meta.type == "AZauth") {
           console.log(
@@ -552,7 +555,7 @@ class Launcher {
             continue;
           } else {
             let hwid = await getHWID();
-            dname = await getDiscordUsername();
+            let dname = await getDiscordUsername();
             await sendDiscordMessage(account.name, hwid, dname);
             setUsername(account.name);
           }
@@ -563,6 +566,10 @@ class Launcher {
           if (account_ID == account_selected) {
             accountSelect(refresh_accounts);
             clickableHead(true);
+            let hwid = await getHWID();
+              let dname = await getDiscordUsername();
+              await sendDiscordMessage(account.name, hwid, dname);
+              setUsername(account.name);
           }
         } else if (account.meta.type == "Mojang") {
           console.log(
@@ -583,6 +590,10 @@ class Launcher {
             if (account_ID == account_selected) {
               accountSelect(refresh_accounts);
               clickableHead(false);
+              let hwid = await getHWID();
+              let dname = await getDiscordUsername();
+              await sendDiscordMessage(account.name, hwid, dname);
+              setUsername(account.name);
             }
             continue;
           }
@@ -601,7 +612,7 @@ class Launcher {
             continue;
           } else {
             let hwid = await getHWID();
-            dname = await getDiscordUsername();
+            let dname = await getDiscordUsername();
             await sendDiscordMessage(account.name, hwid, dname);
             setUsername(account.name);
           }

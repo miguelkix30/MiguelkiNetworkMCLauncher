@@ -424,12 +424,15 @@
     appearance: none;
     height: 10px;
     margin: 0.5rem 0;
+    width: 15rem;
 }
 
 .progress-bar::-webkit-progress-bar {
-    background-color: var(--background);
-    border: solid 1px var(--element-color);
+    background: rgba( 0, 0, 0, 0.25 );
+    border: 1px solid rgba(255, 255, 255, 0.5);
     border-radius: 10px;
+    backdrop-filter: blur( 8px );
+    -webkit-backdrop-filter: blur( 5px );
 }
 
 .progress-bar::-webkit-progress-value {
@@ -439,7 +442,7 @@
 
 .button-container {
     display: flex;
-    justify-content: space-between; /* Optional: Adds space between the buttons */
+    justify-content: space-between;
 }
 
 .settings-btn {
