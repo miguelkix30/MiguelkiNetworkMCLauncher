@@ -2,8 +2,8 @@
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
     "version": "3.1.6",
-    "sub_version": "d",
-    "changelog": "Añadida la verificación de Discord. Ahora se pedirá ser miembro de el servidor de Miguelki Network para poder jugar.",
+    "sub_version": "e",
+    "changelog": "Añadida la verificación de Discord. Ahora se pedirá ser miembro de el servidor de Miguelki Network para poder jugar.<br>También, se han corregido varios errores con la consola.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {

@@ -562,10 +562,16 @@ class Home {
                     ]
                 })
             }
-            new logger('Minecraft', '#36b030');
+            let minecraftLogger = logger2.minecraft;
+            if (e.includes('WARN')) {
+                minecraftLogger.warn(e);
+            } else if (e.includes('ERROR')) {
+                minecraftLogger.error(e);
+            } else {
+                minecraftLogger.log(e);
+            }
             ipcRenderer.send('main-window-progress-load')
             infoStarting.innerHTML = `Iniciando...`
-            console.log(e);
         })
 
         launch.on('close', code => {

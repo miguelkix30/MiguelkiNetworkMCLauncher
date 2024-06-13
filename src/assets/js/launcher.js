@@ -486,11 +486,6 @@ class Launcher {
               `[Account] ${account.name}: ${refresh_accounts.errorMessage}`
             );
             continue;
-          } else {
-            let hwid = await getHWID();
-            let dname = await getDiscordUsername();
-            await sendDiscordMessage(account.name, hwid, dname);
-            setUsername(account.name);
           }
 
           refresh_accounts.ID = account_ID;
@@ -553,11 +548,6 @@ class Launcher {
               `[Account] ${account.name}: ${refresh_accounts.message}`
             );
             continue;
-          } else {
-            let hwid = await getHWID();
-            let dname = await getDiscordUsername();
-            await sendDiscordMessage(account.name, hwid, dname);
-            setUsername(account.name);
           }
 
           refresh_accounts.ID = account_ID;
@@ -610,11 +600,6 @@ class Launcher {
               `[Account] ${account.name}: ${refresh_accounts.errorMessage}`
             );
             continue;
-          } else {
-            let hwid = await getHWID();
-            let dname = await getDiscordUsername();
-            await sendDiscordMessage(account.name, hwid, dname);
-            setUsername(account.name);
           }
 
           refresh_accounts.ID = account_ID;
@@ -662,36 +647,42 @@ class Launcher {
   initLogs() {
     let logs = document.querySelector(".log-bg");
 
-    let block = false;
-    document.addEventListener("keydown", (e) => {
-      if (
-        ((e.ctrlKey && e.shiftKey && e.keyCode == 73) ||
-          event.keyCode == 123) &&
-        !block
-      ) {
-        logs.classList.toggle("show");
-        block = true;
-      }
-    });
+let block = false;
+document.addEventListener("keydown", (e) => {
+  if (
+    ((e.ctrlKey && e.shiftKey && e.keyCode == 73) ||
+      event.keyCode == 123) &&
+    !block
+  ) {
+    logs.classList.toggle("show");
+    block = true;
+  }
+});
 
-    document.addEventListener("keyup", (e) => {
-      if ((e.ctrlKey && e.shiftKey && e.keyCode == 73) || event.keyCode == 123)
-        block = false;
-    });
+document.addEventListener("keydown", (e) => {
+  if (e.key === 'Escape' && logs.classList.contains('show')) {
+    logs.classList.toggle("show");
+  }
+});
 
-    let close = document.querySelector(".log-close");
+document.addEventListener("keyup", (e) => {
+  if ((e.ctrlKey && e.shiftKey && e.keyCode == 73) || event.keyCode == 123)
+    block = false;
+});
 
-    close.addEventListener("click", () => {
-      logs.classList.toggle("show");
-    });
+let close = document.querySelector(".log-close");
 
-    /* launcher logs */
+close.addEventListener("click", () => {
+  logs.classList.toggle("show");
+});
 
-    let launcher = document.querySelector("#launcher.logger");
+/* launcher logs */
 
-    launcher.querySelector(".header").addEventListener("click", () => {
-      launcher.classList.toggle("open");
-    });
+let launcher = document.querySelector("#launcher.logger");
+
+launcher.querySelector(".header").addEventListener("click", () => {
+  launcher.classList.toggle("open");
+});
 
     let lcontent = launcher.querySelector(".content");
 
