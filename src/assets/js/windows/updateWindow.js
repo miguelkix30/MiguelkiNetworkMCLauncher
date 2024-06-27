@@ -6,6 +6,7 @@
 "use strict";
 const { app, BrowserWindow, Menu } = require("electron");
 const path = require("path");
+const pkg = require(path.join(`${app.getAppPath()}/package.json`));
 const os = require("os");
 let dev = process.env.DEV_TOOL === 'open';
 let updateWindow = undefined;
@@ -22,6 +23,10 @@ function destroyWindow() {
 
 function createWindow() {
     destroyWindow();
+
+    let imageUrl = `${pkg.url}launcher/images-launcher`;
+    let backupImagePath = './src/assets/images/background/updatebg.jpg'; // Path to backup image
+
     updateWindow = new BrowserWindow({
         title: "Miguelki Network Launcher",
         width: 400,
@@ -38,6 +43,16 @@ function createWindow() {
     Menu.setApplicationMenu(null);
     updateWindow.setMenuBarVisibility(false);
     updateWindow.loadFile(path.join(`${app.getAppPath()}/src/index.html`));
+    updateWindow.webContents.executeJavaScript(`
+            var img = new Image();
+            img.onload = function() {
+                document.body.style.backgroundImage = 'url("${imageUrl}")';
+            };
+            img.onerror = function() {
+                document.body.style.backgroundImage = '${backupImagePath}';
+            };
+            img.src = "${imageUrl}";
+        `);
     updateWindow.once('ready-to-show', () => {
         if (updateWindow) {
             if (dev) updateWindow.webContents.openDevTools({ mode: 'detach' })

@@ -144,6 +144,17 @@ async function appdata() {
 async function addAccount(data) {
     let skin = false
     if (data?.profile?.skins[0]?.base64) skin = await new skin2D().creatHeadTexture(data.profile.skins[0].base64);
+    else {
+        try {
+            if (data?.name) {
+                let response = await fetch(`https://mineskin.eu/helm/${data.name}`);
+                if (response.ok) skin = `https://mineskin.eu/helm/${data.name}`;
+                else skin = false;
+            }
+        } catch (error) {
+            skin = false;
+        }
+    }
     let div = document.createElement("div");
     div.classList.add("account");
     div.id = data.ID;
@@ -166,8 +177,21 @@ async function accountSelect(data) {
 
     if (activeAccount) activeAccount.classList.toggle('account-select');
     if (account) account.classList.add('account-select');
-    if (data?.profile?.skins[0]?.base64) headplayer(data.profile.skins[0].base64);
+    if (data?.profile?.skins[0]?.base64) headplayer(data.profile.skins[0].base64); 
+    else if (data?.name) {
+        let img = new Image();
+        img.onerror = function() {
+            console.warn("Error al cargar la imagen de la cabeza del jugador, se cargará la imagen por defecto");
+            document.querySelector(".player-head").style.backgroundImage = 'url("assets/images/default/setve.png")';
+        }
+        img.onload = function() {
+            document.querySelector(".player-head").style.backgroundImage = `url(${img.src})`;
+        }
+        img.src = `https://mineskin.eu/helm/${data.name}`;
+    }
+    if (data.name) document.querySelector('.player-name').innerHTML = data.name;
 }
+
 
 async function headplayer(skinBase64) {
     let skin = await new skin2D().creatHeadTexture(skinBase64);

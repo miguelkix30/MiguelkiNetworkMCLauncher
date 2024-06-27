@@ -69,11 +69,25 @@
 .input-login .email,
 .input-login .password,
 .A2F {
-    color: var(--color);
-    background: none;
-    border: solid 2px var(--element-color);
-    border-radius: 30px;
-    width: 50%;
-    padding: 0.4rem 1rem;
-    margin-top: 10px;
+    border: 2px solid transparent;
+    width: 18em;
+    height: 2.5em;
+    padding-left: 0.8em;
+    margin-top: 0.8em;
+    outline: none;
+    overflow: hidden;
+    background-color: #F3F3F3;
+    border-radius: 18px;
+    transition: all 0.5s;
+}
+
+.input-login .email:focus,
+.input-login .password:focus,
+.A2F:focus,
+.input-login .email:hover,
+.input-login .password:hover,
+.A2F:hover {
+    border: 2px solid #4A9DEC;
+    box-shadow: 0px 0px 0px 7px rgb(74, 157, 236, 20%);
+    background-color: white;
 }

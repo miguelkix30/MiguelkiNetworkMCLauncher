@@ -618,6 +618,11 @@
     box-sizing: border-box;
 }
 
+.player-name {
+    width: 0px;
+    max-width: 0px;
+}
+
 .head-frame {
     position: relative;
     overflow: hidden;
@@ -627,6 +632,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-right: 0.5rem;
 }
 
 .head-frame::before {
