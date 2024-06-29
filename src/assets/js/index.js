@@ -1,14 +1,8 @@
-/**
- * @author Luuxis
- * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
- */
-
 const { ipcRenderer, shell } = require('electron');
 const pkg = require('../package.json');
 const os = require('os');
 import { config, database } from './utils.js';
 const nodeFetch = require("node-fetch");
-
 
 class Splash {
     constructor() {
@@ -20,16 +14,29 @@ class Splash {
         document.addEventListener('DOMContentLoaded', async () => {
             let databaseLauncher = new database();
             let configClient = await databaseLauncher.readData('configClient');
-            let theme = configClient?.launcher_config?.theme || "auto"
-            let isDarkTheme = await ipcRenderer.invoke('is-dark-theme', theme).then(res => res)
+            let theme = configClient?.launcher_config?.theme || "auto";
+            let isDarkTheme = await ipcRenderer.invoke('is-dark-theme', theme).then(res => res);
             document.body.className = isDarkTheme ? 'dark global' : 'light global';
-            if (process.platform == 'win32') ipcRenderer.send('update-window-progress-load')
-            this.startAnimation()
+            if (process.platform == 'win32') ipcRenderer.send('update-window-progress-load');
+            this.startAnimation();
         });
     }
 
+    async fetchSplashes() {
+        try {
+            const url = `${pkg.url}launcher/config-launcher/splashes.json`;
+            const response = await nodeFetch(url);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error al cagar los splashes, usando los default:', error);
+            return null;
+        }
+    }
+
     async startAnimation() {
-        let splashes = [
+        let defaultSplashes = [
             { "message": "Miguelki Network", "author": "Miguelki" },
             { "message": "Das Leben ist nicht Schwäche verzeihen", "author": "Adolf Hitler" },
             { "message": "1 de cada 2 personas son gays.", "author": "Miguelki" },
@@ -59,6 +66,16 @@ class Splash {
             { "message": "Cuidaoo", "author": "Miguelillo el impostor" },
             { "message": "No dejes que el miedo se interponga en tu camino", "author": "Dixo (autista mode)" }
         ];
+
+        let splashes = await this.fetchSplashes();
+
+        if (splashes && Array.isArray(splashes) && splashes.length > 0) {
+            console.log("Using fetched splashes");
+        } else {
+            console.log("Using default splashes");
+            splashes = defaultSplashes;
+        }
+
         let splash = splashes[Math.floor(Math.random() * splashes.length)];
         this.splashMessage.textContent = splash.message;
         this.splashAuthor.children[0].textContent = splash.author;
@@ -87,23 +104,22 @@ class Splash {
             if (os.platform() == 'win32') {
                 this.toggleProgress();
                 ipcRenderer.send('start-update');
-            }
-            else return this.dowloadUpdate();
-        })
+            } else return this.dowloadUpdate();
+        });
 
         ipcRenderer.on('error', (event, err) => {
             if (err) return this.shutdown(`${err.message}`);
-        })
+        });
 
         ipcRenderer.on('download-progress', (event, progress) => {
-            ipcRenderer.send('update-window-progress', { progress: progress.transferred, size: progress.total })
+            ipcRenderer.send('update-window-progress', { progress: progress.transferred, size: progress.total });
             this.setProgress(progress.transferred, progress.total);
-        })
+        });
 
         ipcRenderer.on('update-not-available', () => {
             console.error("Actualización no disponible");
             this.maintenanceCheck();
-        })
+        });
     }
 
     getLatestReleaseForOS(os, preferredFormat, asset) {
@@ -129,14 +145,12 @@ class Splash {
         if (os.platform() == 'darwin') latest = this.getLatestReleaseForOS('mac', '.dmg', latestRelease);
         else if (os == 'linux') latest = this.getLatestReleaseForOS('linux', '.appimage', latestRelease);
 
-
         this.setStatus(`Actualización disponible<br><div class="download-update">Descargar</div>`);
         document.querySelector(".download-update").addEventListener("click", () => {
             shell.openExternal(latest.browser_download_url);
             return this.shutdown("Descargando...");
         });
     }
-
 
     async maintenanceCheck() {
         config.GetConfig().then(res => {
@@ -145,7 +159,7 @@ class Splash {
         }).catch(e => {
             console.error(e);
             return this.shutdown("No se ha podido conectar al servidor.<br>Por favor, inténtalo más tarde.");
-        })
+        });
     }
 
     startLauncher() {
@@ -184,7 +198,6 @@ function sleep(ms) {
 document.addEventListener("keydown", (e) => {
     if (e.ctrlKey && e.shiftKey && e.keyCode == 73 || e.keyCode == 123) {
         /* ipcRenderer.send("update-window-dev-tools"); */
-        
     }
-})
+});
 new Splash();
