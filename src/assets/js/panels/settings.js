@@ -3,9 +3,9 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 
-import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead, getDiscordUsername } from '../utils.js'
-const { ipcRenderer } = require('electron');
+import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead } from '../utils.js'
 const os = require('os');
+const { shell } = require('electron');
 
 class Settings {
     static id = "settings";
@@ -18,6 +18,7 @@ class Settings {
         this.javaPath()
         this.resolution()
         this.launcher()
+        this.socials()
     }
 
     navBTN() {
@@ -169,7 +170,7 @@ class Settings {
         javaPathText.textContent = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}/runtime`;
 
         let configClient = await this.db.readData('configClient')
-        let javaPath = configClient?.java_config?.java_path || 'Utilice la versión de java suministrada con el lanzador';
+        let javaPath = configClient?.java_config?.java_path || 'Utilice la versión de java suministrada con el launcher';
         let javaPathInputTxt = document.querySelector(".java-path-input-text");
         let javaPathInputFile = document.querySelector(".java-path-input-file");
         javaPathInputTxt.value = javaPath;
@@ -195,7 +196,7 @@ class Settings {
 
         document.querySelector(".java-path-reset").addEventListener("click", async () => {
             let configClient = await this.db.readData('configClient')
-            javaPathInputTxt.value = 'Utilice la versión de java suministrada con el lanzador';
+            javaPathInputTxt.value = 'Utilice la versión de java suministrada con el launcher';
             configClient.java_config.java_path = null
             await this.db.updateData('configClient', configClient);
         });
@@ -325,6 +326,16 @@ class Settings {
                 }
             }
         })
+    }
+
+    async socials() {
+        document.querySelectorAll('.external').forEach(link => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const url = link.getAttribute('href');
+                shell.openExternal(url);
+            });
+        });
     }
 }
 export default Settings;

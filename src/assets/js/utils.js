@@ -17,6 +17,7 @@ import { skin2D } from './utils/skin.js';
 import slider from './utils/slider.js';
 let username = '';
 let DiscordUsername = '';
+let DiscordPFP = '';
 let headButton = false;
 async function setBackground(theme) {
     theme = "dark";
@@ -278,6 +279,14 @@ async function setDiscordUsername(name) {
     DiscordUsername = name;
 }
 
+async function getDiscordPFP() {
+    return DiscordPFP;
+}
+
+async function setDiscordPFP(pfp) {
+    DiscordPFP = pfp;
+}
+
 async function toggleModsForInstance(instanceName) {
     const instances = await config.getInstanceList();
     const instance = instances.find(i => i.name === instanceName);
@@ -343,10 +352,13 @@ async function discordAccount() {
     let discordLogoutBtn = document.querySelector('.discord-logout-btn');
     let discordLogoutWarning = document.querySelector('.discord-logout-warning');
     let discordUsername = await getDiscordUsername();
-    let discordUsernameText = document.querySelector('.discord-username-text');
+    let discordUsernameText = document.querySelector('.profile-username');
+    let discordPFP = await getDiscordPFP();
+    let discordPFPElement = document.querySelector('.profile-image');
 
     if (discordUsername !== '') {
-        discordUsernameText.textContent = `Cuenta de discord vinculada: ${discordUsername}`;
+        discordUsernameText.textContent = discordUsername;
+        discordPFPElement.src = discordPFP;
         discordLogoutBtn.addEventListener('click', async () => {
             discordLogoutBtn.style.display = 'none';
             logOutDiscord();
@@ -392,6 +404,8 @@ export {
     getDiscordUsername as getDiscordUsername,
     setDiscordUsername as setDiscordUsername,
     discordAccount as discordAccount,
-    logOutDiscord as logOutDiscord
+    logOutDiscord as logOutDiscord,
+    getDiscordPFP as getDiscordPFP,
+    setDiscordPFP as setDiscordPFP
 }
 window.setVideoSource = setVideoSource;

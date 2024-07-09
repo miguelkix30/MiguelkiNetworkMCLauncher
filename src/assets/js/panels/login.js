@@ -40,7 +40,7 @@ class Login {
     }
 
     async getMicrosoft() {
-        console.log('Initializing Microsoft login...');
+        console.log('Inicializando inicio de sesión a través de Microsoft...');
         let popupLogin = new popup();
         let loginHome = document.querySelector('.login-home');
         let microsoftBtn = document.querySelector('.connect-home');
@@ -74,7 +74,7 @@ class Login {
     }
 
     async getCrack() {
-        console.log('Initializing offline login...');
+        console.log('Inicializando inicio de sesión a través de nombre de usuario...');
         let popupLogin = new popup();
         let loginOffline = document.querySelector('.login-offline');
 
@@ -150,7 +150,7 @@ class Login {
     }
 
     async getAZauth() {
-        console.log('Initializing AZauth login...');
+        console.log('Inicializando inicio de sesión a través de MKNetworkID...');
         let AZauthClient = new AZauth(this.config.online);
         let PopupLogin = new popup();
         let loginAZauth = document.querySelector('.login-AZauth');

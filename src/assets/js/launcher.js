@@ -26,6 +26,7 @@ import {
   clickableHead,
   setDiscordUsername,
   getDiscordUsername,
+  setDiscordPFP,
 } from "./utils.js";
 import {
   getHWID,
@@ -35,7 +36,7 @@ import {
 const { AZauth, Microsoft, Mojang } = require("minecraft-java-core");
 
 // libs
-const { ipcRenderer, ipcMain } = require("electron");
+const { ipcRenderer } = require("electron");
 const fs = require("fs");
 const path = require("path");
 let dev = process.env.NODE_ENV === "dev";
@@ -47,7 +48,7 @@ class Launcher {
     if (dev) this.initLog();
     else this.initWindow();
 
-    console.log("Initializing Launcher...");
+    console.log("Iniciando Launcher...");
     await setVideoSource();
     this.shortcut();
     await setBackground();
@@ -169,7 +170,7 @@ class Launcher {
   }
 
   initFrame() {
-    console.log("Initializing Frame...");
+    console.log("Iniciando Interfaz...");
     document.querySelector(".frame").classList.toggle("hide");
     document.querySelector(".dragbar").classList.toggle("hide");
 
@@ -200,7 +201,7 @@ class Launcher {
   }
 
   async initConfigClient() {
-    console.log("Initializing Config Client...");
+    console.log("Inicializando Config Client...");
     let configClient = await this.db.readData("configClient");
 
     if (!configClient) {
@@ -243,7 +244,7 @@ class Launcher {
   createPanels(...panels) {
     let panelsElem = document.querySelector(".panels");
     for (let panel of panels) {
-      console.log(`Initializing ${panel.name} Panel...`);
+      console.log(`Iniciando panel ${panel.name}...`);
       let div = document.createElement("div");
       div.classList.add("panel", panel.id);
       div.innerHTML = fs.readFileSync(
@@ -262,8 +263,8 @@ class Launcher {
     let isTokenValid;
 
     try {
-      isTokenValid = await this.checkTokenValidity();
       console.log("Verificando token de discord...");
+      isTokenValid = await this.checkTokenValidity();
     } catch (error) {
       let discorderrdialog = new popup();
 
@@ -302,6 +303,7 @@ class Launcher {
       });
 
       if (dialogResult === "cancel") {
+        await sendLogoutDiscordMessage();
         ipcRenderer.send("main-window-close");
       } else {
         let retry = true;
@@ -311,7 +313,7 @@ class Launcher {
           try {
             connectingPopup.openPopup({
               title: 'Verificación de Discord',
-              content: 'Conectando...',
+              content: 'Esperando a la autorización...',
               color: 'var(--color)'
           });
             token = await ipcRenderer.invoke("open-discord-auth");
@@ -333,8 +335,8 @@ class Launcher {
             });
 
             if (dialogResult === "cancel") {
-
-              ipcMain.send("main-window-close");
+              await sendLogoutDiscordMessage();
+              ipcRenderer.send('main-window-close');
               retry = false;
             }
           }
@@ -355,7 +357,7 @@ class Launcher {
       color: "var(--color)",
       background: false,
     });
-    isMember = (await this.isUserInGuild(token, "761943171801415692"))
+    isMember = (await this.isUserInGuild(token, pkg.discord_server_id))
       .isInGuild;
       verifypopup.closePopup();
     if (!isMember) {
@@ -377,7 +379,6 @@ class Launcher {
         await this.verifyDiscordAccount();
         return;
       } else {
-        //abrir el enlace discord_url de package.json en el navegador predeterminado
         ipcRenderer.send("open-discord-url");
         configClient.discord_token = null;
         await this.db.updateData("configClient", configClient);
@@ -427,22 +428,23 @@ class Launcher {
         },
       });
       let username = "Desconocido";
+      let userpfp = "https://cdn.discordapp.com/embed/avatars/0.png?size=1024";
       if (!userResponse.ok) {
         throw new Error("Failed to fetch user info");
       } else {
         const user = await userResponse.json();
         username = user.username;
-        setDiscordUsername(username);
+        userpfp = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}?size=1024`;
       }
+      setDiscordPFP(userpfp);
+      setDiscordUsername(username);
 
       const guilds = await response.json();
 
-      // Verificar si el usuario está en el servidor específico
       const isInGuild = guilds.some((guild) => guild.id === guildId);
 
       return { isInGuild };
     } catch (error) {
-      // Error al hacer la solicitud
       console.error("Error al verificar la pertenencia al servidor:", error);
       return { isInGuild: false, error: error.message };
     }
@@ -463,7 +465,7 @@ class Launcher {
         }
         if (account.meta.type === "Xbox") {
           console.log(
-            `Account Type: ${account.meta.type} | Username: ${account.name}`
+            `Plataforma: ${account.meta.type} | Usuario: ${account.name}`
           );
           popupRefresh.openPopup({
             title: "Conectando...",
@@ -501,7 +503,7 @@ class Launcher {
           }
         } else if (account.meta.type == "AZauth") {
           console.log(
-            `Account Type: ${account.meta.type} | Username: ${account.name}`
+            `Plataforma: MKNetworkID | Usuario: ${account.name}`
           );
           popupRefresh.openPopup({
             title: "Conectando...",
@@ -563,7 +565,7 @@ class Launcher {
           }
         } else if (account.meta.type == "Mojang") {
           console.log(
-            `Account Type: ${account.meta.type} | Username: ${account.name}`
+            `Plataforma: ${account.meta.type} | Usuario: ${account.name}`
           );
           popupRefresh.openPopup({
             title: "Connectando...",
@@ -607,7 +609,7 @@ class Launcher {
           await addAccount(refresh_accounts);
           if (account_ID == account_selected) accountSelect(refresh_accounts);
         } else {
-          console.error(`[Account] ${account.name}: Account Type Not Found`);
+          console.error(`[Account] ${account.name}: No se ha encontrado la plataforma de la cuenta.`);
           this.db.deleteData("accounts", account_ID);
           if (account_ID == account_selected) {
             configClient.account_selected = null;

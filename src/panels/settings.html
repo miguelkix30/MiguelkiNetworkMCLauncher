@@ -2,23 +2,36 @@
     <div class="nav-settings">
         <p>Ajustes</p>
         <div class="nav-box">
-            <div id="account" class="nav-settings-btn active-settings-BTN">CUENTAS</div>
+            <div id="account" class="nav-settings-btn active-settings-BTN">
+                CUENTAS
+            </div>
             <div id="java" class="nav-settings-btn">JAVA</div>
             <div id="resolution" class="nav-settings-btn">JUEGO</div>
             <div id="launcher" class="nav-settings-btn">LAUNCHER</div>
+            <div id="credits" class="nav-settings-btn">CRÉDITOS</div>
             <div id="save" class="nav-settings-btn">VOLVER</div>
         </div>
     </div>
 
     <div id="account-tab" class="container-settings active-container-settings">
         <div class="titre-tab">Cuenta de Discord</div>
-        <div class="settings-elements-box" style="margin: 0;">
+        <div class="settings-elements-box" style="margin: 0">
             <div class="discord-settings">
-                <p class="discord-username-text" style="margin: 0;">Cuenta de discord vinculada: Ninguna</p><br>
-                <p class="discord-logout-warning" style="margin: 0;">Si cierras sesión ahora el launcher se reiniciará.</p><br>
-                <div class="discord-logout-btn" style="margin: 0;">Cerrar sesión</div>
+                <p class="discord-username-text" style="margin: 0;">Cuenta de discord vinculada:</p><br>
+                <div class="profile-card">
+                    <img src="https://i.imgur.com/eqeJDoO.jpg" alt="Perfil de Discord" class="profile-image">
+                    <div class="profile-info">
+                        <p class="profile-username">Nombre de Usuario</p>
+                    </div>
+                </div>
+                <br />
+                <p class="discord-logout-warning" style="margin: 0">
+                    Si cierras sesión ahora el launcher se reiniciará.
+                </p>
+                <br />
+                <div class="discord-logout-btn" style="margin: 0">Cerrar sesión</div>
             </div>
-    </div>
+        </div>
         <div class="titre-tab">Cuentas de Minecraft</div>
         <div class="accounts-list content-scroll">
             <div class="account" id="add">
@@ -34,13 +47,15 @@
         <div class="titre-tab">Configurar la RAM</div>
         <div class="settings-elements-box">
             <div class="setting-text">
-                Definición de la RAM asignada a su juego, una cantidad mayor aumentará el rendimiento de su juego.<br>
-                Tenga en cuenta que debe evitar utilizar una cantidad demasiado grande, ya que puede provocar la pérdida de
-                tus otras aplicaciones.<br><br>
-                <b>-RAM máxima:</b> Indica la cantidad total de RAM asignada a tu juego. Se recomienda que no
-                exceda el 50% de la cantidad total de RAM de su PC.<br><br>
-                <b>-RAM mínima:</b> Indica la cantidad mínima de RAM asignada cuando se inicia el juego. Se
-                recomienda no utilizar más de 4GB para este valor.
+                Definición de la RAM asignada a su juego, una cantidad mayor aumentará
+                el rendimiento de su juego.<br />
+                Tenga en cuenta que debe evitar utilizar una cantidad demasiado grande,
+                ya que puede provocar la pérdida de tus otras aplicaciones.<br /><br />
+                <b>-RAM máxima:</b> Indica la cantidad total de RAM asignada a tu juego.
+                Se recomienda que no exceda el 50% de la cantidad total de RAM de su
+                PC.<br /><br />
+                <b>-RAM mínima:</b> Indica la cantidad mínima de RAM asignada cuando se
+                inicia el juego. Se recomienda no utilizar más de 4GB para este valor.
             </div>
             <div class="settings-elements content-evenly">
                 <div class="memory-slider" min="0.5" max="8" step="0.5">
@@ -55,8 +70,9 @@
                     </div>
                 </div>
                 <div class="ram-info-block">
-                    <b>Tienes un total de <span id="total-ram">0 GB</span> RAM.</b><br>
-                    <b>Tienes un total de <span id="free-ram">0 GB</span> RAM disponible.</b>
+                    <b>Tienes un total de <span id="total-ram">0 GB</span> RAM.</b><br />
+                    <b>Tienes un total de <span id="free-ram">0 GB</span> RAM
+                        disponible.</b>
                 </div>
             </div>
         </div>
@@ -64,13 +80,13 @@
         <div class="titre-tab">Ubicación de Java</div>
         <div class="settings-elements-box">
             <div class="setting-text">
-                El lanzador utiliza una versión incrustada de Java.<br>
-                Esta versión está disponible en:<br><span class="java-path-txt"></span><br>
-                Sin embargo, puede especificar su propio ejecutable si su juego requiere una versión más reciente de java.
-                versión reciente.
+                El launcher contiene todas las versiones de Java necesarias.<br />
+                Estas versiones están disponibles en:<br /><span class="java-path-txt"></span><br>
+                Sin embargo, puede especificar su propio ejecutable si su juego requiere
+                una versión más reciente de java.
             </div>
             <div class="settings-elements content-evenly">
-                <input type="text" class="java-path-input-text" disabled>
+                <input type="text" class="java-path-input-text" disabled />
                 <input type="file" class="java-path-input-file" accept="application/octet-stream" />
                 <div class="java-path-box">
                     <div class="java-path-set java-path-btn">Cambiar</div>
@@ -84,15 +100,16 @@
         <div class="titre-tab">Ajustes de resolución de Minecraft</div>
         <div class="settings-elements-box">
             <div class="setting-text">
-                Define una resolución personalizada para el juego que se adapte a tu pantalla.
-                Por defecto, el juego se inicia en 854 X 480,<br>puede modificar este valor para obtener un confort de juego óptimo.
-                comodidad. La resolución ideal es de 1280 x 720.
+                Define una resolución personalizada para el juego que se adapte a tu
+                pantalla. Por defecto, el juego se inicia en 854 X 480,<br />puede
+                modificar este valor para obtener un confort de juego óptimo. comodidad.
+                La resolución ideal es de 1280 x 720.
             </div>
             <div class="settings-elements content-center">
                 <div class="input-size-element">
-                    <input type="number" class="width-size input-resolution">
+                    <input type="number" class="width-size input-resolution" />
                     <div class="size-cross"></div>
-                    <input type="number" class="height-size input-resolution">
+                    <input type="number" class="height-size input-resolution" />
                 </div>
                 <div class="size-reset size-btn">Por defecto</div>
             </div>
@@ -103,15 +120,16 @@
         <div class="titre-tab">Parámetros de descarga</div>
         <div class="settings-elements-box">
             <div class="setting-text">
-                Este parámetro determina el número máximo de archivos que pueden descargarse simultáneamente al actualizar o descargar recursos.<br><br>
+                Este parámetro determina el número máximo de archivos que pueden
+                descargarse simultáneamente al actualizar o descargar recursos.<br /><br />
 
                 Tenga en cuenta que el cambio de esta configuración puede afectar al
-                rendimiento de la descarga.<br>
-                Se recomienda no sobrepasar los límites recomendados por defecto,<br>
+                rendimiento de la descarga.<br />
+                Se recomienda no sobrepasar los límites recomendados por defecto,<br />
                 a menos que tenga problemas específicos de conectividad.
             </div>
             <div class="settings-elements content-center">
-                <input type="number" class="max-files input-max-files">
+                <input type="number" class="max-files input-max-files" />
                 <p>Archivos</p>
                 <div class="max-files-reset max-files-btn">Por defecto</div>
             </div>
@@ -133,16 +151,23 @@
             </div>
         </div> -->
 
-        <div class="titre-tab">Comportamiento del lanzador al arrancar el juego</div>
+        <div class="titre-tab">
+            Comportamiento del launcher al arrancar el juego
+        </div>
         <div class="settings-elements-box">
             <div class="setting-text">
-                Puedes elegir si el lanzador se cierra automáticamente o permanece abierto al iniciar el juego.
+                Puedes elegir si el launcher se cierra automáticamente o permanece
+                abierto al iniciar el juego.
             </div>
 
             <div class="settings-elements content-evenly close-box">
-                <div class="close-launcher close-btn">Cerrar el lanzador después de iniciar el juego</div>
-                <div class="close-none close-btn">Mantener abierto el lanzador</div>
-                <div class="close-all close-btn">Cerrar el juego si el lanzador está cerrado</div>
+                <div class="close-launcher close-btn">
+                    Cerrar el launcher después de iniciar el juego
+                </div>
+                <div class="close-none close-btn">Mantener abierto el launcher</div>
+                <div class="close-all close-btn">
+                    Cerrar el juego al cerrar el launcher
+                </div>
             </div>
         </div>
 
@@ -158,4 +183,42 @@
             </div>
         </div> -->
     </div>
+    <div id="credits-tab" class="container-settings content-scroll">
+        <div class="titre-tab">Créditos</div>
+        <div class="settings-elements-box">
+            <div class="credits-container">
+                <div class="credit">
+                    <img src="assets/images/credits/miguelki.png" alt="Miguelki" />
+                    <h3>Miguelki</h3>
+                    <p class="role">Desarrollador principal</p>
+                    <div class="social-icons">
+                        <a href="https://x.com/MiguelkiX30" class="external"><i class="fab fa-x-twitter"></i></a>
+                        <a href="https://github.com/miguelkix30" class="external"><i class="fab fa-github"></i></a>
+                        <a href="https://dsc.gg/miguelkinetwork" class="external"><i class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+
+                <div class="credit">
+                    <img src="assets/images/credits/luuxis.png" alt="Luuxis" />
+                    <h3>Luuxis</h3>
+                    <p class="role">Desarrollador de la base</p>
+                    <div class="social-icons">
+                        <a href="https://github.com/luuxis" class="external"><i class="fab fa-github"></i></a>
+                        <a href="https://discord.com/invite/e9q7Yr2cuQ" class="external"><i
+                                class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.addEventListener('click', function (event) {
+                if (event.target.tagName === 'A' && event.target.classList.contains('external')) {
+                    event.preventDefault();
+                    shell.openExternal(event.target.href);
+                }
+            });
+        });
+    </script>
 </div>

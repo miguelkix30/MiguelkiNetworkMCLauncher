@@ -71,15 +71,14 @@
     height: calc(100% - 26px);
     opacity: 0;
     pointer-events: none;
-    transform: translateX(100%); /* Se mueve a la izquierda fuera de la vista */
-    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; /* Aplicar la transición aquí */
+    transform: translateX(100%);
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; 
 }
 
 .active-container-settings {
     opacity: 1;
     pointer-events: auto;
-    transform: translateX(0); /* Se mueve a la posición original */
-    /* No es necesario aplicar la transición aquí */
+    transform: translateX(0);
 }
 
 .settings-elements-box {
@@ -252,6 +251,46 @@
 
 .delete-profile-icon {
     pointer-events: none;
+}
+
+.discord-settings {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.discord-username-text {
+    text-align: center;
+    font-size: 1.5rem;
+}
+
+.discord-logout-warning {
+    color: #ff2c2c;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.discord-logout-btn {
+    align-items: center;
+    padding-top: 0.25rem;
+    font-size: 1.25rem;
+    width: 12rem;
+    height: 2.5rem;
+    text-align: center;
+    background-color: var(--box-button);
+    box-shadow: 0px 3px 6px #00000029;
+    border-radius: 25px;
+    color: #fff;
+    cursor: pointer;
+    z-index: 2;
+    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+}
+
+.discord-logout-btn:hover {
+    background-color: var(--box-button-hover);
 }
 
 /*******************************************************************************
@@ -448,6 +487,8 @@
 }
 
 .close-btn {
+    display: grid;
+    place-items: center;
     font-size: 0.95rem;
     width: 200px;
     min-height: 80px;
@@ -462,42 +503,107 @@
     border: 4px solid var(--element-color);
 }
 
-.discord-settings {
+
+/*******************************************************************************
+ *                                                                             *
+ * Credits tab                                                                 *
+ *                                                                             *
+ ******************************************************************************/
+
+
+.credits-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5em;
+    padding: 1em;
+}
+
+.credit {
+    flex-basis: 18em;
+    max-width: 18em;
+    flex-grow: 0;
+    flex-shrink: 1;
+    text-align: center;
+    padding: 14px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(5px);
+}
+  
+  .credit img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 10px;
+  }
+  
+  .credit h3 {
+    margin: 10px 0;
+    font-size: 24px;
+  }
+  
+  .social-icons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+  
+  .social-icons a {
+    font-size: 30px;
+    color: #fff;
+  }
+  
+  .social-icons i {
+    transition: color 0.3s ease;
+  }
+  
+  .social-icons a:hover i {
+    color: #979797;
+  }
+
+  .role {
+    font-size: 0.9em;
+  }
+
+  
+
+  .profile-card {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    transition: all 0.2s;
+    width: auto;
+    max-width: 400px;
+    margin-left: 20px;
+    margin-right: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.profile-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 20px;
+}
+
+.profile-info {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
 }
 
-.discord-username-text {
-    text-align: center;
+.profile-username {
     font-size: 1.5rem;
-}
-
-.discord-logout-warning {
-    color: #ff2c2c;
-    text-align: center;
-    font-size: 1rem;
-}
-
-.discord-logout-btn {
-    align-items: center;
-    padding-top: 0.25rem;
-    font-size: 1.25rem;
-    width: 12rem;
-    height: 2.5rem;
-    text-align: center;
-    background-color: var(--box-button);
-    box-shadow: 0px 3px 6px #00000029;
-    border-radius: 25px;
     color: #fff;
-    cursor: pointer;
-    z-index: 2;
-    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
-}
-
-.discord-logout-btn:hover {
-    background-color: var(--box-button-hover);
+    margin: 0;
 }

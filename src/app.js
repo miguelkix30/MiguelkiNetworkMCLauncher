@@ -4,7 +4,7 @@ const { autoUpdater } = require('electron-updater');
 const pkg = require('../package.json');
 const path = require('path');
 const fs = require('fs');
-const { URLSearchParams, resolve } = require('url');
+const { URLSearchParams } = require('url');
 const express = require('express');
 
 const UpdateWindow = require("./assets/js/windows/updateWindow.js");
@@ -12,7 +12,7 @@ const MainWindow = require("./assets/js/windows/mainWindow.js");
 let dev = process.env.NODE_ENV === 'dev';
 let server;
 let authToken;
-var config = {
+let config = {
     "clientId": "857169541708775445",
     "clientSecret": "RTmN1F_2Qt8X6LzmjgFy3nVe8cRbhQny",
     "redirectUri": "http://localhost:3030/auth/discord/"
@@ -146,7 +146,7 @@ ipcMain.on('create-register-window', () => {
         resizable: false,
         webPreferences: {
             nodeIntegration: true,
-            partition: `persist:${Math.random()}` // unique session for each window
+            partition: `persist:${Math.random()}`
         }
     });
 
@@ -169,7 +169,7 @@ ipcMain.handle('open-discord-auth', async () => {
 
         const discordWin = new BrowserWindow({
             width: 650,
-            height: 700,
+            height: 725,
             minimizable: false,
             maximizable: false,
             resizable: false,

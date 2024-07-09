@@ -161,8 +161,7 @@ class Home {
     async hideNotification() {
         let notification = document.querySelector('.message-container');
         notification.style.opacity = '0';
-        // Espera a que la transición de opacidad termine antes de ocultar el elemento
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Ajusta el tiempo de espera al tiempo de transición de tu CSS
+        await new Promise(resolve => setTimeout(resolve, 1000));
         notification.style.visibility = 'hidden';
         notification.style.display = 'none';
     }
@@ -170,8 +169,8 @@ class Home {
     startNotificationCheck() {
         this.intervalId = setInterval(() => {
             this.notification();
-        }, 60000); // Cambia este valor al intervalo de tiempo que desees
-        console.log('Scheduled notification check started.');
+        }, 60000);
+        console.log('Comprobación de notificación programada iniciada.');
     }
 
     stopNotificationCheck() {
@@ -179,7 +178,7 @@ class Home {
             clearInterval(this.intervalId);
             this.intervalId = null;
         }
-        console.log('Scheduled notification check stopped.');
+        console.log('Se ha detenido la comprobación programada de notificaciones.');
     }
 
     async startModsButton() {
@@ -321,7 +320,7 @@ class Home {
                         await this.db.updateData('configClient', configClient)
                     }
                 }
-            } else console.log(`Initializing instance ${instance.name}...`)
+            } else console.log(`Configurando instancia ${instance.name}...`)
             if (instance.name == instanceSelect) setStatus(instance.status)
             if (instance.name == instanceSelect) setInstanceBackground(instance.background)
             this.notification()
