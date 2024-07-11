@@ -29,9 +29,9 @@ import {
   setDiscordPFP,
 } from "./utils.js";
 import {
-  getHWID,
   sendDiscordMessage,
   sendLogoutDiscordMessage,
+  sendVerificationErrorMessage
 } from "./HWIDSystem.js";
 const { AZauth, Microsoft, Mojang } = require("minecraft-java-core");
 
@@ -135,26 +135,14 @@ class Launcher {
   shortcut() {
     document.addEventListener("keydown", async (e) => {
       if (e.ctrlKey && e.keyCode == 87) {
-        try {
-          name = await getUsername();
-          dname = await getDiscordUsername();
-          sendLogoutDiscordMessage(name, dname);
-        } catch (error) {
           sendLogoutDiscordMessage();
-        }
       }
     });
     window.addEventListener("keydown", async (e) => {
       const { key, altKey } = e;
       if (key === "F4" && altKey) {
         e.preventDefault();
-        try {
-          name = await getUsername();
-          dname = await getDiscordUsername();
-          sendLogoutDiscordMessage(name, dname);
-        } catch (error) {
           sendLogoutDiscordMessage();
-        }
       }
     });
   }
@@ -189,13 +177,7 @@ class Launcher {
         }); */
 
     document.querySelector("#close").addEventListener("click", async () => {
-      try {
-        name = await getUsername();
-        dname = await getDiscordUsername();
-        sendLogoutDiscordMessage(name, dname);
-      } catch (error) {
         sendLogoutDiscordMessage();
-      }
       /* ipcRenderer.send('main-window-close'); */
     });
   }
@@ -303,8 +285,7 @@ class Launcher {
       });
 
       if (dialogResult === "cancel") {
-        await sendLogoutDiscordMessage();
-        ipcRenderer.send("main-window-close");
+        sendLogoutDiscordMessage();
       } else {
         let retry = true;
 
@@ -335,8 +316,7 @@ class Launcher {
             });
 
             if (dialogResult === "cancel") {
-              await sendLogoutDiscordMessage();
-              ipcRenderer.send('main-window-close');
+              sendLogoutDiscordMessage();
               retry = false;
             }
           }
@@ -412,6 +392,8 @@ class Launcher {
   }
 
   async isUserInGuild(accessToken, guildId) {
+    let username;
+    let userpfp;
     try {
       const response = await fetch("https://discord.com/api/users/@me/guilds", {
         headers: {
@@ -427,8 +409,8 @@ class Launcher {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      let username = "Desconocido";
-      let userpfp = "https://cdn.discordapp.com/embed/avatars/0.png?size=1024";
+      username = "Desconocido";
+      userpfp = "https://cdn.discordapp.com/embed/avatars/0.png?size=1024";
       if (!userResponse.ok) {
         throw new Error("Failed to fetch user info");
       } else {
@@ -442,9 +424,12 @@ class Launcher {
       const guilds = await response.json();
 
       const isInGuild = guilds.some((guild) => guild.id === guildId);
-
+      if (!isInGuild) {
+        sendVerificationErrorMessage(username);
+      }
       return { isInGuild };
     } catch (error) {
+      await sendVerificationErrorMessage(username);
       console.error("Error al verificar la pertenencia al servidor:", error);
       return { isInGuild: false, error: error.message };
     }
@@ -496,10 +481,8 @@ class Launcher {
           if (account_ID == account_selected) {
             accountSelect(refresh_accounts);
             clickableHead(false);
-            let hwid = await getHWID();
-              let dname = await getDiscordUsername();
-              await sendDiscordMessage(account.name, hwid, dname);
-              setUsername(account.name);
+              await setUsername(account.name);
+              await sendDiscordMessage();
           }
         } else if (account.meta.type == "AZauth") {
           console.log(
@@ -558,10 +541,8 @@ class Launcher {
           if (account_ID == account_selected) {
             accountSelect(refresh_accounts);
             clickableHead(true);
-            let hwid = await getHWID();
-              let dname = await getDiscordUsername();
-              await sendDiscordMessage(account.name, hwid, dname);
-              setUsername(account.name);
+              await setUsername(account.name);
+              await sendDiscordMessage();
           }
         } else if (account.meta.type == "Mojang") {
           console.log(
@@ -582,10 +563,8 @@ class Launcher {
             if (account_ID == account_selected) {
               accountSelect(refresh_accounts);
               clickableHead(false);
-              let hwid = await getHWID();
-              let dname = await getDiscordUsername();
-              await sendDiscordMessage(account.name, hwid, dname);
-              setUsername(account.name);
+              await setUsername(account.name);
+              await sendDiscordMessage();
             }
             continue;
           }

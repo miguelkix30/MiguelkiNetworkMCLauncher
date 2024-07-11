@@ -3,19 +3,18 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount } from '../utils.js'
-import { getHWID, checkHWID, getFetchError } from '../HWIDSystem.js';
+import { getHWID, checkHWID, getFetchError, sendPlayingMessage, sendStoppedPlayingMessage } from '../HWIDSystem.js';
 
-// cambiar información de la actividad de discord en el launcher
 const clientId = '857169541708775445';
 const DiscordRPC = require('discord-rpc');
 const RPC = new DiscordRPC.Client({ transport: 'ipc' });
 let dev = process.env.NODE_ENV === 'dev';
-var rpcActive = true;
-var startingTime = Date.now();
-var LogBan = false;
+let rpcActive = true;
+let startingTime = Date.now();
+let LogBan = false;
+let playing = false;
 DiscordRPC.register(clientId);
 
-var StoreAvailable = false;
 async function setActivity() {
     if (!RPC) return;
 };
@@ -70,17 +69,14 @@ class Home {
             if (response.ok) {
                 /* document.querySelector('.storebutton').setAttribute('href', pkg.store_url); */
                 document.querySelector('.news-blockshop').style.display = 'block';
-                StoreAvailable = true;
 
             } else {
                 console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda.');
                 document.querySelector('.news-blockshop').style.display = 'none';
-                StoreAvailable = false;
             }
         } catch (error) {
             console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda.');
             document.querySelector('.news-blockshop').style.display = 'none';
-            StoreAvailable = false;
         }
         storebutton.addEventListener('click', e => {
             ipcRenderer.send('create-store-window');
@@ -109,7 +105,6 @@ class Home {
                     console.error('Se ha detectado un bloqueo de HWID. No se puede iniciar ninguna instancia.');
                     LogBan = true;
                 }
-                //mostrar notificación
                 notificationTitle.innerHTML = '¡Atención!';
                 notificationContent.innerHTML = "Se ha detectado un bloqueo de dispositivo. No podrá iniciar ninguna instancia hasta que su dispositivo sea desbloqueado.";
                 notification.style.background = colorRed;
@@ -127,8 +122,13 @@ class Home {
                 await this.showNotification();
             }
             
+        } else if (process.env.NODE_ENV === 'dev') {
+            notificationTitle.innerHTML = '¡Atención!';
+                notificationContent.innerHTML = "Estas ejecutando el launcher desde la consola, recuerda que si utilizas el código de este launcher deberás cumplir con las condiciones de uso disponibles en el Github.";
+                notification.style.background = colorRed;
+                notificationIcon.src = 'assets/images/notification/exclamation2.png';
+                await this.showNotification();
         } else if (res.notification.enabled) {
-            //mostrar notificación
             notificationTitle.innerHTML = res.notification.title;
             notificationContent.innerHTML = res.notification.content;
             if (notificationContent.innerHTML.length > 160) {
@@ -141,14 +141,13 @@ class Home {
             await this.showNotification();
             
         } else {
-            //ocultar notiificación
             await this.hideNotification();
         }
     }
 
     async showNotification() {
         let notification = document.querySelector('.message-container');
-        notification.style.display = 'flex'; // Usa 'block' o cualquier otro valor que sea apropiado para tu layout
+        notification.style.display = 'flex';
         notification.style.visibility = 'visible';
         requestAnimationFrame(function() {
             requestAnimationFrame(function() {
@@ -561,13 +560,22 @@ class Home {
                     ]
                 })
             }
-            let minecraftLogger = logger2.minecraft;
-            if (e.includes('WARN')) {
-                minecraftLogger.warn(e);
-            } else if (e.includes('ERROR')) {
-                minecraftLogger.error(e);
+            if(!playing) {
+                playing = true;
+                sendPlayingMessage(configClient.instance_selct);
+            }
+            if (process.env.NODE_ENV === 'dev') {
+                new logger('Minecraft', '#36b030');
+                console.log(e);
             } else {
-                minecraftLogger.log(e);
+                let minecraftLogger = logger.minecraft;
+                if (e.includes('WARN')) {
+                    minecraftLogger.warn(e);
+                } else if (e.includes('ERROR')) {
+                    minecraftLogger.error(e);
+                } else {
+                    minecraftLogger.log(e);
+                }
             }
             ipcRenderer.send('main-window-progress-load')
             infoStarting.innerHTML = `Iniciando...`
@@ -599,6 +607,8 @@ class Home {
                     }
                 ]
             }).catch();
+            sendStoppedPlayingMessage(configClient.instance_selct);
+            playing = false;
         }
         });
         

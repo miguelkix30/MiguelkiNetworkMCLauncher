@@ -350,11 +350,12 @@ async function toggleMod(modFile, instanceName, isActive) {
 
 async function discordAccount() {
     let discordLogoutBtn = document.querySelector('.discord-logout-btn');
-    let discordLogoutWarning = document.querySelector('.discord-logout-warning');
+    let discordAccountManagerTitle = document.querySelector('#discord-account-manager-title');
+    let discordAccountManagerPanel = document.querySelector('#discord-account-manager');
     let discordUsername = await getDiscordUsername();
     let discordUsernameText = document.querySelector('.profile-username');
     let discordPFP = await getDiscordPFP();
-    let discordPFPElement = document.querySelector('.profile-image');
+    let discordPFPElement = document.querySelector('.discord-profile-image');
 
     if (discordUsername !== '') {
         discordUsernameText.textContent = discordUsername;
@@ -364,8 +365,8 @@ async function discordAccount() {
             logOutDiscord();
         });
     } else {
-        discordLogoutBtn.style.display = 'none';
-        discordLogoutWarning.style.display = 'none';
+        discordAccountManagerTitle.style.display = 'none';
+        discordAccountManagerPanel.style.display = 'none';
     }
 }
 

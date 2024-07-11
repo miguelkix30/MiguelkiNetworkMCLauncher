@@ -291,10 +291,8 @@ class Login {
         await this.db.updateData('configClient', configClient);
         await addAccount(account);
         await accountSelect(account);
-        let hwid = await getHWID();
-        let dname = await getDiscordUsername();
-        await sendDiscordMessage(account.name, hwid, dname);
-        setUsername(account.name);
+        await setUsername(account.name);
+        await sendDiscordMessage();
         changePanel('home');
     }
 }

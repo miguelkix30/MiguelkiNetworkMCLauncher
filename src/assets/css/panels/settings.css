@@ -253,6 +253,42 @@
     pointer-events: none;
 }
 
+.profile-card {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    transition: all 0.2s;
+    width: auto;
+    max-width: 400px;
+    margin-left: 20px;
+    margin-right: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.discord-profile-image {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 20px;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-username {
+    font-size: 1.5rem;
+    color: #fff;
+    margin: 0;
+}
+
 .discord-settings {
     display: flex;
     flex-direction: column;
@@ -569,41 +605,3 @@
   .role {
     font-size: 0.9em;
   }
-
-  
-
-  .profile-card {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    transition: all 0.2s;
-    width: auto;
-    max-width: 400px;
-    margin-left: 20px;
-    margin-right: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(5px);
-}
-
-.profile-image {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 20px;
-}
-
-.profile-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.profile-username {
-    font-size: 1.5rem;
-    color: #fff;
-    margin: 0;
-}
