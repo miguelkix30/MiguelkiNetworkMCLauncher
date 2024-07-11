@@ -564,19 +564,10 @@ class Home {
                 playing = true;
                 sendPlayingMessage(configClient.instance_selct);
             }
-            if (process.env.NODE_ENV === 'dev') {
+// ARREGLAR LOGGER O SI NO NO FUNCA
                 new logger('Minecraft', '#36b030');
                 console.log(e);
-            } else {
-                let minecraftLogger = logger.minecraft;
-                if (e.includes('WARN')) {
-                    minecraftLogger.warn(e);
-                } else if (e.includes('ERROR')) {
-                    minecraftLogger.error(e);
-                } else {
-                    minecraftLogger.log(e);
-                }
-            }
+
             ipcRenderer.send('main-window-progress-load')
             infoStarting.innerHTML = `Iniciando...`
         })

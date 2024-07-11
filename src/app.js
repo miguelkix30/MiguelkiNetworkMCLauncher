@@ -168,7 +168,7 @@ ipcMain.handle('open-discord-auth', async () => {
         startServer();
 
         const discordWin = new BrowserWindow({
-            width: 650,
+            width: 1000,
             height: 725,
             minimizable: false,
             maximizable: false,

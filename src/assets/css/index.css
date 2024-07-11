@@ -13,6 +13,10 @@ body {
     transition: background-image 1s ease-in-out;
 }
 
+p {
+    color: white;
+}
+
 img {
     -webkit-user-drag: none;
     user-select: none;
