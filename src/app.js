@@ -1,4 +1,4 @@
-const { app, ipcMain, nativeTheme, BrowserWindow } = require('electron');
+const { app, ipcMain, BrowserWindow } = require('electron');
 const { Microsoft } = require('minecraft-java-core');
 const { autoUpdater } = require('electron-updater');
 const pkg = require('../package.json');
@@ -198,9 +198,7 @@ ipcMain.handle('Microsoft-window', async (_, client_id) => {
 });
 
 ipcMain.handle('is-dark-theme', (_, theme) => {
-    if (theme === 'dark') return true;
-    if (theme === 'light') return false;
-    return nativeTheme.shouldUseDarkColors;
+    return true;
 });
 
 app.on('window-all-closed', () => {
