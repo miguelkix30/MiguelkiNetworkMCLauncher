@@ -1,8 +1,8 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.1.9",
-    "sub_version": "b",
+    "version": "3.1.10",
+    "sub_version": "",
     "changelog": "Se han realizado mejoras a la interfaz, añadido una pestaña de créditos y se han corregido errores menores.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
@@ -11,7 +11,7 @@
         "email": "admin@miguelkinetwork.fun",
         "url": "https://github.com/miguelkix30"
     },
-    "url": "http://node1.miguelkinetwork.fun:25565/",
+    "url": "http://node1.miguelkinetwork.info:25565/",
     "store_url": "https://minecraft.miguelkinetwork.fun/shop/",
     "azuriom_url": "https://minecraft.miguelkinetwork.fun/",
     "discord_server_id": "761943171801415692",
