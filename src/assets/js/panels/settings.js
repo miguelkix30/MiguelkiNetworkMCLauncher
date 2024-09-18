@@ -19,6 +19,7 @@ class Settings {
         this.resolution()
         this.launcher()
         this.socials()
+        this.terms()
     }
 
     navBTN() {
@@ -337,5 +338,37 @@ class Settings {
             });
         });
     }
+
+    async terms() {
+        try {
+            const result = await getTermsAndConditions();
+    
+            const termsContainer = document.querySelector('.info-container');
+            const lastUpdatedText = `<strong>Última actualización:</strong> ${new Date(result.metaInfo.lastUpdated).toLocaleString()}`;
+            const lastModifiedText = `<strong>Última modificación:</strong> ${result.metaInfo.lastModified === 'nunca' ? 'Nunca' : new Date(result.metaInfo.lastModified).toLocaleString()}`;
+    
+            const metaInfoHTML = `
+                <p>${lastUpdatedText}</p>
+                <p>${lastModifiedText}</p>
+                <hr />
+            `;
+    
+            termsContainer.innerHTML = metaInfoHTML + result.terms;
+    
+            // Manejar la apertura de enlaces externos en el navegador predeterminado
+            termsContainer.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    const url = event.target.href;
+                    window.api.openExternalLink(url);
+                });
+            });
+        } catch (error) {
+            console.error('Error al inicializar los términos y condiciones:', error);
+            const termsContainer = document.querySelector('.info-container');
+            termsContainer.innerHTML = '<p>Ha ocurrido un error al cargar los términos y condiciones.</p>';
+        }
+    }
+
 }
 export default Settings;
