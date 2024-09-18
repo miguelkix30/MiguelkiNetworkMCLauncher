@@ -605,3 +605,42 @@
   .role {
     font-size: 0.9em;
   }
+
+  /* Terminos y condiciones */
+
+.info-container {
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+  background-color: #f8f9fabe;
+  border-radius: 5px;
+  padding: 10px;
+  color: black;
+  user-select: text;
+  width: 90%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.info-panel {
+  padding: 20px;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  opacity: 0;
+  animation: fadeIn 0.3s forwards;
+  max-width: 90%;
+  margin: auto;
+  box-sizing: border-box;
+}
+
+.info-container p strong {
+    color: #333;
+    font-weight: bold;
+}
+
+.info-container p {
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: #555;
+}

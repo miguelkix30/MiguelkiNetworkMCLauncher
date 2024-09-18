@@ -8,6 +8,8 @@ const { Status } = require('minecraft-java-core')
 const fs = require('fs');
 const path = require('path');
 const pkg = require('../package.json');
+const fetch = require('node-fetch');
+const { marked } = require('marked');
 
 import config from './utils/config.js';
 import database from './utils/database.js';
@@ -381,62 +383,38 @@ async function logOutDiscord() {
 }
 
 async function getTermsAndConditions() {
-    const dataPath = await ipcRenderer.invoke('path-user-data');
-      // si datapath/info no existe, lo crea
-      if (!fs.existsSync(path.join(dataPath, 'info'))) {
-        fs.mkdirSync(path.join(dataPath, 'info'));
-      }
-      const termsFilePath = path.join(dataPath, 'info/terms.txt');
-      const metaFilePath = path.join(dataPath, 'info/terms-meta.json');
-    
-      try {
-          // Descargar los términos desde el servidor
-          const response = await axios.get(`${url}terms.txt`);
-          const termsContent = response.data;
-    
-          // Convertir Markdown a HTML
-          const htmlContent = marked(termsContent);
-    
-          let metaInfo = {
-              lastUpdated: new Date().toISOString(),
-              lastModified: 'nunca',  // Valor por defecto para la última modificación
-          };
-    
-          // Comprobar si ya hay términos guardados localmente
-          if (fs.existsSync(termsFilePath)) {
-              const localTermsContent = fs.readFileSync(termsFilePath, 'utf-8');
-    
-              // Si los términos nuevos son diferentes a los locales, se considera una modificación
-              if (localTermsContent !== termsContent) {
-                  metaInfo.lastModified = new Date().toISOString();
-              } else {
-                  // Si son iguales, conservar la última fecha de modificación almacenada
-                  if (fs.existsSync(metaFilePath)) {
-                      const savedMetaInfo = JSON.parse(fs.readFileSync(metaFilePath, 'utf-8'));
-                      metaInfo.lastModified = savedMetaInfo.lastModified || 'nunca';
-                  }
-              }
-          }
-    
-          // Guardar los términos y la meta información localmente
-          fs.writeFileSync(termsFilePath, termsContent, 'utf-8');
-          fs.writeFileSync(metaFilePath, JSON.stringify(metaInfo), 'utf-8');
-    
-          return { terms: htmlContent, metaInfo };
-      } catch (error) {
-          console.error('Error al descargar los términos:', error);
-    
-          // Si ocurre un error, cargar el archivo local existente
-          if (fs.existsSync(termsFilePath)) {
-              const termsContent = fs.readFileSync(termsFilePath, 'utf-8');
-              const htmlContent = marked(termsContent);
-              const metaInfo = fs.existsSync(metaFilePath) ? JSON.parse(fs.readFileSync(metaFilePath, 'utf-8')) : {};
-              return { terms: htmlContent, metaInfo };
-          } else {
-              throw new Error('No se pudo descargar ni cargar los términos y condiciones.');
-          }
-      }
+    try {
+        console.log('Iniciando descarga de términos y condiciones...');
+        console.log('URL:', `${pkg.url}launcher/config-launcher/terms.txt`);
+        console.log('URL:', `${pkg.url}launcher/config-launcher/terms-meta.json`);
+        const termsResponse = await fetch(`${pkg.url}launcher/config-launcher/terms.txt`);
+        const metaResponse = await fetch(`${pkg.url}launcher/config-launcher/terms-meta.json`);
+        
+
+        if (!termsResponse.ok) {
+            console.error('Error al obtener términos:', termsResponse.statusText);
+            throw new Error(`Error al obtener términos: ${termsResponse.statusText}`);
+        }
+
+        if (!metaResponse.ok) {
+            console.error('Error al obtener meta información:', metaResponse.statusText);
+            throw new Error(`Error al obtener meta información: ${metaResponse.statusText}`);
+        }
+
+        const termsContent = await termsResponse.text();
+        const metaInfo = await metaResponse.json();
+
+        const htmlContent = marked(termsContent);
+        const lastModified = metaInfo.lastModified || 'desconocida';
+
+        return { htmlContent, lastModified };
+    } catch (error) {
+        console.error('Error al inicializar los términos y condiciones:', error.message);
+        throw error;
+    }
 }
+
+
 
 export {
     appdata as appdata,

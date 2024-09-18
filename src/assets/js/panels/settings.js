@@ -3,9 +3,10 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 
-import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead } from '../utils.js'
+import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead, getTermsAndConditions } from '../utils.js'
 const os = require('os');
 const { shell } = require('electron');
+const { marked } = require('marked');
 
 class Settings {
     static id = "settings";
@@ -340,35 +341,34 @@ class Settings {
     }
 
     async terms() {
-        try {
+/*         try { */
             const result = await getTermsAndConditions();
-    
+        
             const termsContainer = document.querySelector('.info-container');
-            const lastUpdatedText = `<strong>Última actualización:</strong> ${new Date(result.metaInfo.lastUpdated).toLocaleString()}`;
-            const lastModifiedText = `<strong>Última modificación:</strong> ${result.metaInfo.lastModified === 'nunca' ? 'Nunca' : new Date(result.metaInfo.lastModified).toLocaleString()}`;
-    
+            const lastModifiedText = `<strong>Última modificación:</strong> ${result.lastModified === 'desconocida' ? 'Desconocida' : new Date(result.lastModified).toLocaleString()}`;
+        
             const metaInfoHTML = `
-                <p>${lastUpdatedText}</p>
                 <p>${lastModifiedText}</p>
                 <hr />
             `;
-    
-            termsContainer.innerHTML = metaInfoHTML + result.terms;
-    
+        
+            termsContainer.innerHTML = metaInfoHTML + result.htmlContent;
+        
             // Manejar la apertura de enlaces externos en el navegador predeterminado
             termsContainer.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', (event) => {
                     event.preventDefault();
                     const url = event.target.href;
-                    window.api.openExternalLink(url);
+                    shell.openExternal(url);
                 });
             });
-        } catch (error) {
+/*         } catch (error) {
             console.error('Error al inicializar los términos y condiciones:', error);
             const termsContainer = document.querySelector('.info-container');
             termsContainer.innerHTML = '<p>Ha ocurrido un error al cargar los términos y condiciones.</p>';
-        }
+        } */
     }
+    
 
 }
 export default Settings;
