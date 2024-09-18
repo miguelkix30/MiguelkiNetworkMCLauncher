@@ -3,7 +3,7 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 
-const { ipcRenderer } = require('electron')
+const { ipcRenderer, shell } = require('electron')
 const { Status } = require('minecraft-java-core')
 const fs = require('fs');
 const path = require('path');
@@ -427,9 +427,17 @@ async function showTermsAndConditions() {
             const acceptButton = document.querySelector('.accept-terms-btn');
             const declineButton = document.querySelector('.decline-terms-btn');
             const loginButton = document.querySelector('.connect-home');
+            
 
             // Mostrar términos en HTML
             termsContainer.innerHTML = result.htmlContent;
+            termsContainer.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    const url = event.target.href;
+                    shell.openExternal(url);
+                });
+            });
             
             // Inicialmente deshabilitamos los botones
             acceptButton.disabled = true;
