@@ -414,25 +414,42 @@ async function getTermsAndConditions() {
 
 async function showTermsAndConditions() {
     try {
-        const result = await getTermsAndConditions();
+        const result = await getTermsAndConditions();  // Obtener los términos y la fecha de modificación
         const db = new database();
         let configClient = await db.readData('configClient');
         const lastModified = new Date(result.lastModified);
 
-        // Si ya aceptaron los términos y no han cambiado desde entonces, no se necesitan aceptar de nuevo
-        if (configClient.termsAcceptedDate && new Date(configClient.termsAcceptedDate) >= lastModified) {
-            return true;
+        let isNewUser = false;
+
+        // Si no existe el parámetro `terms_accepted` o `termsAcceptedDate`, consideramos que no se han aceptado
+        if (!configClient.terms_accepted || !configClient.termsAcceptedDate) {
+            console.log("No se han aceptado los términos anteriormente. Usuario nuevo.");
+            isNewUser = true;
+        } else {
+            const termsAcceptedDate = new Date(configClient.termsAcceptedDate);
+
+            // Si los términos han sido modificados desde la última aceptación, se debe solicitar nuevamente
+            if (termsAcceptedDate < lastModified) {
+                console.log("Términos modificados, solicitando aceptación nuevamente.");
+            } else {
+                console.log("Términos ya aceptados y no han sido modificados.");
+                return true;  // No hay necesidad de mostrar los términos nuevamente
+            }
         }
 
-        // Si los términos han cambiado o nunca fueron aceptados, solicitamos aceptación
+        // Mostrar el modal para aceptar los términos
         return new Promise((resolve, reject) => {
             const termsContainer = document.querySelector('.terms-container');
             const acceptButton = document.querySelector('.accept-terms-btn');
             const declineButton = document.querySelector('.decline-terms-btn');
             const messageText = document.querySelector('.terms-message');
 
-            // Mostrar mensaje actualizado si los términos han sido modificados
-            messageText.innerText = "Los términos y condiciones han sido modificados y debes volver a aceptarlos para poder seguir usando el lanzador.";
+            // Cambiar el mensaje según si es un usuario nuevo o si los términos han sido modificados
+            if (isNewUser) {
+                messageText.innerText = "Bienvenido. Antes de continuar, acepta los términos y condiciones para poder utilizar el software. De lo contrario, el launcher se cerrará y no podrás utilizarlo hasta que los aceptes.";
+            } else {
+                messageText.innerText = "Los términos y condiciones han sido modificados y debes aceptarlos para seguir usando el lanzador.";
+            }
 
             // Mostrar términos en HTML
             termsContainer.innerHTML = result.htmlContent;
@@ -450,7 +467,7 @@ async function showTermsAndConditions() {
             // Mostrar el modal
             document.querySelector('.terms-modal').style.display = 'flex';
 
-            // Detectar cuando el usuario llegue al final del texto
+            // Detectar cuando el usuario haya llegado al final del texto
             termsContainer.addEventListener('scroll', () => {
                 if (termsContainer.scrollTop + termsContainer.clientHeight >= termsContainer.scrollHeight) {
                     acceptButton.disabled = false;
@@ -460,8 +477,12 @@ async function showTermsAndConditions() {
             // Si el usuario acepta los términos
             acceptButton.addEventListener('click', async () => {
                 document.querySelector('.terms-modal').style.display = 'none';
-                configClient.termsAcceptedDate = new Date().toISOString();  // Guardar fecha de aceptación
+
+                // Actualizar y guardar los valores de `terms_accepted` y `termsAcceptedDate`
+                configClient.terms_accepted = true;
+                configClient.termsAcceptedDate = new Date().toISOString();  // Guardar la fecha de aceptación
                 await db.updateData('configClient', configClient);
+
                 resolve(true);  // El usuario aceptó los términos
             });
 

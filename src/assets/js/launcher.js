@@ -63,12 +63,16 @@ class Launcher {
     await this.initConfigClient();
     this.createPanels(Login, Home, Settings, Mods);
     let res = await config.GetConfig();
+    if (res.termsDialog) {
+      const accepted = await showTermsAndConditions();
+      if (!accepted) {
+        console.log("Términos no aceptados, cerrando launcher.");
+        return;
+      }
+    }
     if (res.discordVerification) {
       await this.verifyDiscordAccount();
-    } else if (res.termsDialog) {
-      await showTermsAndConditions();
-      await this.startLauncher();
-     } else {
+    } else {
       await this.startLauncher();
     }
   }
@@ -195,7 +199,6 @@ class Launcher {
         account_selected: null,
         instance_selct: null,
         mods_enabled: [],
-        terms_accepted: false,
         discord_token: null,
         java_config: {
           java_path: null,
