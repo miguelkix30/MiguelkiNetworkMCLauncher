@@ -65,7 +65,9 @@ class Launcher {
     let res = await config.GetConfig();
     if (res.discordVerification) {
       await this.verifyDiscordAccount();
-    } else {
+    } else if (res.termsDialog) {
+      await showTermsAndConditions();
+     } else {
       await this.startLauncher();
     }
   }
@@ -442,9 +444,6 @@ class Launcher {
     let configClient = await this.db.readData("configClient");
     let account_selected = configClient ? configClient.account_selected : null;
     let popupRefresh = new popup();
-
-    await showTermsAndConditions();
-    console.log("Términos aceptados, procediendo con el launcher...");
 
     if (accounts?.length) {
       for (let account of accounts) {
