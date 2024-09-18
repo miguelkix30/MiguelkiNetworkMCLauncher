@@ -67,6 +67,7 @@ class Launcher {
       await this.verifyDiscordAccount();
     } else if (res.termsDialog) {
       await showTermsAndConditions();
+      await this.startLauncher();
      } else {
       await this.startLauncher();
     }

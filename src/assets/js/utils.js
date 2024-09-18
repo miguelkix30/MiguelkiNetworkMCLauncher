@@ -385,8 +385,6 @@ async function logOutDiscord() {
 async function getTermsAndConditions() {
     try {
         console.log('Iniciando descarga de términos y condiciones...');
-        console.log('URL:', `${pkg.url}launcher/config-launcher/terms.txt`);
-        console.log('URL:', `${pkg.url}launcher/config-launcher/terms-meta.json`);
         const termsResponse = await fetch(`${pkg.url}launcher/config-launcher/terms.txt`);
         const metaResponse = await fetch(`${pkg.url}launcher/config-launcher/terms-meta.json`);
         
@@ -418,16 +416,23 @@ async function showTermsAndConditions() {
     try {
         const result = await getTermsAndConditions();
         const db = new database();
-        let configClient = await db.readData('configClient')
-        if (configClient.terms_accepted) {
+        let configClient = await db.readData('configClient');
+        const lastModified = new Date(result.lastModified);
+
+        // Si ya aceptaron los términos y no han cambiado desde entonces, no se necesitan aceptar de nuevo
+        if (configClient.termsAcceptedDate && new Date(configClient.termsAcceptedDate) >= lastModified) {
             return true;
         }
+
+        // Si los términos han cambiado o nunca fueron aceptados, solicitamos aceptación
         return new Promise((resolve, reject) => {
             const termsContainer = document.querySelector('.terms-container');
             const acceptButton = document.querySelector('.accept-terms-btn');
             const declineButton = document.querySelector('.decline-terms-btn');
-            const loginButton = document.querySelector('.connect-home');
-            
+            const messageText = document.querySelector('.terms-message');
+
+            // Mostrar mensaje actualizado si los términos han sido modificados
+            messageText.innerText = "Los términos y condiciones han sido modificados y debes volver a aceptarlos para poder seguir usando el lanzador.";
 
             // Mostrar términos en HTML
             termsContainer.innerHTML = result.htmlContent;
@@ -438,15 +443,14 @@ async function showTermsAndConditions() {
                     shell.openExternal(url);
                 });
             });
-            
-            // Inicialmente deshabilitamos los botones
+
+            // Deshabilitar el botón de aceptar inicialmente
             acceptButton.disabled = true;
-            loginButton.disabled = true;
 
             // Mostrar el modal
             document.querySelector('.terms-modal').style.display = 'flex';
 
-            // Detectar cuando el usuario haya llegado al final del texto
+            // Detectar cuando el usuario llegue al final del texto
             termsContainer.addEventListener('scroll', () => {
                 if (termsContainer.scrollTop + termsContainer.clientHeight >= termsContainer.scrollHeight) {
                     acceptButton.disabled = false;
@@ -454,18 +458,17 @@ async function showTermsAndConditions() {
             });
 
             // Si el usuario acepta los términos
-            acceptButton.addEventListener('click', () => {
+            acceptButton.addEventListener('click', async () => {
                 document.querySelector('.terms-modal').style.display = 'none';
-                loginButton.disabled = false;
-                configClient.terms_accepted = true;
-                db.updateData('configClient', configClient);
-                resolve(true);  // Resolviendo que el usuario aceptó los términos
+                configClient.termsAcceptedDate = new Date().toISOString();  // Guardar fecha de aceptación
+                await db.updateData('configClient', configClient);
+                resolve(true);  // El usuario aceptó los términos
             });
 
             // Si el usuario rechaza los términos
             declineButton.addEventListener('click', () => {
                 ipcRenderer.send('main-window-close');  // Cerrar el launcher
-                reject(false);  // Rechazar, lo que indica que el usuario no aceptó
+                reject(false);  // El usuario rechazó los términos
             });
         });
     } catch (error) {
