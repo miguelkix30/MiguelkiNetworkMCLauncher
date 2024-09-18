@@ -414,6 +414,59 @@ async function getTermsAndConditions() {
     }
 }
 
+async function showTermsAndConditions() {
+    try {
+        const result = await getTermsAndConditions();
+        const db = new database();
+        let configClient = await db.readData('configClient')
+        if (configClient.terms_accepted) {
+            return true;
+        }
+        return new Promise((resolve, reject) => {
+            const termsContainer = document.querySelector('.terms-container');
+            const acceptButton = document.querySelector('.accept-terms-btn');
+            const declineButton = document.querySelector('.decline-terms-btn');
+            const loginButton = document.querySelector('.connect-home');
+
+            // Mostrar términos en HTML
+            termsContainer.innerHTML = result.htmlContent;
+            
+            // Inicialmente deshabilitamos los botones
+            acceptButton.disabled = true;
+            loginButton.disabled = true;
+
+            // Mostrar el modal
+            document.querySelector('.terms-modal').style.display = 'flex';
+
+            // Detectar cuando el usuario haya llegado al final del texto
+            termsContainer.addEventListener('scroll', () => {
+                if (termsContainer.scrollTop + termsContainer.clientHeight >= termsContainer.scrollHeight) {
+                    acceptButton.disabled = false;
+                }
+            });
+
+            // Si el usuario acepta los términos
+            acceptButton.addEventListener('click', () => {
+                document.querySelector('.terms-modal').style.display = 'none';
+                loginButton.disabled = false;
+                configClient.terms_accepted = true;
+                db.updateData('configClient', configClient);
+                resolve(true);  // Resolviendo que el usuario aceptó los términos
+            });
+
+            // Si el usuario rechaza los términos
+            declineButton.addEventListener('click', () => {
+                ipcRenderer.send('main-window-close');  // Cerrar el launcher
+                reject(false);  // Rechazar, lo que indica que el usuario no aceptó
+            });
+        });
+    } catch (error) {
+        console.error('Error al cargar los términos y condiciones:', error);
+        throw error;
+    }
+}
+
+
 
 
 export {
@@ -444,6 +497,7 @@ export {
     logOutDiscord as logOutDiscord,
     getDiscordPFP as getDiscordPFP,
     setDiscordPFP as setDiscordPFP,
-    getTermsAndConditions as getTermsAndConditions
+    getTermsAndConditions as getTermsAndConditions,
+    showTermsAndConditions as showTermsAndConditions
 }
 window.setVideoSource = setVideoSource;

@@ -27,6 +27,7 @@ import {
   setDiscordUsername,
   getDiscordUsername,
   setDiscordPFP,
+  showTermsAndConditions
 } from "./utils.js";
 import {
   sendDiscordMessage,
@@ -191,6 +192,7 @@ class Launcher {
         account_selected: null,
         instance_selct: null,
         mods_enabled: [],
+        terms_accepted: false,
         discord_token: null,
         java_config: {
           java_path: null,
@@ -440,6 +442,9 @@ class Launcher {
     let configClient = await this.db.readData("configClient");
     let account_selected = configClient ? configClient.account_selected : null;
     let popupRefresh = new popup();
+
+    await showTermsAndConditions();
+    console.log("Términos aceptados, procediendo con el launcher...");
 
     if (accounts?.length) {
       for (let account of accounts) {
