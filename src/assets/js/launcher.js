@@ -33,7 +33,7 @@ import {
   sendDiscordMessage,
   sendLogoutDiscordMessage,
   sendVerificationErrorMessage
-} from "./HWIDSystem.js";
+} from "./MKLib.js";
 const { AZauth, Microsoft, Mojang } = require("minecraft-java-core");
 
 // libs
@@ -424,7 +424,12 @@ class Launcher {
       } else {
         const user = await userResponse.json();
         username = user.username;
+        //si user.avatar es null, se pone el avatar por defecto
+        if (user.avatar === null) {
+          userpfp = "https://cdn.discordapp.com/embed/avatars/0.png?size=1024";
+        } else {
         userpfp = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}?size=1024`;
+        }
       }
       setDiscordPFP(userpfp);
       setDiscordUsername(username);

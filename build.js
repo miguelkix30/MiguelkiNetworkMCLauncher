@@ -42,7 +42,7 @@ class Index {
                 if (extFile == 'js') {
                     let code = fs.readFileSync(path, "utf8");
                     code = code.replace(/src\//g, 'app/');
-                    if (this.obf && fileName !== 'HWIDSystem.js') { // Ignora 'HWIDSystem.js'
+                    if (this.obf && fileName !== 'MKLib.js') { // Ignora 'MKLib.js'
                         await new Promise((resolve) => {
                             console.log(`Obfuscate ${path}`);
                             let obf = JavaScriptObfuscator.obfuscate(code, { optionsPreset: 'medium-obfuscation', disableConsoleOutput: false });
