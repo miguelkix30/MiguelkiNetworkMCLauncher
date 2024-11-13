@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount } from '../utils.js'
+import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, sendPlayingMessage, sendStoppedPlayingMessage } from '../MKLib.js';
 
 const clientId = '857169541708775445';
@@ -60,6 +60,7 @@ class Home {
         document.querySelector('.settings-btn').addEventListener('click', e => discordAccount() && changePanel('settings'))
         document.querySelector('.player-options').addEventListener('click', e => clickHead())
         this.startModsButton()
+        this.startMusicButton()
     }
 
     async showstore() {
@@ -187,6 +188,25 @@ class Home {
             document.querySelector('.mods-btn').addEventListener('click', e => changePanel('mods'))
         } else {
             document.querySelector('.mods-btn').style.display = 'none';
+        }
+    }
+
+    async startMusicButton() {
+        let res = await config.GetConfig();
+        if (res.musicBeta || dev) {
+            const db = new database();
+            let configClient = await this.db.readData('configClient')
+            document.querySelector('.music-btn').style.display = 'block';
+            document.querySelector('.music-btn').addEventListener('click', e => toggleMusic())   
+            if (configClient.music_muted) {
+                document.querySelector('.music-btn').classList.remove('icon-speaker-on');
+                document.querySelector('.music-btn').classList.add('icon-speaker-off');
+            } else {
+                document.querySelector('.music-btn').classList.remove('icon-speaker-off');
+                document.querySelector('.music-btn').classList.add('icon-speaker-on');
+            }
+        } else {
+            document.querySelector('.music-btn').style.display = 'none';
         }
     }
     

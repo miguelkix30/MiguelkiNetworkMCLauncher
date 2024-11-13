@@ -90,7 +90,8 @@ input::-webkit-inner-spin-button {
 
 .icon-minimize:hover,
 .icon-restore-down:hover,
-.icon-maximize:hover {
+.icon-maximize:hover,
+.icon-speaker:hover {
     background-color: #0000009d;
 }
 

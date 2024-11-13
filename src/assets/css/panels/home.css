@@ -354,6 +354,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 3;
+    margin-left: 100px;
 }
 
 .play-instance {
@@ -366,7 +368,7 @@
     border-radius: 25px;
     color: var(--icon-unselected);
     cursor: pointer;
-    z-index: 2;
+    z-index: 3;
     transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
     height: 3.2rem;
     padding-right: 2rem;
@@ -453,12 +455,22 @@
     border-radius: 100px;
     color: #fff;
     cursor: pointer;
-    z-index: 2;
+    z-index: 4;
     transition: color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
     margin: 0 1.5rem;
 }
 .settings-btn:hover {
     color: var(--icon-unselected);
+    animation: rotating 2s linear infinite;
+}
+
+@keyframes rotating {
+    from{
+        -webkit-transform: rotate(0deg);
+    }
+    to{
+        -webkit-transform: rotate(360deg);
+    }
 }
 
 .mods-btn {
@@ -469,10 +481,25 @@
     border-radius: 100px;
     color: #fff;
     cursor: pointer;
-    z-index: 3;
+    z-index: 4;
     transition: color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+    margin-left: 1.5rem;
 }
 .mods-btn:hover {
+    color: var(--icon-unselected);
+}
+
+.music-btn {
+    text-align: center;
+    width: 3rem;
+    height: 3rem;
+    font-size: 3rem;
+    color: #fff;
+    cursor: pointer;
+    z-index: 4;
+    transition: color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+}
+.music-btn:hover {
     color: var(--icon-unselected);
 }
 
@@ -668,6 +695,28 @@
         rgb(255, 0, 127));
     background-size: 50% 50%;
     animation: rotation 4s linear infinite;
+}
+
+.icon-speaker-on {
+    background-image: url('../../images/music/speaker-on.png');
+    background-size: 3rem;
+    background-repeat: no-repeat;
+    background-position: left;
+    transition: all 0.2s;
+}
+
+.icon-speaker-off {
+    background-image: url('../../images/music/speaker-off.png');
+    background-size: 3rem;
+    background-repeat: no-repeat;
+    background-position: left;
+    transition: all 0.2s;
+}
+
+.icon-speaker-on:hover,
+.icon-speaker-off:hover {
+    filter: brightness(50%);
+    transition: all 0.2s;
 }
 
 @keyframes rotation {

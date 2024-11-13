@@ -200,6 +200,7 @@ class Launcher {
         instance_selct: null,
         mods_enabled: [],
         discord_token: null,
+        music_muted: false,
         java_config: {
           java_path: null,
           java_memory: {

@@ -498,6 +498,22 @@ async function showTermsAndConditions() {
     }
 }
 
+async function  toggleMusic () {
+    const db = new database();
+    let configClient = await db.readData('configClient');
+    if (configClient.music_muted) {
+        document.querySelector('.music-btn').classList.remove('icon-speaker-off');
+        document.querySelector('.music-btn').classList.add('icon-speaker-on');
+        configClient.music_muted = false;
+        await db.updateData('configClient', configClient);
+    } else {
+        document.querySelector('.music-btn').classList.remove('icon-speaker-on');
+        document.querySelector('.music-btn').classList.add('icon-speaker-off');
+        configClient.music_muted = true;
+        await db.updateData('configClient', configClient);
+    }
+}
+
 
 
 
@@ -530,6 +546,7 @@ export {
     getDiscordPFP as getDiscordPFP,
     setDiscordPFP as setDiscordPFP,
     getTermsAndConditions as getTermsAndConditions,
-    showTermsAndConditions as showTermsAndConditions
+    showTermsAndConditions as showTermsAndConditions,
+    toggleMusic as toggleMusic
 }
 window.setVideoSource = setVideoSource;
