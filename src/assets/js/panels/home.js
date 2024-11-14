@@ -528,10 +528,7 @@ class Home {
             }
             let musicMuted = configClient.launcher_config.music_muted;
             let musicPlaying = true;
-            console.log('lanzado')
-            console.log(opt)
             launch.Launch(opt);
-            console.log('lanzado2')
 
         playInstanceBTN.style.display = "none"
         infoStartingBOX.style.display = "block"
