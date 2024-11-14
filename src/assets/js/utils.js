@@ -503,25 +503,19 @@ async function showTermsAndConditions() {
 }
 
 async function initializeMusic() {
-    const db = new database();
-    const configClient = await db.readData('configClient');
-    musicAudio.muted = configClient.launcher_config.music_muted;
-
-    if (!musicAudio.muted) {
-        await setMusicSource('./assets/sounds/music/default-music.mp3'); // Ruta inicial
-        musicAudio.volume = 0.05; // Volumen bajo inicial
-    }
-    await db.updateData('configClient', configClient);
-    
+    await setMusicSource('./assets/sounds/music/default-music.mp3'); // Ruta inicial
 }
 
 async function setMusicSource(source) {
+    const db = new database();
+    const configClient = await db.readData('configClient');
     if (isMusicPlaying) await fadeOutAudio();
-    
+    musicAudio.muted = configClient.launcher_config.music_muted;
     musicAudio.src = source;
     musicAudio.loop = true;
     musicAudio.volume = 0; // Inicialmente en volumen cero para fundido
-    musicAudio.play().then(() => fadeInAudio());
+    if (musicAudio.muted) musicAudio.play();
+    else musicAudio.play().then(() => fadeInAudio());
     isMusicPlaying = true;
 }
 
@@ -619,6 +613,8 @@ export {
     showTermsAndConditions as showTermsAndConditions,
     toggleMusic as toggleMusic,
     setMusicSource as setMusicSource,
-    initializeMusic as initializeMusic
+    initializeMusic as initializeMusic,
+    fadeOutAudio as fadeOutAudio,
+    fadeInAudio as fadeInAudio
 }
 window.setVideoSource = setVideoSource;

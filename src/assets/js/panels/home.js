@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic } from '../utils.js'
+import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeInAudio, fadeOutAudio } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, sendPlayingMessage, sendStoppedPlayingMessage } from '../MKLib.js';
 
 const clientId = '857169541708775445';
@@ -480,7 +480,7 @@ class Home {
                     return;
                 }
             }
-
+            console.log('iniciando minecraftjavacore intance')
             let opt = {
                 url: options.url,
                 authenticator: authenticator,
@@ -514,8 +514,12 @@ class Home {
                     max: `${configClient.java_config.java_memory.max * 1024}M`
                 }
             }
-
+            let musicMuted = configClient.launcher_config.music_muted;
+            let musicPlaying = true;
+            console.log('lanzado')
+            console.log(opt)
             launch.Launch(opt);
+            console.log('lanzado2')
 
         playInstanceBTN.style.display = "none"
         infoStartingBOX.style.display = "block"
@@ -560,6 +564,10 @@ class Home {
         });
 
         launch.on('data', (e) => {
+            if (!musicMuted && musicPlaying) {
+                musicPlaying = false;
+                fadeOutAudio();
+            }
             progressBar.style.display = "none"
             if (configClient.launcher_config.closeLauncher == 'close-launcher') {
                 ipcRenderer.send("main-window-hide")
@@ -598,6 +606,10 @@ class Home {
             };
             ipcRenderer.send('main-window-progress-reset')
             this.notification()
+            if (!musicMuted && !musicPlaying) {
+                musicPlaying = true;
+                fadeOutAudio();
+            }
             infoStartingBOX.style.display = "none"
             playInstanceBTN.style.display = "flex"
             infoStarting.innerHTML = `Cerrando...`
@@ -662,6 +674,10 @@ class Home {
                     ipcRenderer.send("main-window-show")
                 };
                 ipcRenderer.send('main-window-progress-reset')
+                if (!musicMuted && !musicPlaying) {
+                    musicPlaying = true;
+                    fadeOutAudio();
+                }
                 infoStartingBOX.style.display = "none"
                 playInstanceBTN.style.display = "flex"
                 infoStarting.innerHTML = `Verificando...`
