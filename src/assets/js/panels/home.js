@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeInAudio, fadeOutAudio } from '../utils.js'
+import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, initializeMusic } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, sendPlayingMessage, sendStoppedPlayingMessage } from '../MKLib.js';
 
 const clientId = '857169541708775445';
@@ -57,10 +57,9 @@ class Home {
         this.startNotificationCheck()
         this.socialLick()
         this.instancesSelect()
+        this.startButtonManager()
         document.querySelector('.settings-btn').addEventListener('click', e => discordAccount() && changePanel('settings'))
         document.querySelector('.player-options').addEventListener('click', e => clickHead())
-        this.startModsButton()
-        this.startMusicButton()
     }
 
     async showstore() {
@@ -181,9 +180,22 @@ class Home {
         console.log('Se ha detenido la comprobación programada de notificaciones.');
     }
 
+    async startButtonManager() {
+        let res = await config.GetConfig();
+        if ((res.modsBeta && res.musicBeta) || dev) {
+            document.querySelector('.play-elements').style.marginLeft = "100px";
+        } else if (res.modsBeta || res.musicBeta) {
+            document.querySelector('.play-elements').style.marginLeft = "40px";
+        } else {
+            document.querySelector('.play-elements').style.marginLeft = "0px";
+        }
+        this.startModsButton()
+        this.startMusicButton()
+    }
+
     async startModsButton() {
         let res = await config.GetConfig();
-        if (res.modsBeta  || dev) {
+        if (res.modsBeta || dev) {
             document.querySelector('.mods-btn').style.display = 'block';
             document.querySelector('.mods-btn').addEventListener('click', e => changePanel('mods'))
         } else {
@@ -608,7 +620,7 @@ class Home {
             this.notification()
             if (!musicMuted && !musicPlaying) {
                 musicPlaying = true;
-                fadeOutAudio();
+                initializeMusic();
             }
             infoStartingBOX.style.display = "none"
             playInstanceBTN.style.display = "flex"
@@ -676,7 +688,7 @@ class Home {
                 ipcRenderer.send('main-window-progress-reset')
                 if (!musicMuted && !musicPlaying) {
                     musicPlaying = true;
-                    fadeOutAudio();
+                    fadeInAudio();
                 }
                 infoStartingBOX.style.display = "none"
                 playInstanceBTN.style.display = "flex"
