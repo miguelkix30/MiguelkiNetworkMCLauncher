@@ -21,6 +21,10 @@ let username = '';
 let DiscordUsername = '';
 let DiscordPFP = '';
 let headButton = false;
+let musicAudio = new Audio();
+let isMusicPlaying = false;
+const fadeDuration = 1000;
+
 async function setBackground(theme) {
     theme = "dark";
     let background
@@ -498,21 +502,87 @@ async function showTermsAndConditions() {
     }
 }
 
-async function  toggleMusic () {
+async function initializeMusic() {
+    const db = new database();
+    const configClient = await db.readData('configClient');
+    musicAudio.muted = configClient.launcher_config.music_muted;
+
+    if (!musicAudio.muted) {
+        await setMusicSource('./assets/sounds/music/default-music.mp3'); // Ruta inicial
+        musicAudio.volume = 0.05; // Volumen bajo inicial
+    }
+    await db.updateData('configClient', configClient);
+    
+}
+
+async function setMusicSource(source) {
+    if (isMusicPlaying) await fadeOutAudio();
+    
+    musicAudio.src = source;
+    musicAudio.loop = true;
+    musicAudio.volume = 0; // Inicialmente en volumen cero para fundido
+    musicAudio.play().then(() => fadeInAudio());
+    isMusicPlaying = true;
+}
+
+function fadeInAudio() {
+    let volume = 0;
+    const maxVolume = 0.05; // Volumen máximo bajo
+    const interval = setInterval(() => {
+        volume += 0.005; // Incremento más pequeño
+        if (volume >= maxVolume) {
+            musicAudio.volume = maxVolume;
+            clearInterval(interval);
+        } else {
+            musicAudio.volume = volume;
+        }
+    }, fadeDuration / 20); // Ajuste de la duración de fade
+}
+
+function fadeOutAudio() {
+    return new Promise((resolve) => {
+        let volume = musicAudio.volume;
+        const interval = setInterval(() => {
+            volume -= 0.005;
+            if (volume <= 0) {
+                musicAudio.volume = 0;
+                musicAudio.pause();
+                clearInterval(interval);
+                resolve();
+            } else {
+                musicAudio.volume = volume;
+            }
+        }, fadeDuration / 20);
+    });
+}
+
+async function toggleMusic() {
     const db = new database();
     let configClient = await db.readData('configClient');
-    if (configClient.music_muted) {
+
+    if (configClient.launcher_config.music_muted) {
         document.querySelector('.music-btn').classList.remove('icon-speaker-off');
         document.querySelector('.music-btn').classList.add('icon-speaker-on');
-        configClient.music_muted = false;
+        configClient.launcher_config.music_muted = false;
+        musicAudio.muted = false;
         await db.updateData('configClient', configClient);
+        await fadeInAudio();
+        
+        // Asegurarse de que la música se reproduce después del desmuteo
+        if (!isMusicPlaying) {
+            await musicAudio.play();
+            isMusicPlaying = true;
+        }
     } else {
         document.querySelector('.music-btn').classList.remove('icon-speaker-on');
         document.querySelector('.music-btn').classList.add('icon-speaker-off');
-        configClient.music_muted = true;
+        configClient.launcher_config.music_muted = true;
         await db.updateData('configClient', configClient);
+        await fadeOutAudio();
+        isMusicPlaying = false;
     }
 }
+
 
 
 
@@ -547,6 +617,8 @@ export {
     setDiscordPFP as setDiscordPFP,
     getTermsAndConditions as getTermsAndConditions,
     showTermsAndConditions as showTermsAndConditions,
-    toggleMusic as toggleMusic
+    toggleMusic as toggleMusic,
+    setMusicSource as setMusicSource,
+    initializeMusic as initializeMusic
 }
 window.setVideoSource = setVideoSource;

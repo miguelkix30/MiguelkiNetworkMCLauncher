@@ -198,7 +198,7 @@ class Home {
             let configClient = await this.db.readData('configClient')
             document.querySelector('.music-btn').style.display = 'block';
             document.querySelector('.music-btn').addEventListener('click', e => toggleMusic())   
-            if (configClient.music_muted) {
+            if (configClient.launcher_config.music_muted) {
                 document.querySelector('.music-btn').classList.remove('icon-speaker-on');
                 document.querySelector('.music-btn').classList.add('icon-speaker-off');
             } else {
