@@ -22,6 +22,7 @@ let DiscordUsername = '';
 let DiscordPFP = '';
 let headButton = false;
 let musicAudio = new Audio();
+let musicSource = '';
 let isMusicPlaying = false;
 const fadeDuration = 1000;
 
@@ -271,6 +272,17 @@ async function setInstanceBackground(opt) {
     }
 }
 
+async function setBackgroundMusic(opt) {
+    let music = opt
+    if (music === undefined) {
+        setMusicSource()
+    } else if (music.match(/^(http|https):\/\/[^ "]+$/)) {
+        setMusicSource(music)
+    } else {
+        setMusicSource()
+    }
+}
+
 async function getUsername() {
     return username;
 }
@@ -502,42 +514,65 @@ async function showTermsAndConditions() {
     }
 }
 
-async function initializeMusic() {
-    await setMusicSource('./assets/sounds/music/default-music.mp3'); // Ruta inicial
-}
-
 async function setMusicSource(source) {
+    if (source === undefined || source === '' || source === 'none') {
+        let res = await config.GetConfig();
+        if (res.custom_music.match(/^(http|https):\/\/[^ "]+$/)) {
+            source = res.custom_music;
+        } else {
+        source = './assets/sounds/music/default-music.mp3';
+        }
+    }
+    if (musicSource === source) return;
+    musicSource = source;
+
     const db = new database();
     const configClient = await db.readData('configClient');
+
     if (isMusicPlaying) await fadeOutAudio();
+
     musicAudio.muted = configClient.launcher_config.music_muted;
     musicAudio.src = source;
     musicAudio.loop = true;
-    musicAudio.volume = 0; // Inicialmente en volumen cero para fundido
-    if (musicAudio.muted) musicAudio.play();
-    else musicAudio.play().then(() => fadeInAudio());
+    musicAudio.volume = 0;
+    musicAudio.disableRemotePlayback = true;
+
+    navigator.mediaSession.setActionHandler('play', null);
+    navigator.mediaSession.setActionHandler('pause', null);
+    navigator.mediaSession.setActionHandler('seekbackward', null);
+    navigator.mediaSession.setActionHandler('seekforward', null);
+    navigator.mediaSession.setActionHandler('previoustrack', null);
+    navigator.mediaSession.setActionHandler('nexttrack', null);
+
+    if (musicAudio.muted) {
+        musicAudio.play();
+    } else {
+        musicAudio.play().then(() => fadeInAudio());
+    }
+
     isMusicPlaying = true;
 }
 
+
 function fadeInAudio() {
     let volume = 0;
-    const maxVolume = 0.05; // Volumen máximo bajo
+    const maxVolume = 0.008; // Volumen máximo bajo
     const interval = setInterval(() => {
-        volume += 0.005; // Incremento más pequeño
+        volume += 0.0005; // Incremento más pequeño
         if (volume >= maxVolume) {
             musicAudio.volume = maxVolume;
             clearInterval(interval);
         } else {
             musicAudio.volume = volume;
         }
-    }, fadeDuration / 20); // Ajuste de la duración de fade
+    }, fadeDuration / 25); // Ajuste de la duración de fade
 }
 
 function fadeOutAudio() {
     return new Promise((resolve) => {
         let volume = musicAudio.volume;
         const interval = setInterval(() => {
-            volume -= 0.005;
+            volume -= 0.0005;
             if (volume <= 0) {
                 musicAudio.volume = 0;
                 musicAudio.pause();
@@ -546,7 +581,7 @@ function fadeOutAudio() {
             } else {
                 musicAudio.volume = volume;
             }
-        }, fadeDuration / 20);
+        }, fadeDuration / 25);
     });
 }
 
@@ -612,9 +647,8 @@ export {
     getTermsAndConditions as getTermsAndConditions,
     showTermsAndConditions as showTermsAndConditions,
     toggleMusic as toggleMusic,
-    setMusicSource as setMusicSource,
-    initializeMusic as initializeMusic,
     fadeOutAudio as fadeOutAudio,
-    fadeInAudio as fadeInAudio
+    fadeInAudio as fadeInAudio,
+    setBackgroundMusic as setBackgroundMusic
 }
 window.setVideoSource = setVideoSource;

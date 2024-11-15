@@ -28,7 +28,7 @@ import {
   getDiscordUsername,
   setDiscordPFP,
   showTermsAndConditions,
-  initializeMusic
+  setBackgroundMusic
 } from "./utils.js";
 import {
   sendDiscordMessage,
@@ -64,7 +64,7 @@ class Launcher {
     await this.initConfigClient();
     this.createPanels(Login, Home, Settings, Mods);
     let res = await config.GetConfig();
-    if (res.musicBeta || dev) initializeMusic();
+    if (res.musicBeta || dev) setBackgroundMusic();
     if (res.termsDialog) {
       const accepted = await showTermsAndConditions();
       if (!accepted) {

@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, initializeMusic } from '../utils.js'
+import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, sendPlayingMessage, sendStoppedPlayingMessage } from '../MKLib.js';
 
 const clientId = '1307003977442787451';
@@ -347,12 +347,14 @@ class Home {
                         configClient.instance_selct = newInstanceSelect.name
                         instanceSelect = newInstanceSelect.name
                         setStatus(newInstanceSelect.status)
+                        setBackgroundMusic(newInstanceSelect.backgroundMusic)
                         setInstanceBackground(newInstanceSelect.background)
                         await this.db.updateData('configClient', configClient)
                     }
                 }
             } else console.log(`Configurando instancia ${instance.name}...`)
             if (instance.name == instanceSelect) setStatus(instance.status)
+            if (instance.name == instanceSelect) setBackgroundMusic(instance.backgroundMusic)
             if (instance.name == instanceSelect) setInstanceBackground(instance.background)
             this.notification()
         }
@@ -375,7 +377,8 @@ class Home {
                 let instance = await config.getInstanceList()
                 let options = instance.find(i => i.name == configClient.instance_selct)
                 await setStatus(options.status)
-                await setInstanceBackground(options.background)
+                setBackgroundMusic(options.backgroundMusic)
+                setInstanceBackground(options.background)
             }
         })
 
@@ -492,7 +495,6 @@ class Home {
                     return;
                 }
             }
-            console.log('iniciando minecraftjavacore intance')
             let opt = {
                 url: options.url,
                 authenticator: authenticator,
@@ -617,7 +619,7 @@ class Home {
             this.notification()
             if (!musicMuted && !musicPlaying) {
                 musicPlaying = true;
-                initializeMusic();
+                setBackgroundMusic();
             }
             infoStartingBOX.style.display = "none"
             playInstanceBTN.style.display = "flex"
@@ -685,7 +687,7 @@ class Home {
                 ipcRenderer.send('main-window-progress-reset')
                 if (!musicMuted && !musicPlaying) {
                     musicPlaying = true;
-                    fadeInAudio();
+                    setBackgroundMusic();
                 }
                 infoStartingBOX.style.display = "none"
                 playInstanceBTN.style.display = "flex"
