@@ -5,7 +5,7 @@
 import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, initializeMusic } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, sendPlayingMessage, sendStoppedPlayingMessage } from '../MKLib.js';
 
-const clientId = '857169541708775445';
+const clientId = '1307003977442787451';
 const DiscordRPC = require('discord-rpc');
 const RPC = new DiscordRPC.Client({ transport: 'ipc' });
 let dev = process.env.NODE_ENV === 'dev';
@@ -30,7 +30,7 @@ RPC.on('ready', async () => {
         buttons: [
             {
                 label: `Discord`,
-                url: `https://discord.gg/7kPGjgJND7`,
+                url: `https://discord.gg/yQfeHSWvft`,
             }
         ]
     }).catch();
@@ -122,13 +122,13 @@ class Home {
                 await this.showNotification();
             }
             
-        } else if (process.env.NODE_ENV === 'dev') {
+        } /* else if (process.env.NODE_ENV === 'dev') {
             notificationTitle.innerHTML = '¡Atención!';
                 notificationContent.innerHTML = "Estas ejecutando el launcher desde la consola, recuerda que si utilizas el código de este launcher deberás cumplir con las condiciones de uso disponibles en el Github.";
                 notification.style.background = colorRed;
                 notificationIcon.src = 'assets/images/notification/exclamation2.png';
                 await this.showNotification();
-        } else if (res.notification.enabled) {
+        } */ else if (res.notification.enabled) {
             notificationTitle.innerHTML = res.notification.title;
             notificationContent.innerHTML = res.notification.content;
             if (notificationContent.innerHTML.length > 160) {
@@ -592,7 +592,7 @@ class Home {
                     buttons: [
                         {
                             label: `Discord`,
-                            url: `https://discord.gg/7kPGjgJND7`,
+                            url: `https://discord.gg/yQfeHSWvft`,
                         }
                     ]
                 })
@@ -635,7 +635,7 @@ class Home {
                 buttons: [
                     {
                         label: `Discord`,
-                        url: `https://discord.gg/7kPGjgJND7`,
+                        url: `https://discord.gg/yQfeHSWvft`,
                     }
                 ]
             }).catch();
@@ -664,7 +664,7 @@ class Home {
                     buttons: [
                         {
                             label: `Discord`,
-                            url: `https://discord.gg/7kPGjgJND7`,
+                            url: `https://discord.gg/yQfeHSWvft`,
                         }
                     ]
                 }).catch();
@@ -703,7 +703,7 @@ class Home {
                     buttons: [
                         {
                             label: `Discord`,
-                            url: `https://discord.gg/7kPGjgJND7`,
+                            url: `https://discord.gg/yQfeHSWvft`,
                         }
                     ]
                 }).catch();

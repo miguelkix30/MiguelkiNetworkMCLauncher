@@ -13,8 +13,8 @@ let dev = process.env.NODE_ENV === 'dev';
 let server;
 let authToken;
 let config = {
-    "clientId": "857169541708775445",
-    "clientSecret": "RTmN1F_2Qt8X6LzmjgFy3nVe8cRbhQny",
+    "clientId": "1307003977442787451",
+    "clientSecret": "UZSX-RM_KnL10I8vCGRYFaIKBDFzYn4Y",
     "redirectUri": "http://localhost:3030/auth/discord/"
   }
 
