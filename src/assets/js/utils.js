@@ -516,7 +516,8 @@ async function showTermsAndConditions() {
 
 async function setMusicSource(source) {
     let res = await config.GetConfig();
-    if (!res.musicBeta && !process.env.NODE_ENV === 'dev') return;
+    let dev = process.env.NODE_ENV === 'dev';
+    if (!res.musicBeta && !dev) return;
     if (source === undefined || source === '' || source === 'none') {
         if (res.custom_music.match(/^(http|https):\/\/[^ "]+$/)) {
             source = res.custom_music;
