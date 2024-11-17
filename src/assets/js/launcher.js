@@ -466,107 +466,63 @@ class Launcher {
           continue;
         }
         if (account.meta.type === "Xbox") {
-          console.log(
-            `Plataforma: ${account.meta.type} | Usuario: ${account.name}`
-          );
+          console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
           popupRefresh.openPopup({
             title: "Conectando...",
             content: `Plataforma: ${account.meta.type} | Usuario: ${account.name}`,
             color: "var(--color)",
             background: false,
           });
-
-          let refresh_accounts = await new Microsoft(
-            this.config.client_id
-          ).refresh(account);
-
+          let refresh_accounts = await new Microsoft(this.config.client_id).refresh(account);
           if (refresh_accounts.error) {
             await this.db.deleteData("accounts", account_ID);
             if (account_ID == account_selected) {
               configClient.account_selected = null;
               await this.db.updateData("configClient", configClient);
             }
-            console.error(
-              `[Account] ${account.name}: ${refresh_accounts.errorMessage}`
-            );
+            console.error(`[Account] ${account.name}: ${refresh_accounts.errorMessage}`);
             continue;
           }
-
           refresh_accounts.ID = account_ID;
           await this.db.updateData("accounts", refresh_accounts, account_ID);
           await addAccount(refresh_accounts);
           if (account_ID == account_selected) {
             accountSelect(refresh_accounts);
             clickableHead(false);
-              await setUsername(account.name);
-              await sendDiscordMessage();
+            await setUsername(account.name);
+            await sendDiscordMessage();
           }
         } else if (account.meta.type == "AZauth") {
-          console.log(
-            `Plataforma: MKNetworkID | Usuario: ${account.name}`
-          );
+          console.log(`Plataforma: MKNetworkID | Usuario: ${account.name}`);
           popupRefresh.openPopup({
             title: "Conectando...",
             content: `Plataforma: MKNetworkID | Usuario: ${account.name}`,
             color: "var(--color)",
             background: false,
           });
-          if (typeof this.config.online !== "string") {
-            console.error(`Invalid URL: ${this.config.online}`);
-            this.db.deleteData("accounts", account_ID);
-            if (account_ID == account_selected) {
-              configClient.account_selected = null;
-              this.db.updateData("configClient", configClient);
-            }
-            console.error(`[Account] ${account.name}`);
-            continue;
-          }
-
-          if (
-            !this.config.online.startsWith("http://") &&
-            !this.config.online.startsWith("https://")
-          ) {
-            console.error(`Invalid URL: ${this.config.online}`);
-            this.db.deleteData("accounts", account_ID);
-            if (account_ID == account_selected) {
-              configClient.account_selected = null;
-              this.db.updateData("configClient", configClient);
-            }
-            console.error(`[Account] ${account.name}`);
-            continue;
-          }
-
-          let refresh_accounts = await new AZauth(this.config.online).verify(
-            account
-          );
-
+          let refresh_accounts = await new AZauth(this.config.online).verify(account);
           if (refresh_accounts.error) {
-            this.db.deleteData("accounts", account_ID);
+            await this.db.deleteData("accounts", account_ID);
             if (account_ID == account_selected) {
               configClient.account_selected = null;
-              this.db.updateData("configClient", configClient);
+              await this.db.updateData("configClient", configClient);
             }
-            console.error(
-              `[Account] ${account.name}: ${refresh_accounts.message}`
-            );
+            console.error(`[Account] ${account.name}: ${refresh_accounts.message}`);
             continue;
           }
-
           refresh_accounts.ID = account_ID;
-          this.db.updateData("accounts", refresh_accounts, account_ID);
+          await this.db.updateData("accounts", refresh_accounts, account_ID);
           await addAccount(refresh_accounts);
           if (account_ID == account_selected) {
             accountSelect(refresh_accounts);
             clickableHead(true);
-              await setUsername(account.name);
-              await sendDiscordMessage();
+            await setUsername(account.name);
+            await sendDiscordMessage();
           }
         } else if (account.meta.type == "Mojang") {
-          console.log(
-            `Plataforma: ${account.meta.type} | Usuario: ${account.name}`
-          );
+          console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
           popupRefresh.openPopup({
-            title: "Connectando...",
+            title: "Conectando...",
             content: `Plataforma: ${account.meta.type} | Usuario: ${account.name}`,
             color: "var(--color)",
             background: false,
@@ -585,40 +541,12 @@ class Launcher {
             }
             continue;
           }
-
-          let refresh_accounts = await Mojang.refresh(account);
-
-          if (refresh_accounts.error) {
-            this.db.deleteData("accounts", account_ID);
-            if (account_ID == account_selected) {
-              configClient.account_selected = null;
-              this.db.updateData("configClient", configClient);
-            }
-            console.error(
-              `[Account] ${account.name}: ${refresh_accounts.errorMessage}`
-            );
-            continue;
-          }
-
-          refresh_accounts.ID = account_ID;
-          this.db.updateData("accounts", refresh_accounts, account_ID);
-          await addAccount(refresh_accounts);
-          if (account_ID == account_selected) accountSelect(refresh_accounts);
-        } else {
-          console.error(`[Account] ${account.name}: No se ha encontrado la plataforma de la cuenta.`);
-          this.db.deleteData("accounts", account_ID);
-          if (account_ID == account_selected) {
-            configClient.account_selected = null;
-            this.db.updateData("configClient", configClient);
-          }
         }
       }
-
       accounts = await this.db.readAllData("accounts");
       configClient = await this.db.readData("configClient");
       account_selected = configClient ? configClient.account_selected : null;
-
-      if (!account_selected) {
+      if (!account_selected && accounts.length) {
         let uuid = accounts[0].ID;
         if (uuid) {
           configClient.account_selected = uuid;
@@ -626,14 +554,12 @@ class Launcher {
           accountSelect(uuid);
         }
       }
-
       if (!accounts.length) {
-        config.account_selected = null;
-        await this.db.updateData("configClient", config);
+        configClient.account_selected = null;
+        await this.db.updateData("configClient", configClient);
         popupRefresh.closePopup();
         return changePanel("login");
       }
-
       popupRefresh.closePopup();
       changePanel("home");
     } else {

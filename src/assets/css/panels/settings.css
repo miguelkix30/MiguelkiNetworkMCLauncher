@@ -429,6 +429,11 @@
     border-radius: 15px;
     margin: 0 1rem;
     cursor: pointer;
+    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+}
+
+.java-path-btn:hover {
+    background-color: var(--box-button-hover);
 }
 
 /*******************************************************************************
@@ -466,6 +471,11 @@
     border-radius: 15px;
     margin: 0 1rem;
     cursor: pointer;
+    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+}
+
+.size-btn:hover {
+    background-color: var(--box-button-hover);
 }
 
 /*******************************************************************************
@@ -491,6 +501,11 @@
     border-radius: 15px;
     margin: 0 1rem;
     cursor: pointer;
+    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+}
+
+.max-files-btn:hover {
+    background-color: var(--box-button-hover);
 }
 
 .theme-btn {

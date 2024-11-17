@@ -2,7 +2,7 @@
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
     "version": "3.1.13",
-    "sub_version": "",
+    "sub_version": "b",
     "changelog": "Se ha añadido un sistema de música de fondo.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
@@ -14,7 +14,7 @@
     "url": "http://node1.miguelkinetwork.info:25565/",
     "store_url": "https://minecraft.miguelkinetwork.info/shop/",
     "azuriom_url": "https://minecraft.miguelkinetwork.info/",
-    "discord_server_id": "761943171801415692",
+    "discord_server_id": "1300477405957329018",
     "discord_url": "https://dsc.gg/miguelkinetwork",
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",

@@ -179,7 +179,7 @@ ipcMain.handle('open-discord-auth', async () => {
             }
         });
 
-        discordWin.loadURL('https://discord.com/oauth2/authorize?client_id=857169541708775445&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3030%2Fauth%2Fdiscord%2F&scope=identify+guilds');
+        discordWin.loadURL('https://discord.com/oauth2/authorize?client_id=1307003977442787451&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3030%2Fauth%2Fdiscord%2F&scope=identify+guilds');
 
         discordWin.on('closed', () => {
             console.log("Ventana de Discord cerrada");

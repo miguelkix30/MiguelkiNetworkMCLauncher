@@ -619,7 +619,7 @@ class Home {
             this.notification()
             if (!musicMuted && !musicPlaying) {
                 musicPlaying = true;
-                setBackgroundMusic();
+                setBackgroundMusic(options.backgroundMusic);
             }
             infoStartingBOX.style.display = "none"
             playInstanceBTN.style.display = "flex"
@@ -687,7 +687,7 @@ class Home {
                 ipcRenderer.send('main-window-progress-reset')
                 if (!musicMuted && !musicPlaying) {
                     musicPlaying = true;
-                    setBackgroundMusic();
+                    setBackgroundMusic(options.backgroundMusic);
                 }
                 infoStartingBOX.style.display = "none"
                 playInstanceBTN.style.display = "flex"
