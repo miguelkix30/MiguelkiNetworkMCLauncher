@@ -321,7 +321,7 @@ class Home {
 
         let instanceBTN = document.querySelector('.play-instance')
         let instancePopup = document.querySelector('.instance-popup')
-        let instancesListPopup = document.querySelector('.instances-List')
+        let instancesGrid = document.querySelector('.instances-grid')
         let instanceSelectBTN = document.querySelector('.instance-select')
         let instanceCloseBTN = document.querySelector('.close-popup')
 
@@ -361,25 +361,17 @@ class Home {
         }
 
         instanceSelectBTN.addEventListener('click', async () => {
-            instancesListPopup.innerHTML = ''
+            instancesGrid.innerHTML = ''
             for (let instance of instancesList) {
                 let color = instance.mkid ? 'green' : 'red';
-                if (instance.whitelistActive) {
-                    instance.whitelist.map(whitelist => {
-                        if (whitelist == auth?.name) {
-                            if (instance.name == instanceSelect) {
-                                instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements active-instance">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
-                            } else {
-                                instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
-                            }
-                        }
-                    })
-                } else {
-                    if (instance.name == instanceSelect) {
-                        instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements active-instance">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
-                    } else {
-                        instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
-                    }
+                let whitelist = instance.whitelistActive && instance.whitelist.includes(auth?.name);
+                let imageUrl = instance.image || 'assets/images/default/placeholder.jpg';
+                if (!instance.whitelistActive || whitelist) {
+                    instancesGrid.innerHTML += `
+                        <div id="${instance.name}" class="instance-element ${instance.name === instanceSelect ? 'active-instance' : ''}">
+                            <div class="instance-image" style="background-image: url('${imageUrl}');"></div>
+                            <div class="instance-name">${instance.name}<div class="instance-mkid" style="background-color: ${color};"></div></div>
+                        </div>`;
                 }
             }
             instancePopup.classList.add('show');
@@ -388,16 +380,16 @@ class Home {
         instancePopup.addEventListener('click', async e => {
             let configClient = await this.db.readData('configClient')
 
-            if (e.target.classList.contains('instance-elements')) {
-                let newInstanceSelect = e.target.id
+            if (e.target.closest('.instance-element')) {
+                let newInstanceSelect = e.target.closest('.instance-element').id
                 let activeInstanceSelect = document.querySelector('.active-instance')
 
-                if (activeInstanceSelect) activeInstanceSelect.classList.toggle('active-instance');
-                e.target.classList.add('active-instance');
+                if (activeInstanceSelect) activeInstanceSelect.classList.remove('active-instance');
+                e.target.closest('.instance-element').classList.add('active-instance');
 
                 configClient.instance_selct = newInstanceSelect
                 await this.db.updateData('configClient', configClient)
-                instanceSelect = instancesList.filter(i => i.name == newInstanceSelect)
+                instanceSelect = newInstanceSelect // Correctly update instanceSelect
                 instancePopup.classList.remove('show');
                 this.notification()
                 let instance = await config.getInstanceList()
