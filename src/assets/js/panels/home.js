@@ -322,10 +322,11 @@ class Home {
         let instanceBTN = document.querySelector('.play-instance')
         let instancePopup = document.querySelector('.instance-popup')
         let instancesListPopup = document.querySelector('.instances-List')
+        let instanceSelectBTN = document.querySelector('.instance-select')
         let instanceCloseBTN = document.querySelector('.close-popup')
 
         if (instancesList.length === 1) {
-            document.querySelector('.instance-select').style.display = 'none'
+            instanceSelectBTN.style.display = 'none'
             instanceBTN.style.paddingRight = '0'
         }
 
@@ -359,6 +360,31 @@ class Home {
             this.notification()
         }
 
+        instanceSelectBTN.addEventListener('click', async () => {
+            instancesListPopup.innerHTML = ''
+            for (let instance of instancesList) {
+                let color = instance.mkid ? 'green' : 'red';
+                if (instance.whitelistActive) {
+                    instance.whitelist.map(whitelist => {
+                        if (whitelist == auth?.name) {
+                            if (instance.name == instanceSelect) {
+                                instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements active-instance">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
+                            } else {
+                                instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
+                            }
+                        }
+                    })
+                } else {
+                    if (instance.name == instanceSelect) {
+                        instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements active-instance">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
+                    } else {
+                        instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
+                    }
+                }
+            }
+            instancePopup.classList.add('show');
+        });
+
         instancePopup.addEventListener('click', async e => {
             let configClient = await this.db.readData('configClient')
 
@@ -382,38 +408,8 @@ class Home {
             }
         })
 
-        instanceBTN.addEventListener('click', async e => {
-            let configClient = await this.db.readData('configClient')
-            let instanceSelect = configClient.instance_selct
-            let auth = await this.db.readData('accounts', configClient.account_selected)
-
-            if (e.target.classList.contains('instance-select')) {
-                instancesListPopup.innerHTML = ''
-                for (let instance of instancesList) {
-                    let color = instance.mkid ? 'green' : 'red';
-                    if (instance.whitelistActive) {
-                        instance.whitelist.map(whitelist => {
-                            if (whitelist == auth?.name) {
-                                if (instance.name == instanceSelect) {
-                                    instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements active-instance">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
-                                } else {
-                                    instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
-                                }
-                            }
-                        })
-                    } else {
-                        if (instance.name == instanceSelect) {
-                            instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements active-instance">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
-                        } else {
-                            instancesListPopup.innerHTML += `<div id="${instance.name}" class="instance-elements">${instance.name}&#160;<span style="color:${color}; text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white; float: right;">MKNetID&#160;</span></div>`
-                        }
-                    }
-                }
-                instancePopup.classList.add('show');
-
-            }
-
-            if (!e.target.classList.contains('instance-select')) this.startGame()
+        instanceBTN.addEventListener('click', async () => {
+            this.startGame()
         })
 
         instanceCloseBTN.addEventListener('click', () => {
