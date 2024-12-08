@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic } from '../utils.js'
+import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, sendPlayingMessage, sendStoppedPlayingMessage } from '../MKLib.js';
 
 const clientId = '1307003977442787451';
@@ -51,15 +51,15 @@ class Home {
     async init(config) {
         this.config = config;
         this.db = new database();
-        this.news()
-        this.showstore()
-        this.notification()
-        this.startNotificationCheck()
-        this.socialLick()
-        this.instancesSelect()
-        this.startButtonManager()
-        document.querySelector('.settings-btn').addEventListener('click', e => discordAccount() && changePanel('settings'))
-        document.querySelector('.player-options').addEventListener('click', e => clickHead())
+        this.news();
+        this.showstore();
+        this.notification();
+        this.startNotificationCheck();
+        this.socialLick();
+        this.instancesSelect();
+        this.startButtonManager();
+        document.querySelector('.settings-btn').addEventListener('click', e => discordAccount() && changePanel('settings'));
+        document.querySelector('.player-options').addEventListener('click', e => clickHead());
     }
 
     async showstore() {
@@ -314,57 +314,60 @@ class Home {
     }
 
     async instancesSelect() {
-        let configClient = await this.db.readData('configClient')
-        let auth = await this.db.readData('accounts', configClient.account_selected)
-        let instancesList = await config.getInstanceList()
-        let instanceSelect = instancesList.find(i => i.name == configClient?.instance_selct) ? configClient?.instance_selct : null
+        let configClient = await this.db.readData('configClient');
+        let auth = await this.db.readData('accounts', configClient.account_selected);
+        let username = await getUsername();
+        let instancesList = await config.getInstanceList();
+        let instanceSelect = instancesList.find(i => i.name == configClient?.instance_selct) ? configClient?.instance_selct : null;
 
-        let instanceBTN = document.querySelector('.play-instance')
-        let instancePopup = document.querySelector('.instance-popup')
-        let instancesGrid = document.querySelector('.instances-grid')
-        let instanceSelectBTN = document.querySelector('.instance-select')
-        let instanceCloseBTN = document.querySelector('.close-popup')
+        let instanceBTN = document.querySelector('.play-instance');
+        let instancePopup = document.querySelector('.instance-popup');
+        let instancesGrid = document.querySelector('.instances-grid');
+        let instanceSelectBTN = document.querySelector('.instance-select');
+        let instanceCloseBTN = document.querySelector('.close-popup');
 
         if (instancesList.length === 1) {
-            instanceSelectBTN.style.display = 'none'
-            instanceBTN.style.paddingRight = '0'
+            instanceSelectBTN.style.display = 'none';
+            instanceBTN.style.paddingRight = '0';
         }
 
         if (!instanceSelect) {
-            let newInstanceSelect = instancesList.find(i => i.whitelistActive == false)
-            let configClient = await this.db.readData('configClient')
-            configClient.instance_selct = newInstanceSelect.name
-            instanceSelect = newInstanceSelect.name
-            await this.db.updateData('configClient', configClient)
+            let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
+            configClient.instance_selct = newInstanceSelect.name;
+            instanceSelect = newInstanceSelect.name;
+            await this.db.updateData('configClient', configClient);
         }
 
         for (let instance of instancesList) {
             if (instance.whitelistActive) {
-                let whitelist = instance.whitelist.find(whitelist => whitelist == auth?.name)
-                if (whitelist !== auth?.name) {
+                let whitelist = instance.whitelist.find(whitelist => whitelist == username);
+                if (whitelist !== username) {
                     if (instance.name == instanceSelect) {
-                        let newInstanceSelect = instancesList.find(i => i.whitelistActive == false)
-                        let configClient = await this.db.readData('configClient')
-                        configClient.instance_selct = newInstanceSelect.name
-                        instanceSelect = newInstanceSelect.name
-                        setStatus(newInstanceSelect.status)
-                        setBackgroundMusic(newInstanceSelect.backgroundMusic)
-                        setInstanceBackground(newInstanceSelect.background)
-                        await this.db.updateData('configClient', configClient)
+                        let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
+                        configClient.instance_selct = newInstanceSelect.name;
+                        instanceSelect = newInstanceSelect.name;
+                        setStatus(newInstanceSelect.status);
+                        setBackgroundMusic(newInstanceSelect.backgroundMusic);
+                        setInstanceBackground(newInstanceSelect.background);
+                        await this.db.updateData('configClient', configClient);
                     }
                 }
-            } else console.log(`Configurando instancia ${instance.name}...`)
-            if (instance.name == instanceSelect) setStatus(instance.status)
-            if (instance.name == instanceSelect) setBackgroundMusic(instance.backgroundMusic)
-            if (instance.name == instanceSelect) setInstanceBackground(instance.background)
-            this.notification()
+            } else {
+                console.log(`Configurando instancia ${instance.name}...`);
+            }
+            if (instance.name == instanceSelect) setStatus(instance.status);
+            if (instance.name == instanceSelect) setBackgroundMusic(instance.backgroundMusic);
+            if (instance.name == instanceSelect) setInstanceBackground(instance.background);
+            this.notification();
         }
 
         instanceSelectBTN.addEventListener('click', async () => {
-            instancesGrid.innerHTML = ''
+            let username = await getUsername();
+            instancesGrid.innerHTML = '';
             for (let instance of instancesList) {
-                let color = instance.maintenance ? 'red' : 'green'; // Change color based on maintenance status
-                let whitelist = instance.whitelistActive && instance.whitelist.includes(auth?.name);
+                let color = instance.maintenance ? 'red' : 'green';
+                let whitelist = instance.whitelistActive && instance.whitelist.includes(username);
+                console.log(username);
                 let imageUrl = instance.image || 'assets/images/default/placeholder.jpg';
                 if (!instance.whitelistActive || whitelist) {
                     instancesGrid.innerHTML += `
@@ -378,36 +381,36 @@ class Home {
         });
 
         instancePopup.addEventListener('click', async e => {
-            let configClient = await this.db.readData('configClient')
+            let configClient = await this.db.readData('configClient');
 
             if (e.target.closest('.instance-element')) {
-                let newInstanceSelect = e.target.closest('.instance-element').id
-                let activeInstanceSelect = document.querySelector('.active-instance')
+                let newInstanceSelect = e.target.closest('.instance-element').id;
+                let activeInstanceSelect = document.querySelector('.active-instance');
 
                 if (activeInstanceSelect) activeInstanceSelect.classList.remove('active-instance');
                 e.target.closest('.instance-element').classList.add('active-instance');
 
-                configClient.instance_selct = newInstanceSelect
-                await this.db.updateData('configClient', configClient)
-                instanceSelect = newInstanceSelect // Correctly update instanceSelect
+                configClient.instance_selct = newInstanceSelect;
+                await this.db.updateData('configClient', configClient);
+                instanceSelect = newInstanceSelect; // Correctly update instanceSelect
                 instancePopup.classList.remove('show');
-                this.notification()
-                let instance = await config.getInstanceList()
-                let options = instance.find(i => i.name == configClient.instance_selct)
-                await setStatus(options.status)
-                setBackgroundMusic(options.backgroundMusic)
-                setInstanceBackground(options.background)
+                this.notification();
+                let instance = await config.getInstanceList();
+                let options = instance.find(i => i.name == configClient.instance_selct);
+                await setStatus(options.status);
+                setBackgroundMusic(options.backgroundMusic);
+                setInstanceBackground(options.background);
             }
-        })
+        });
 
         instanceBTN.addEventListener('click', async () => {
-            this.startGame()
-        })
+            this.startGame();
+        });
 
         instanceCloseBTN.addEventListener('click', () => {
             instancePopup.classList.remove('show');
             this.notification();
-        })
+        });
     }
 
     async startGame() {

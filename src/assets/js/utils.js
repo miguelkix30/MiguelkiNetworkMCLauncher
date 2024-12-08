@@ -197,7 +197,8 @@ async function accountSelect(data) {
         }
         img.src = `https://mineskin.eu/helm/${data.name}`;
     }
-    if (data.name) document.querySelector('.player-name').innerHTML = data.name;
+    setUsername(data.name);
+    /* if (data.name) document.querySelector('.player-name').innerHTML = data.name; */
 }
 
 
