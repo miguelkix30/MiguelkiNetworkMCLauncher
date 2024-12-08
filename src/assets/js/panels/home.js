@@ -363,7 +363,7 @@ class Home {
         instanceSelectBTN.addEventListener('click', async () => {
             instancesGrid.innerHTML = ''
             for (let instance of instancesList) {
-                let color = instance.mkid ? 'green' : 'red';
+                let color = instance.maintenance ? 'red' : 'green'; // Change color based on maintenance status
                 let whitelist = instance.whitelistActive && instance.whitelist.includes(auth?.name);
                 let imageUrl = instance.image || 'assets/images/default/placeholder.jpg';
                 if (!instance.whitelistActive || whitelist) {

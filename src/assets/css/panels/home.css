@@ -167,7 +167,7 @@
 }
 
 .news-block, .news-blockshop {
-    width: 100%;
+    width: 99%;
     margin: 0 0 1rem 0;
     border-radius: 10px;
     background-color: var(--sidebar);
@@ -178,15 +178,6 @@
     border: 1px solid rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(15.5px);
-}
-
-.news-list::-webkit-scrollbar, .changelog-store-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-.news-list::-webkit-scrollbar-thumb, .changelog-store-list::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
 }
 
 .news-header {
@@ -411,14 +402,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: transparent;
-    transition: color 0.05s, background-color 0.2s;
-    border-radius: 100px;
+    border-radius: 15px;
     color: #fff;
     font-size: 1rem;
     height: 3rem;
     width: 3rem;
     cursor: pointer;
+    background: rgba(0, 0, 0, 0.05); /* Transparent background */
+    transition: background 0.2s, border 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.18); /* Semi-transparent border */
+    backdrop-filter: blur(15.5px);
+    -webkit-backdrop-filter: blur(15.5px);
 }
 .instance-select:hover {
     background: var(--box-button-hover-2);
@@ -575,17 +569,21 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: var(--background-element);
+    background: rgba(0, 0, 0, 0.05); /* Transparent background */
     border-radius: 10px;
     padding: 1rem;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, border 0.2s;
     width: 250px; /* Adjust width */
     margin: 0; /* Remove extra spacing */
+    border: 1px solid rgba(255, 255, 255, 0.18); /* Semi-transparent border */
+    backdrop-filter: blur(15.5px);
+    -webkit-backdrop-filter: blur(15.5px);
 }
 
 .instance-element:hover {
-    background: var(--element-color);
+    background: rgba(0, 120, 189, 0.2); /* Slightly more translucent blue on hover */
+    border: 1px solid rgba(0, 120, 189, 0.3); /* More opaque border on hover */
 }
 
 .instance-image {
@@ -614,8 +612,8 @@
 }
 
 .active-instance {
-    background: var(--element-color);
-    border: 2px solid var(--box-button); /* Highlight selected instance */
+    background: rgba(0, 120, 189, 0.4); /* Slightly more translucent blue on hover */
+    border: 1px solid rgba(0, 120, 189, 0.3); /* More opaque border on hover */
 }
 
 .close-popup {
@@ -637,10 +635,6 @@
     font-size: 2rem;
 }
 
-.active-instance {
-    background: var(--element-color);
-}
-
 .instance-elements {
     background: var(--background-element);
     text-align: center;
@@ -651,10 +645,6 @@
 }
 
 .instance-elements:hover {
-    background: var(--element-color);
-}
-
-.active-instance {
     background: var(--element-color);
 }
 
@@ -797,38 +787,13 @@
     transition: all 0.2s;
 }
 
+.grid-icon {
+    width: 50%;
+    height: 50%;
+    filter: invert(1); /* Make the icon white */
+}
+
 @keyframes rotation {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
-}
-
-/* Tooltip styles */
-.tooltip-container {
-    position: relative;
-    display: inline-block;
-}
-
-.tooltip-text {
-    visibility: hidden;
-    width: auto;
-    max-width: 220px;
-    background-color: #333;
-    color: #fff;
-    text-align: center;
-    border-radius: 5px;
-    padding: 5px;
-    position: absolute;
-    z-index: 10; /* Ensure it is above other elements */
-    top: 50%;
-    left: 110%; /* Position to the right of the player head */
-    transform: translateY(-50%);
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 14px;
-    white-space: nowrap; /* Ensure the text stays in one line */
-}
-
-.tooltip-container:hover .tooltip-text {
-    visibility: visible;
-    opacity: 1;
 }
