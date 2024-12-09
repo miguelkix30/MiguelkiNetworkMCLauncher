@@ -58,6 +58,7 @@ class Home {
         this.socialLick();
         this.instancesSelect();
         this.startButtonManager();
+        await this.loadRecentInstances(); // Ensure recent instances are loaded after initialization
         document.querySelector('.settings-btn').addEventListener('click', e => discordAccount() && changePanel('settings'));
         document.querySelector('.player-options').addEventListener('click', e => clickHead());
     }
@@ -385,14 +386,15 @@ class Home {
 
                 configClient.instance_selct = newInstanceSelect;
                 await this.db.updateData('configClient', configClient);
-                instanceSelect = newInstanceSelect; // Correctly update instanceSelect
+                instanceSelect = newInstanceSelect;
                 instancePopup.classList.remove('show');
                 this.notification();
                 let instance = await config.getInstanceList();
                 let options = instance.find(i => i.name == configClient.instance_selct);
-                await setStatus(options.status);
+                setStatus(options.status);
                 setBackgroundMusic(options.backgroundMusic);
                 setInstanceBackground(options.background);
+                this.updateSelectedInstanceStyle(newInstanceSelect);
             }
         });
 
@@ -480,6 +482,15 @@ class Home {
                     return;
                 }
             }
+
+            let recentInstances = configClient.recent_instances || [];
+            recentInstances = recentInstances.filter(name => name !== options.name);
+            recentInstances.unshift(options.name);
+            if (recentInstances.length > 3) recentInstances.pop();
+            configClient.recent_instances = recentInstances;
+            await this.db.updateData('configClient', configClient);
+            await this.loadRecentInstances(); // Ensure recent instances are updated immediately
+
             let opt = {
                 url: options.url,
                 authenticator: authenticator,
@@ -706,6 +717,71 @@ class Home {
         });
         }
         
+    }
+
+    async loadRecentInstances() {
+        let configClient = await this.db.readData('configClient');
+        let recentInstances = configClient.recent_instances || [];
+        let recentInstancesContainer = document.querySelector('.recent-instances');
+
+        recentInstancesContainer.innerHTML = '';
+
+        for (let instanceName of recentInstances) {
+            let instance = await config.getInstanceList().then(instances => instances.find(i => i.name === instanceName));
+            if (instance) {
+                let button = document.createElement('div');
+                button.classList.add('recent-instance-button');
+                button.style.backgroundImage = `url(${instance.icon || 'assets/images/default/placeholder.jpg'})`;
+                button.dataset.instanceName = instanceName; // Store instance name in data attribute
+                if (instanceName === configClient.instance_selct) {
+                    button.classList.add('selected-instance');
+                }
+                button.addEventListener('click', async (e) => {
+                    let username = await getUsername();
+                    if (instance.whitelistActive && !instance.whitelist.includes(username)) {
+                        let popupError = new popup();
+                        popupError.openPopup({
+                            title: 'Error',
+                            content: 'No tienes permiso para seleccionar esta instancia.',
+                            color: 'red',
+                            options: true
+                        });
+                    } else {
+                        await this.selectInstance(instanceName);
+                    }
+                });
+                recentInstancesContainer.appendChild(button);
+            }
+        }
+    }
+
+    async selectInstance(instanceName) {
+        let selectInstanceBTN = document.querySelector('.instance-select');
+        if (selectInstanceBTN.disabled) return;
+        let configClient = await this.db.readData('configClient');
+        configClient.instance_selct = instanceName;
+        await this.db.updateData('configClient', configClient);
+        let instance = await config.getInstanceList().then(instances => instances.find(i => i.name === instanceName));
+        let instanceList = await config.getInstanceList();
+        this.notification();
+        instance = await config.getInstanceList().then(instances => instances.find(i => i.name === instanceName));
+        setStatus(instance.status);
+        setBackgroundMusic(instance.backgroundMusic);
+        setInstanceBackground(instance.background);
+        this.updateSelectedInstanceStyle(instanceName);
+        
+    }
+
+    updateSelectedInstanceStyle(instanceName) {
+        let recentInstancesContainer = document.querySelector('.recent-instances');
+        let buttons = recentInstancesContainer.querySelectorAll('.recent-instance-button');
+        buttons.forEach(button => {
+            if (button.dataset.instanceName === instanceName) {
+                button.classList.add('selected-instance');
+            } else {
+                button.classList.remove('selected-instance');
+            }
+        });
     }
 
     getdate(e) {

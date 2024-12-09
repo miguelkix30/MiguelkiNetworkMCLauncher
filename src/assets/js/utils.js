@@ -24,6 +24,7 @@ let headButton = false;
 let musicAudio = new Audio();
 let musicSource = '';
 let isMusicPlaying = false;
+let videoBusy = false;
 const fadeDuration = 1000;
 
 async function setBackground(theme) {
@@ -41,6 +42,8 @@ async function setBackground(theme) {
 let currentVideo = document.querySelector('.background-video.current');
 let nextVideo = document.querySelector('.background-video.next');
 async function setVideoSource(game = '') {
+    if (videoBusy) return;
+    videoBusy = true;
     let source;
     let sourcePromise = new Promise(async (resolve) => {
     if (game) {
@@ -100,6 +103,7 @@ async function setVideoSource(game = '') {
 } else {
     console.error('No se pudo establecer la fuente del video: source está indefinida');
 }
+videoBusy = false;
 }
 
 function getSeason() {

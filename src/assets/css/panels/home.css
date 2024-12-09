@@ -418,6 +418,7 @@
     backdrop-filter: blur(15.5px);
     -webkit-backdrop-filter: blur(15.5px);
 }
+
 .instance-select:hover {
     background: var(--box-button-hover-2);
 }
@@ -822,4 +823,30 @@
 @keyframes rotation {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+.recent-instances {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.recent-instance-button {
+    width: 3rem;
+    height: 3rem;
+    background-size: cover;
+    background-position: center;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: transform 0.2s, border 0.2s;
+}
+
+.recent-instance-button:hover {
+    transform: scale(1.1);
+}
+
+.recent-instance-button.selected-instance {
+    border: 3px solid white;
 }
