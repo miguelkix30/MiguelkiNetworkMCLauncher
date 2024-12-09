@@ -362,7 +362,7 @@ class Home {
                 let color = instance.maintenance ? 'red' : 'green';
                 let whitelist = instance.whitelistActive && instance.whitelist.includes(username);
                 console.log(username);
-                let imageUrl = instance.image || 'assets/images/default/placeholder.jpg';
+                let imageUrl = instance.thumbnail || 'assets/images/default/placeholder.jpg';
                 if (!instance.whitelistActive || whitelist) {
                     instancesGrid.innerHTML += `
                         <div id="${instance.name}" class="instance-element ${instance.name === instanceSelect ? 'active-instance' : ''}">
