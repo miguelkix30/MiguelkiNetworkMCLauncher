@@ -181,14 +181,6 @@ class Home {
     }
 
     async startButtonManager() {
-        let res = await config.GetConfig();
-        if ((res.modsBeta && res.musicBeta) || dev) {
-            document.querySelector('.play-elements').style.marginLeft = "100px";
-        } else if (res.modsBeta || res.musicBeta) {
-            document.querySelector('.play-elements').style.marginLeft = "40px";
-        } else {
-            document.querySelector('.play-elements').style.marginLeft = "0px";
-        }
         this.startModsButton()
         this.startMusicButton()
     }
@@ -362,6 +354,7 @@ class Home {
         }
 
         instanceSelectBTN.addEventListener('click', async () => {
+            if (instanceSelectBTN.disabled) return;
             let username = await getUsername();
             instancesGrid.innerHTML = '';
             for (let instance of instancesList) {
@@ -426,6 +419,7 @@ class Home {
 
         let playInstanceBTN = document.querySelector('.play-instance')
         let infoStartingBOX = document.querySelector('.info-starting-game')
+        let instanceSelectBTN = document.querySelector('.instance-select')
         let infoStarting = document.querySelector(".info-starting-game-text")
         let progressBar = document.querySelector('.progress-bar')
 
@@ -525,6 +519,8 @@ class Home {
 
         playInstanceBTN.style.display = "none"
         infoStartingBOX.style.display = "block"
+        instanceSelectBTN.disabled = true;
+        instanceSelectBTN.classList.add('disabled');
         progressBar.style.display = "";
         ipcRenderer.send('main-window-progress-load')
 
@@ -614,6 +610,8 @@ class Home {
             }
             infoStartingBOX.style.display = "none"
             playInstanceBTN.style.display = "flex"
+            instanceSelectBTN.disabled = false;
+            instanceSelectBTN.classList.remove('disabled');
             infoStarting.innerHTML = `Cerrando...`
             new logger(pkg.name, '#7289da');
             console.log('Close');
@@ -682,6 +680,8 @@ class Home {
                 }
                 infoStartingBOX.style.display = "none"
                 playInstanceBTN.style.display = "flex"
+                instanceSelectBTN.disabled = false;
+                instanceSelectBTN.classList.remove('disabled');
                 infoStarting.innerHTML = `Verificando...`
                 new logger(pkg.name, '#7289da');
                 console.log(err);

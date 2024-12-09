@@ -369,8 +369,8 @@
 
 .play-instance {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: center; /* Center the button horizontally */
+    align-items: center; /* Center the button vertically */
     position: relative;
     background-color: var(--box-button);
     box-shadow: 0px 3px 6px #00000029;
@@ -380,7 +380,8 @@
     z-index: 3;
     transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
     height: 3.2rem;
-    padding-right: 2rem;
+    padding-right: 1rem;
+    padding-left: 1rem;
 }
 .play-instance:hover {
     color: var(--icon-hover);
@@ -394,8 +395,11 @@
     color:#fff;
     font-size: 2rem;
     font-weight: bolder;
-    padding: 0 1.5rem;
     pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center; 
+    height: 100%;
 }
 
 .instance-select {
@@ -421,6 +425,13 @@
 .info-starting-game {
     display: none;
     text-align: center;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(15.5px);
+    transition: all 0.2s, border 0.2s;
+    padding: 0.5rem;
 }
 
 .progress-bar {
