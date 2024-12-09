@@ -57,7 +57,11 @@
 
 .server-status-icon {
     height: 3.3rem;
-    opacity: 0;
+    width: 3.3rem;
+    opacity: 1;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    transition: all 0.2s;
 }
 
 .server-status-name {

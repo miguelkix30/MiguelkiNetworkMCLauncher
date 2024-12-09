@@ -282,7 +282,7 @@ class Login {
                     if (instance.name == instanceSelect) {
                         let newInstanceSelect = instancesList.find(i => i.whitelistActive == false)
                         configClient.instance_selct = newInstanceSelect.name
-                        await setStatus(newInstanceSelect.status)
+                        await setStatus(newInstanceSelect)
                     }
                 }
             }

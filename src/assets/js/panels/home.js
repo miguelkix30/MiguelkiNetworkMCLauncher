@@ -233,7 +233,6 @@ class Home {
                 blockNews.classList.add('news-block');
                 blockNews.innerHTML = `
                     <div class="news-header">
-                        <img class="server-status-icon" src="assets/images/icon.png">
                         <div class="header-text">
                             <div class="title">Actualmente no hay noticias disponibles.</div>
                         </div>
@@ -255,7 +254,6 @@ class Home {
                     blockNews.classList.add('news-block');
                     blockNews.innerHTML = `
                         <div class="news-header">
-                        <img class="server-status-icon" src="assets/images/icon.png">
                             <div class="header-text">
                                 <div class="title">${News.title}</div>
                             </div>
@@ -276,9 +274,9 @@ class Home {
         } else {
             let blockNews = document.createElement('div');
             blockNews.classList.add('news-block');
+            // eliminado debajo de news-header: <img class="server-status-icon" src="assets/images/icon.png">
             blockNews.innerHTML = `
                 <div class="news-header">
-                        <img class="server-status-icon" src="assets/images/icon.png">
                         <div class="header-text">
                             <div class="title">Error.</div>
                         </div>
@@ -339,7 +337,7 @@ class Home {
                         let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
                         configClient.instance_selct = newInstanceSelect.name;
                         instanceSelect = newInstanceSelect.name;
-                        setStatus(newInstanceSelect.status);
+                        setStatus(newInstanceSelect);
                         setBackgroundMusic(newInstanceSelect.backgroundMusic);
                         setInstanceBackground(newInstanceSelect.background);
                         await this.db.updateData('configClient', configClient);
@@ -348,7 +346,7 @@ class Home {
             } else {
                 console.log(`Configurando instancia ${instance.name}...`);
             }
-            if (instance.name == instanceSelect) setStatus(instance.status);
+            if (instance.name == instanceSelect) setStatus(instance);
             if (instance.name == instanceSelect) setBackgroundMusic(instance.backgroundMusic);
             if (instance.name == instanceSelect) setInstanceBackground(instance.background);
             this.notification();
@@ -361,7 +359,6 @@ class Home {
             for (let instance of instancesList) {
                 let color = instance.maintenance ? 'red' : 'green';
                 let whitelist = instance.whitelistActive && instance.whitelist.includes(username);
-                console.log(username);
                 let imageUrl = instance.thumbnail || 'assets/images/default/placeholder.jpg';
                 if (!instance.whitelistActive || whitelist) {
                     instancesGrid.innerHTML += `
@@ -391,7 +388,7 @@ class Home {
                 this.notification();
                 let instance = await config.getInstanceList();
                 let options = instance.find(i => i.name == configClient.instance_selct);
-                setStatus(options.status);
+                setStatus(options);
                 setBackgroundMusic(options.backgroundMusic);
                 setInstanceBackground(options.background);
                 this.updateSelectedInstanceStyle(newInstanceSelect);
@@ -765,7 +762,7 @@ class Home {
         let instanceList = await config.getInstanceList();
         this.notification();
         instance = await config.getInstanceList().then(instances => instances.find(i => i.name === instanceName));
-        setStatus(instance.status);
+        setStatus(instance);
         setBackgroundMusic(instance.backgroundMusic);
         setInstanceBackground(instance.background);
         this.updateSelectedInstanceStyle(instanceName);

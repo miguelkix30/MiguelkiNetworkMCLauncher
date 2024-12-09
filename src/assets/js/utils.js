@@ -238,22 +238,25 @@ async function clickHead() {
 }
 
 async function setStatus(opt) {
+    let instanceIcon = document.querySelector('.server-status-icon')
     let nameServerElement = document.querySelector('.server-status-name')
     let statusServerElement = document.querySelector('.server-status-text')
     let playersOnline = document.querySelector('.status-player-count .player-count')
 
     if (!opt) {
+        instanceIcon.src = './assets/images/icon.png'
         statusServerElement.classList.add('red')
         statusServerElement.innerHTML = `Offline - 0 ms`
         document.querySelector('.status-player-count').classList.add('red')
         playersOnline.innerHTML = '0'
         return
     }
-
-    let { ip, port, nameServer } = opt
+    instanceIcon.src = opt.icon || './assets/images/icon.png'
+    let { ip, port, nameServer } = opt.status
     nameServerElement.innerHTML = nameServer
     let status = new Status(ip, port);
     let statusServer = await status.getStatus().then(res => res).catch(err => err);
+    
 
     if (!statusServer.error) {
         statusServerElement.classList.remove('red')
