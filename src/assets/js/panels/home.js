@@ -349,6 +349,7 @@ class Home {
             if (instance.name == instanceSelect) setStatus(instance);
             if (instance.name == instanceSelect) setBackgroundMusic(instance.backgroundMusic);
             if (instance.name == instanceSelect) setInstanceBackground(instance.background);
+            if (instance.name == instanceSelect) this.updateSelectedInstanceStyle(instanceSelect);
             this.notification();
         }
 
@@ -761,12 +762,10 @@ class Home {
         let instance = await config.getInstanceList().then(instances => instances.find(i => i.name === instanceName));
         let instanceList = await config.getInstanceList();
         this.notification();
-        instance = await config.getInstanceList().then(instances => instances.find(i => i.name === instanceName));
         setStatus(instance);
         setBackgroundMusic(instance.backgroundMusic);
         setInstanceBackground(instance.background);
         this.updateSelectedInstanceStyle(instanceName);
-        
     }
 
     updateSelectedInstanceStyle(instanceName) {

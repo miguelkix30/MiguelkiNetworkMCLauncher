@@ -570,6 +570,7 @@
     justify-content: center;
     width: 100%;
     overflow-y: auto; /* Allow scrolling only for the grid container */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
     max-height: calc(80vh - 4rem); /* Adjust the height to fit within the parent container */
 }
 
