@@ -58,7 +58,7 @@ class Home {
         this.socialLick();
         this.instancesSelect();
         this.startButtonManager();
-        await this.loadRecentInstances(); // Ensure recent instances are loaded after initialization
+        await this.loadRecentInstances();
         document.querySelector('.settings-btn').addEventListener('click', e => discordAccount() && changePanel('settings'));
         document.querySelector('.player-options').addEventListener('click', e => clickHead());
     }
@@ -426,14 +426,14 @@ class Home {
         if (check) {
             if (fetchError == false) {
                 let popupError = new popup()
-            popupError.openPopup({
-                title: 'Error',
-                content: 'No puedes iniciar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Miguelki Network.',
-                color: 'red',
-                options: true
-            })
-            return;
-             } else {
+                popupError.openPopup({
+                    title: 'Error',
+                    content: 'No puedes iniciar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Miguelki Network.',
+                    color: 'red',
+                    options: true
+                })
+                return;
+            } else {
                 let popupError = new popup()
                 popupError.openPopup({
                     title: 'Error',
@@ -442,7 +442,7 @@ class Home {
                     options: true
                 })
                 return;
-             }
+            }
         }
         if (options.maintenance) {
             let popupError = new popup()
@@ -461,70 +461,81 @@ class Home {
                     options: true
                 })
             }
-            
-        } else {
-            let clickHead = await getClickeableHead();
-            if (!options.mkid && clickHead) {
-                let popupInstance = new popup();
-            
-                let dialogResult = await new Promise(resolve => {
-                    popupInstance.openDialog({
-                        title: 'Instancia no compatible con MKNetworkID',
-                        content: 'Se ha detectado que estás intentando iniciar una instancia que no es compatible con MKNetworkID. ¿Deseas continuar?',
-                        options: true,
-                        callback: resolve
-                    });
+            return;
+        }
+
+        let username = await getUsername();
+        if (options.whitelistActive && !options.whitelist.includes(username)) {
+            let popupError = new popup();
+            popupError.openPopup({
+                title: 'Error',
+                content: 'No tienes permiso para iniciar esta instancia.',
+                color: 'red',
+                options: true
+            });
+            return;
+        }
+
+        let clickHead = await getClickeableHead();
+        if (!options.mkid && clickHead) {
+            let popupInstance = new popup();
+            let dialogResult = await new Promise(resolve => {
+                popupInstance.openDialog({
+                    title: 'Instancia no compatible con MKNetworkID',
+                    content: 'Se ha detectado que estás intentando iniciar una instancia que no es compatible con MKNetworkID. ¿Deseas continuar?',
+                    options: true,
+                    callback: resolve
                 });
-            
-                if (dialogResult === 'cancel') {
-                    return;
-                }
+            });
+            if (dialogResult === 'cancel') {
+                return;
             }
+        }
 
-            let recentInstances = configClient.recent_instances || [];
-            recentInstances = recentInstances.filter(name => name !== options.name);
-            recentInstances.unshift(options.name);
-            if (recentInstances.length > 3) recentInstances.pop();
-            configClient.recent_instances = recentInstances;
-            await this.db.updateData('configClient', configClient);
-            await this.loadRecentInstances(); // Ensure recent instances are updated immediately
+        let recentInstances = configClient.recent_instances || [];
+        recentInstances = recentInstances.filter(name => name !== options.name);
+        recentInstances.unshift(options.name);
+        if (recentInstances.length > 3) recentInstances.pop();
+        configClient.recent_instances = recentInstances;
+        await this.db.updateData('configClient', configClient);
+        await this.loadRecentInstances(); // Ensure recent instances are updated immediately
 
-            let opt = {
-                url: options.url,
-                authenticator: authenticator,
-                timeout: 10000,
-                path: `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}`,
-                instance: options.name,
-                version: options.loadder.minecraft_version,
-                detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
-                downloadFileMultiple: configClient.launcher_config.download_multi,
-                intelEnabledMac: configClient.launcher_config.intelEnabledMac,
-    
-                loader: {
-                    type: options.loadder.loadder_type,
-                    build: options.loadder.loadder_version,
-                    enable: options.loadder.loadder_type == 'none' ? false : true
-                },
-    
-                verify: options.verify,
-    
-                ignored: [...options.ignored],
-    
-                javaPath: configClient.java_config.java_path,
-    
-                screen: {
-                    width: configClient.game_config.screen_size.width,
-                    height: configClient.game_config.screen_size.height
-                },
-    
-                memory: {
-                    min: `${configClient.java_config.java_memory.min * 1024}M`,
-                    max: `${configClient.java_config.java_memory.max * 1024}M`
-                }
+        let opt = {
+            url: options.url,
+            authenticator: authenticator,
+            timeout: 10000,
+            path: `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}`,
+            instance: options.name,
+            version: options.loadder.minecraft_version,
+            detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
+            downloadFileMultiple: configClient.launcher_config.download_multi,
+            intelEnabledMac: configClient.launcher_config.intelEnabledMac,
+
+            loader: {
+                type: options.loadder.loadder_type,
+                build: options.loadder.loadder_version,
+                enable: options.loadder_type == 'none' ? false : true
+            },
+
+            verify: options.verify,
+
+            ignored: [...options.ignored],
+
+            javaPath: configClient.java_config.java_path,
+
+            screen: {
+                width: configClient.game_config.screen_size.width,
+                height: configClient.game_config.screen_size.height
+            },
+
+            memory: {
+                min: `${configClient.java_config.java_memory.min * 1024}M`,
+                max: `${configClient.java_config.java_memory.max * 1024}M`
             }
-            let musicMuted = configClient.launcher_config.music_muted;
-            let musicPlaying = true;
-            launch.Launch(opt);
+        }
+        let musicMuted = configClient.launcher_config.music_muted;
+        let musicPlaying = true;
+        launch.Launch(opt);
 
         playInstanceBTN.style.display = "none"
         infoStartingBOX.style.display = "block"
@@ -599,9 +610,8 @@ class Home {
                 playing = true;
                 sendPlayingMessage(configClient.instance_selct);
             }
-// ARREGLAR LOGGER O SI NO NO FUNCA
-                new logger('Minecraft', '#36b030');
-                console.log(e);
+            new logger('Minecraft', '#36b030');
+            console.log(e);
 
             ipcRenderer.send('main-window-progress-load')
             infoStarting.innerHTML = `Iniciando...`
@@ -625,35 +635,6 @@ class Home {
             new logger(pkg.name, '#7289da');
             console.log('Close');
             if (rpcActive) {
-            RPC.setActivity({
-                state: `En el launcher`,
-                startTimestamp: startingTime,
-                largeImageKey: 'icon',
-                smallImageKey: 'verificado',
-                largeImageText: `Miguelki Network`,
-                instance: true,
-                buttons: [
-                    {
-                        label: `Discord`,
-                        url: `https://discord.gg/yQfeHSWvft`,
-                    }
-                ]
-            }).catch();
-            sendStoppedPlayingMessage(configClient.instance_selct);
-            playing = false;
-        }
-        });
-        
-
-        launch.on('error', err => {
-            let popupError = new popup()
-            if (typeof err.error === 'undefined') {
-                new logger(pkg.name, '#7289da');
-                console.warn('Ha occurrido un error en la descarga de algún archivo. Si el juego no inicia correctamente esto puede ser la causa.');
-                if (configClient.launcher_config.closeLauncher == 'close-launcher') {
-                    ipcRenderer.send("main-window-show")
-                };
-                if (rpcActive) {
                 RPC.setActivity({
                     state: `En el launcher`,
                     startTimestamp: startingTime,
@@ -668,17 +649,43 @@ class Home {
                         }
                     ]
                 }).catch();
+                sendStoppedPlayingMessage(configClient.instance_selct);
+                playing = false;
             }
-            } else {
-                
+        });
 
+        launch.on('error', err => {
+            let popupError = new popup()
+            if (typeof err.error === 'undefined') {
+                new logger(pkg.name, '#7289da');
+                console.warn('Ha occurrido un error en la descarga de algún archivo. Si el juego no inicia correctamente esto puede ser la causa.');
+                if (configClient.launcher_config.closeLauncher == 'close-launcher') {
+                    ipcRenderer.send("main-window-show")
+                };
+                if (rpcActive) {
+                    RPC.setActivity({
+                        state: `En el launcher`,
+                        startTimestamp: startingTime,
+                        largeImageKey: 'icon',
+                        smallImageKey: 'verificado',
+                        largeImageText: `Miguelki Network`,
+                        instance: true,
+                        buttons: [
+                            {
+                                label: `Discord`,
+                                url: `https://discord.gg/yQfeHSWvft`,
+                            }
+                        ]
+                    }).catch();
+                }
+            } else {
                 popupError.openPopup({
                     title: 'Error',
                     content: err.error,
                     color: 'red',
                     options: true
                 })
-    
+
                 if (configClient.launcher_config.closeLauncher == 'close-launcher') {
                     ipcRenderer.send("main-window-show")
                 };
@@ -696,25 +703,22 @@ class Home {
                 console.log(err);
                 this.notification()
                 if (rpcActive) {
-                RPC.setActivity({
-                    state: `En el launcher`,
-                    largeImageKey: 'icon',
-                    smallImageKey: 'verificado',
-                    largeImageText: `Miguelki Network`,
-                    instance: true,
-                    buttons: [
-                        {
-                            label: `Discord`,
-                            url: `https://discord.gg/yQfeHSWvft`,
-                        }
-                    ]
-                }).catch();
+                    RPC.setActivity({
+                        state: `En el launcher`,
+                        largeImageKey: 'icon',
+                        smallImageKey: 'verificado',
+                        largeImageText: `Miguelki Network`,
+                        instance: true,
+                        buttons: [
+                            {
+                                label: `Discord`,
+                                url: `https://discord.gg/yQfeHSWvft`,
+                            }
+                        ]
+                    }).catch();
+                }
             }
-            }
-            
         });
-        }
-        
     }
 
     async loadRecentInstances() {
@@ -729,8 +733,8 @@ class Home {
             if (instance) {
                 let button = document.createElement('div');
                 button.classList.add('recent-instance-button');
-                button.style.backgroundImage = `url(${instance.icon || 'assets/images/default/placeholder.jpg'})`;
-                button.dataset.instanceName = instanceName; // Store instance name in data attribute
+                button.style.backgroundImage = `url(${instance.icon || instance.thumbnail || 'assets/images/default/placeholder.jpg'})`;
+                button.dataset.instanceName = instanceName;
                 if (instanceName === configClient.instance_selct) {
                     button.classList.add('selected-instance');
                 }
@@ -749,6 +753,12 @@ class Home {
                     }
                 });
                 recentInstancesContainer.appendChild(button);
+            } else {
+                console.log(`Removing instance ${instanceName} from recent instances.`);
+                // Remove the instance from recent instances if it no longer exists
+                recentInstances = recentInstances.filter(name => name !== instanceName);
+                configClient.recent_instances = recentInstances;
+                await this.db.updateData('configClient', configClient);
             }
         }
     }
@@ -760,7 +770,6 @@ class Home {
         configClient.instance_selct = instanceName;
         await this.db.updateData('configClient', configClient);
         let instance = await config.getInstanceList().then(instances => instances.find(i => i.name === instanceName));
-        let instanceList = await config.getInstanceList();
         this.notification();
         setStatus(instance);
         setBackgroundMusic(instance.backgroundMusic);

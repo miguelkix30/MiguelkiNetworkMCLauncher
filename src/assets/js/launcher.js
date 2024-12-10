@@ -626,32 +626,6 @@ launcher.querySelector(".header").addEventListener("click", () => {
       addLog(lcontent, "error", args);
     });
 
-    /* minecraft logs */
-
-    let minecraft = document.querySelector("#minecraft.logger");
-
-    minecraft.querySelector(".header").addEventListener("click", () => {
-      minecraft.classList.toggle("open");
-    });
-
-    let mcontent = minecraft.querySelector(".content");
-
-    logger2.minecraft.on("info", (...args) => {
-      addLog(mcontent, "info", args);
-    });
-
-    logger2.minecraft.on("warn", (...args) => {
-      addLog(mcontent, "warn", args);
-    });
-
-    logger2.minecraft.on("debug", (...args) => {
-      addLog(mcontent, "debug", args);
-    });
-
-    logger2.minecraft.on("error", (...args) => {
-      addLog(mcontent, "error", args);
-    });
-
     /* add log */
 
     function addLog(content, type, args) {

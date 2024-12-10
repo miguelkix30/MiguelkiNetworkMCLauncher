@@ -373,8 +373,8 @@
 
 .play-instance {
     display: flex;
-    justify-content: center; /* Center the button horizontally */
-    align-items: center; /* Center the button vertically */
+    justify-content: center;
+    align-items: center;
     position: relative;
     background-color: var(--box-button);
     box-shadow: 0px 3px 6px #00000029;
@@ -413,8 +413,8 @@
     border-radius: 15px;
     color: #fff;
     font-size: 1rem;
-    height: 3rem;
-    width: 3rem;
+    height: 3.1rem;
+    width: 3.1rem;
     cursor: pointer;
     background: rgba(0, 0, 0, 0.05);
     transition: background 0.2s, border 0.2s;
@@ -562,16 +562,16 @@
     border: 1px solid rgba(255, 255, 255, 0.18);
     max-height: 80vh;
     width: 80%;
-    overflow: hidden; /* Prevent the title from being moved */
+    overflow: hidden;
 }
 
 .instances-grid-container {
     display: flex;
     justify-content: center;
     width: 100%;
-    overflow-y: auto; /* Allow scrolling only for the grid container */
-    overflow-x: hidden; /* Prevent horizontal scrolling */
-    max-height: calc(80vh - 4rem); /* Adjust the height to fit within the parent container */
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(80vh - 4rem);
 }
 
 .instances-grid {
@@ -581,7 +581,7 @@
     padding: 1rem;
     width: 100%;
     max-width: 1200px;
-    justify-content: center; /* Center items if fewer than 3 in a row */
+    justify-content: center;
 }
 
 .instance-element {

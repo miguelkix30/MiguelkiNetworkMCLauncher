@@ -353,8 +353,6 @@ class Settings {
             `;
         
             termsContainer.innerHTML = metaInfoHTML + result.htmlContent;
-        
-            // Manejar la apertura de enlaces externos en el navegador predeterminado
             termsContainer.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', (event) => {
                     event.preventDefault();

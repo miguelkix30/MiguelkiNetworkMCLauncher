@@ -84,7 +84,7 @@ async function setVideoSource(game = '') {
     try {
         await nextVideo.play();
     } catch (err) {
-        console.error('No se pudo iniciar la reproducción del video:', err);
+        console.error('No se pudo iniciar la reproducción de un video');
     }
     nextVideo.style.opacity = '1'; 
 
@@ -251,7 +251,7 @@ async function setStatus(opt) {
         playersOnline.innerHTML = '0'
         return
     }
-    instanceIcon.src = opt.icon || './assets/images/icon.png'
+    instanceIcon.src = opt.icon || opt.thumbnail || './assets/images/icon.png'
     let { ip, port, nameServer } = opt.status
     nameServerElement.innerHTML = nameServer
     let status = new Status(ip, port);
@@ -438,44 +438,39 @@ async function getTermsAndConditions() {
 
 async function showTermsAndConditions() {
     try {
-        const result = await getTermsAndConditions();  // Obtener los términos y la fecha de modificación
+        const result = await getTermsAndConditions();
         const db = new database();
         let configClient = await db.readData('configClient');
         const lastModified = new Date(result.lastModified);
 
         let isNewUser = false;
 
-        // Si no existe el parámetro `terms_accepted` o `termsAcceptedDate`, consideramos que no se han aceptado
         if (!configClient.terms_accepted || !configClient.termsAcceptedDate) {
             console.log("No se han aceptado los términos anteriormente. Usuario nuevo.");
             isNewUser = true;
         } else {
             const termsAcceptedDate = new Date(configClient.termsAcceptedDate);
 
-            // Si los términos han sido modificados desde la última aceptación, se debe solicitar nuevamente
             if (termsAcceptedDate < lastModified) {
                 console.log("Términos modificados, solicitando aceptación nuevamente.");
             } else {
                 console.log("Términos ya aceptados y no han sido modificados.");
-                return true;  // No hay necesidad de mostrar los términos nuevamente
+                return true;
             }
         }
 
-        // Mostrar el modal para aceptar los términos
         return new Promise((resolve, reject) => {
             const termsContainer = document.querySelector('.terms-container');
             const acceptButton = document.querySelector('.accept-terms-btn');
             const declineButton = document.querySelector('.decline-terms-btn');
             const messageText = document.querySelector('.terms-message');
 
-            // Cambiar el mensaje según si es un usuario nuevo o si los términos han sido modificados
             if (isNewUser) {
                 messageText.innerText = "Bienvenido. Antes de continuar, acepta los términos y condiciones para poder utilizar el software. De lo contrario, el launcher se cerrará y no podrás utilizarlo hasta que los aceptes.";
             } else {
                 messageText.innerText = "Los términos y condiciones han sido modificados y debes aceptarlos para seguir usando el lanzador.";
             }
 
-            // Mostrar términos en HTML
             termsContainer.innerHTML = result.htmlContent;
             termsContainer.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', (event) => {
@@ -485,35 +480,29 @@ async function showTermsAndConditions() {
                 });
             });
 
-            // Deshabilitar el botón de aceptar inicialmente
             acceptButton.disabled = true;
 
-            // Mostrar el modal
             document.querySelector('.terms-modal').style.display = 'flex';
 
-            // Detectar cuando el usuario haya llegado al final del texto
             termsContainer.addEventListener('scroll', () => {
                 if (termsContainer.scrollTop + termsContainer.clientHeight >= termsContainer.scrollHeight) {
                     acceptButton.disabled = false;
                 }
             });
 
-            // Si el usuario acepta los términos
             acceptButton.addEventListener('click', async () => {
                 document.querySelector('.terms-modal').style.display = 'none';
 
-                // Actualizar y guardar los valores de `terms_accepted` y `termsAcceptedDate`
                 configClient.terms_accepted = true;
-                configClient.termsAcceptedDate = new Date().toISOString();  // Guardar la fecha de aceptación
+                configClient.termsAcceptedDate = new Date().toISOString();
                 await db.updateData('configClient', configClient);
 
-                resolve(true);  // El usuario aceptó los términos
+                resolve(true);  
             });
 
-            // Si el usuario rechaza los términos
             declineButton.addEventListener('click', () => {
-                ipcRenderer.send('main-window-close');  // Cerrar el launcher
-                reject(false);  // El usuario rechazó los términos
+                ipcRenderer.send('main-window-close');
+                reject(false);
             });
         });
     } catch (error) {
@@ -566,16 +555,16 @@ async function setMusicSource(source) {
 
 function fadeInAudio() {
     let volume = 0;
-    const maxVolume = 0.008; // Volumen máximo bajo
+    const maxVolume = 0.008;
     const interval = setInterval(() => {
-        volume += 0.0005; // Incremento más pequeño
+        volume += 0.0005;
         if (volume >= maxVolume) {
             musicAudio.volume = maxVolume;
             clearInterval(interval);
         } else {
             musicAudio.volume = volume;
         }
-    }, fadeDuration / 25); // Ajuste de la duración de fade
+    }, fadeDuration / 25);
 }
 
 function fadeOutAudio() {
@@ -607,7 +596,6 @@ async function toggleMusic() {
         await db.updateData('configClient', configClient);
         await fadeInAudio();
         
-        // Asegurarse de que la música se reproduce después del desmuteo
         if (!isMusicPlaying) {
             await musicAudio.play();
             isMusicPlaying = true;
