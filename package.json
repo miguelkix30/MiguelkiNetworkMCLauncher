@@ -3,7 +3,7 @@
     "preductname": "Miguelki Network MC Launcher",
     "version": "3.2.0",
     "sub_version": "BETA1",
-    "changelog": "Se ha actualizado el layout del menú principal y se ha actualizado el sistema de selección de instancias",
+    "changelog": "El menú principal ha sido mejorado junto a la llegada de el nuevo sistema de instancias.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
