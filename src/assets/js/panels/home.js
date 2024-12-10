@@ -754,8 +754,6 @@ class Home {
                 });
                 recentInstancesContainer.appendChild(button);
             } else {
-                console.log(`Removing instance ${instanceName} from recent instances.`);
-                // Remove the instance from recent instances if it no longer exists
                 recentInstances = recentInstances.filter(name => name !== instanceName);
                 configClient.recent_instances = recentInstances;
                 await this.db.updateData('configClient', configClient);
