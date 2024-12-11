@@ -336,12 +336,6 @@
     margin: 1.5rem 0;
 }
 
-.player-options.hoverenabled:hover {
-    opacity: 0.8;
-    background-color: rgba(255, 255, 255, 0.5);
-    transition: all 0.2s;
-}
-
 .player-head {
     background: url('../../images/default/setve.png'), no-repeat;
     background-size: cover;
