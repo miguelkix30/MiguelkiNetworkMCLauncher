@@ -752,6 +752,33 @@ class Home {
                         await this.selectInstance(instanceName);
                     }
                 });
+
+                button.addEventListener('mouseenter', (e) => {
+                    let tooltip = document.createElement('div');
+                    tooltip.classList.add('tooltip');
+                    tooltip.innerHTML = instanceName;
+                    document.body.appendChild(tooltip);
+                    let rect = button.getBoundingClientRect();
+                    tooltip.style.left = `${rect.left + window.scrollX + rect.width / 2 - tooltip.offsetWidth / 2}px`;
+                    tooltip.style.top = `${rect.top + window.scrollY - tooltip.offsetHeight - 10}px`;
+                    button.tooltip = tooltip;
+                    requestAnimationFrame(() => {
+                        tooltip.style.opacity = '1';
+                    });
+                });
+
+                button.addEventListener('mouseleave', (e) => {
+                    if (button.tooltip) {
+                        button.tooltip.style.opacity = '0';
+                        setTimeout(() => {
+                            if (button.tooltip) {
+                                document.body.removeChild(button.tooltip);
+                                button.tooltip = null;
+                            }
+                        }, 200);
+                    }
+                });
+
                 recentInstancesContainer.appendChild(button);
             } else {
                 recentInstances = recentInstances.filter(name => name !== instanceName);
