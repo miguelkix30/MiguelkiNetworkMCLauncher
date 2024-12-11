@@ -845,7 +845,7 @@
 
 .tooltip {
     position: absolute;
-    background-color: #333;
+    background-color: rgba(0, 0, 0, 0.8);
     color: #fff;
     padding: 0.5rem;
     border-radius: 5px;
@@ -855,6 +855,9 @@
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     opacity: 0;
     transition: opacity 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.18); 
+    backdrop-filter: blur(15.5px);
+    -webkit-backdrop-filter: blur(15.5px);
 }
 
 .tooltip::after {
@@ -865,9 +868,10 @@
     transform: translateY(-50%) rotate(180deg);
     border-width: 5px;
     border-style: solid;
-    border-color: transparent transparent transparent #333;
+    border-color: transparent transparent transparent rgba(0, 0, 0, 0.8);
 }
 
 .recent-instance-button:hover .tooltip {
     opacity: 1;
+    pointer-events: none;
 }
