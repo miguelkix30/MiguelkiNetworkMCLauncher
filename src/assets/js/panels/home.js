@@ -65,6 +65,8 @@ class Home {
 
     async showstore() {
         let storebutton = document.querySelector('.storebutton')
+        let res = await config.GetConfig();
+        if (res.store_enabled) {
         try {
             const response = await fetch(pkg.store_url).catch(err => console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda.'));
             if (response.ok) {
@@ -72,16 +74,20 @@ class Home {
                 document.querySelector('.news-blockshop').style.display = 'block';
 
             } else {
-                console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda.');
+                console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda...');
                 document.querySelector('.news-blockshop').style.display = 'none';
             }
         } catch (error) {
-            console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda.');
+            console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda...');
             document.querySelector('.news-blockshop').style.display = 'none';
         }
         storebutton.addEventListener('click', e => {
             ipcRenderer.send('create-store-window');
         })
+    } else {
+        document.querySelector('.news-blockshop').style.display = 'none';
+        console.log('La tienda se encuentra desactivada. Ocultando sección de tienda...');
+    }
     }
 
     async notification() { 
