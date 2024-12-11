@@ -759,8 +759,8 @@ class Home {
                     tooltip.innerHTML = instanceName;
                     document.body.appendChild(tooltip);
                     let rect = button.getBoundingClientRect();
-                    tooltip.style.left = `${rect.left + window.scrollX + rect.width / 2 - tooltip.offsetWidth / 2}px`;
-                    tooltip.style.top = `${rect.top + window.scrollY - tooltip.offsetHeight - 10}px`;
+                    tooltip.style.left = `${rect.right + window.scrollX + 10}px`;
+                    tooltip.style.top = `${rect.top + window.scrollY + rect.height / 2 - tooltip.offsetHeight / 2}px`;
                     button.tooltip = tooltip;
                     requestAnimationFrame(() => {
                         tooltip.style.opacity = '1';
