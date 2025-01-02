@@ -579,12 +579,6 @@
     justify-content: center;
 }
 
-/* Add this to handle the case where there are only two instances */
-.instances-grid > .instance-element:nth-child(2) {
-    margin-left: auto;
-    margin-right: auto;
-}
-
 .instance-element {
     display: flex;
     flex-direction: column;
