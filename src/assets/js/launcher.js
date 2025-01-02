@@ -31,9 +31,9 @@ import {
   setBackgroundMusic
 } from "./utils.js";
 import {
-  sendDiscordMessage,
-  sendLogoutDiscordMessage,
-  sendVerificationErrorMessage
+  loginMSG,
+  quitAPP,
+  verificationError
 } from "./MKLib.js";
 const { AZauth, Microsoft, Mojang } = require("minecraft-java-core");
 
@@ -145,14 +145,14 @@ class Launcher {
   shortcut() {
     document.addEventListener("keydown", async (e) => {
       if (e.ctrlKey && e.keyCode == 87) {
-          sendLogoutDiscordMessage();
+          quitAPP();
       }
     });
     window.addEventListener("keydown", async (e) => {
       const { key, altKey } = e;
       if (key === "F4" && altKey) {
         e.preventDefault();
-          sendLogoutDiscordMessage();
+          quitAPP();
       }
     });
   }
@@ -187,7 +187,7 @@ class Launcher {
         }); */
 
     document.querySelector("#close").addEventListener("click", async () => {
-        sendLogoutDiscordMessage();
+        quitAPP();
       /* ipcRenderer.send('main-window-close'); */
     });
   }
@@ -297,7 +297,7 @@ class Launcher {
       });
 
       if (dialogResult === "cancel") {
-        sendLogoutDiscordMessage();
+        quitAPP();
       } else {
         let retry = true;
 
@@ -328,7 +328,7 @@ class Launcher {
             });
 
             if (dialogResult === "cancel") {
-              sendLogoutDiscordMessage();
+              quitAPP();
               retry = false;
             }
           }
@@ -428,7 +428,6 @@ class Launcher {
       } else {
         const user = await userResponse.json();
         username = user.username;
-        //si user.avatar es null, se pone el avatar por defecto
         if (user.avatar === null) {
           userpfp = "https://cdn.discordapp.com/embed/avatars/0.png?size=1024";
         } else {
@@ -442,11 +441,11 @@ class Launcher {
 
       const isInGuild = guilds.some((guild) => guild.id === guildId);
       if (!isInGuild) {
-        sendVerificationErrorMessage(username);
+        verificationError(username);
       }
       return { isInGuild };
     } catch (error) {
-      await sendVerificationErrorMessage(username);
+      await verificationError(username);
       console.error("Error al verificar la pertenencia al servidor:", error);
       return { isInGuild: false, error: error.message };
     }
@@ -490,7 +489,7 @@ class Launcher {
             accountSelect(refresh_accounts);
             clickableHead(false);
             await setUsername(account.name);
-            await sendDiscordMessage();
+            await loginMSG();
           }
         } else if (account.meta.type == "AZauth") {
           console.log(`Plataforma: MKNetworkID | Usuario: ${account.name}`);
@@ -517,7 +516,7 @@ class Launcher {
             accountSelect(refresh_accounts);
             clickableHead(true);
             await setUsername(account.name);
-            await sendDiscordMessage();
+            await loginMSG();
           }
         } else if (account.meta.type == "Mojang") {
           console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
@@ -537,7 +536,7 @@ class Launcher {
               accountSelect(refresh_accounts);
               clickableHead(false);
               await setUsername(account.name);
-              await sendDiscordMessage();
+              await loginMSG();
             }
             continue;
           }
@@ -600,7 +599,6 @@ close.addEventListener("click", () => {
   logs.classList.toggle("show");
 });
 
-/* launcher logs */
 
 let launcher = document.querySelector("#launcher.logger");
 
@@ -626,7 +624,6 @@ launcher.querySelector(".header").addEventListener("click", () => {
       addLog(lcontent, "error", args);
     });
 
-    /* add log */
 
     function addLog(content, type, args) {
       let final = [];

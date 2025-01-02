@@ -6,7 +6,7 @@ const { AZauth, Mojang } = require('minecraft-java-core');
 const { ipcRenderer } = require('electron');
 
 import { popup, database, changePanel, accountSelect, addAccount, config, setStatus, setUsername, clickableHead, getDiscordUsername } from '../utils.js';
-import { getHWID, sendDiscordMessage } from '../MKLib.js';
+import { getHWID, loginMSG } from '../MKLib.js';
 
 class Login {
     static id = "login";
@@ -292,7 +292,7 @@ class Login {
         await addAccount(account);
         await accountSelect(account);
         await setUsername(account.name);
-        await sendDiscordMessage();
+        await loginMSG();
         changePanel('home');
     }
 }

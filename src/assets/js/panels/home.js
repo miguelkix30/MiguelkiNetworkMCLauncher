@@ -3,7 +3,7 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername } from '../utils.js'
-import { getHWID, checkHWID, getFetchError, sendPlayingMessage, sendStoppedPlayingMessage } from '../MKLib.js';
+import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG } from '../MKLib.js';
 
 const clientId = '1307003977442787451';
 const DiscordRPC = require('discord-rpc');
@@ -619,7 +619,7 @@ class Home {
             }
             if(!playing) {
                 playing = true;
-                sendPlayingMessage(configClient.instance_selct);
+                playMSG(configClient.instance_selct);
             }
             new logger('Minecraft', '#36b030');
             console.log(e);
@@ -660,7 +660,7 @@ class Home {
                         }
                     ]
                 }).catch();
-                sendStoppedPlayingMessage(configClient.instance_selct);
+                playquitMSG(configClient.instance_selct);
                 playing = false;
             }
         });
@@ -864,9 +864,11 @@ class Home {
                     if (result.success) {
                         await this.instancesSelect();
                     }
+                    addInstanceMSG(result.success, code);
                     addInstancePopup.classList.remove('show');
                     addInstanceInput.value = '';
                 } catch (error) {
+                    addInstanceMSG(false, code);
                     const popupMessage = new popup();
                     popupMessage.openPopup({
                         title: 'Error',
