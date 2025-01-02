@@ -934,3 +934,9 @@
 .add-instance-popup .popup-content button:hover {
     background-color: var(--box-button-hover);
 }
+
+.warning-message {
+    color: red;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}

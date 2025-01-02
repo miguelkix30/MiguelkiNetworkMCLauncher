@@ -508,7 +508,8 @@ class Home {
         if (recentInstances.length > 3) recentInstances.pop();
         configClient.recent_instances = recentInstances;
         await this.db.updateData('configClient', configClient);
-        await this.loadRecentInstances(); // Ensure recent instances are updated immediately
+        await this.loadRecentInstances();
+        await this.loadRecentInstances();
 
         let opt = {
             url: options.url,
