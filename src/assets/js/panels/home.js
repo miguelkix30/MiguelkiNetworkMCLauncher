@@ -361,7 +361,8 @@ class Home {
             this.notification();
         }
 
-        instanceSelectBTN.addEventListener('click', async () => {
+        instanceSelectBTN.removeEventListener('click', this.instanceSelectClickHandler);
+        this.instanceSelectClickHandler = async () => {
             if (instanceSelectBTN.disabled) return;
             let username = await getUsername();
             instancesGrid.innerHTML = '';
@@ -378,7 +379,8 @@ class Home {
                 }
             }
             instancePopup.classList.add('show');
-        });
+        };
+        instanceSelectBTN.addEventListener('click', this.instanceSelectClickHandler);
 
         instancePopup.addEventListener('click', async e => {
             let configClient = await this.db.readData('configClient');
