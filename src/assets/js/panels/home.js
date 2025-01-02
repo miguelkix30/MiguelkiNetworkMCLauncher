@@ -61,6 +61,8 @@ class Home {
         await this.loadRecentInstances();
         document.querySelector('.settings-btn').addEventListener('click', e => discordAccount() && changePanel('settings'));
         document.querySelector('.player-options').addEventListener('click', e => clickHead());
+        this.addInstanceButton();
+        this.addPlayerTooltip();
     }
 
     async showstore() {
@@ -827,6 +829,92 @@ class Home {
         let day = date.getDate()
         let allMonth = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
         return { year: year, month: allMonth[month - 1], day: day }
+    }
+
+    addInstanceButton() {
+        const addInstanceButton = document.querySelector('.add-instance');
+        const instancePopup = document.querySelector('.instance-popup');
+        const addInstancePopup = document.querySelector('.add-instance-popup');
+        const addInstanceInput = document.querySelector('.add-instance-input');
+        const addInstanceConfirm = document.querySelector('.add-instance-confirm');
+        const addInstanceCancel = document.querySelector('.add-instance-cancel');
+
+        addInstanceButton.addEventListener('click', () => {
+            addInstancePopup.classList.add('show');
+        });
+
+        addInstanceConfirm.addEventListener('click', async () => {
+            const code = addInstanceInput.value;
+            if (code) {
+                try {
+                    const username = await getUsername();
+                    const response = await fetch(`${pkg.url}/api/instance-code.php?code=${code}&user=${username}`);
+                    const result = await response.json();
+
+                    const popupMessage = new popup();
+                    popupMessage.openPopup({
+                        title: result.success ? 'Éxito' : 'Error',
+                        content: result.message,
+                        color: result.success ? 'green' : 'red',
+                        options: true
+                    });
+
+                    // Close the popup
+                    addInstancePopup.classList.remove('show');
+                    addInstanceInput.value = '';
+                } catch (error) {
+                    const popupMessage = new popup();
+                    popupMessage.openPopup({
+                        title: 'Error',
+                        content: 'Ha ocurrido un error al intentar agregar el código.',
+                        color: 'red',
+                        options: true
+                    });
+                }
+            }
+        });
+
+        addInstanceCancel.addEventListener('click', () => {
+            addInstancePopup.classList.remove('show');
+            addInstanceInput.value = '';
+        });
+    }
+
+    addPlayerTooltip() {
+        const playerOptions = document.querySelector('.player-options');
+        const playerHead = document.querySelector('.player-head');
+
+        const showTooltip = async (element) => {
+            const username = await getUsername();
+            let tooltip = document.createElement('div');
+            tooltip.classList.add('tooltip');
+            tooltip.innerHTML = username;
+            document.body.appendChild(tooltip);
+            let rect = element.getBoundingClientRect();
+            tooltip.style.left = `${rect.right + window.scrollX + 10}px`;
+            tooltip.style.top = `${rect.top + window.scrollY + rect.height / 2 - tooltip.offsetHeight / 2}px`;
+            element.tooltip = tooltip;
+            requestAnimationFrame(() => {
+                tooltip.style.opacity = '1';
+            });
+        };
+
+        const hideTooltip = (element) => {
+            if (element.tooltip) {
+                element.tooltip.style.opacity = '0';
+                setTimeout(() => {
+                    if (element.tooltip) {
+                        document.body.removeChild(element.tooltip);
+                        element.tooltip = null;
+                    }
+                }, 200);
+            }
+        };
+
+        playerOptions.addEventListener('mouseenter', () => showTooltip(playerOptions));
+        playerOptions.addEventListener('mouseleave', () => hideTooltip(playerOptions));
+        playerHead.addEventListener('mouseenter', () => showTooltip(playerHead));
+        playerHead.addEventListener('mouseleave', () => hideTooltip(playerHead));
     }
 }
 export default Home;

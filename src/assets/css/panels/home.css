@@ -400,7 +400,7 @@
     height: 100%;
 }
 
-.instance-select {
+.instance-select, .add-instance {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -415,9 +415,10 @@
     border: 1px solid rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(15.5px);
     -webkit-backdrop-filter: blur(15.5px);
+    margin-top: 1rem;
 }
 
-.instance-select:hover {
+.instance-select:hover, .add-instance:hover {
     background: var(--box-button-hover-2);
     transform: scale(1.05);
 }
@@ -806,6 +807,12 @@
     filter: invert(1);
 }
 
+.plus-icon {
+    width: 50%;
+    height: 50%;
+    filter: invert(1);
+}
+
 @keyframes rotation {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -868,4 +875,62 @@
 .recent-instance-button:hover .tooltip {
     opacity: 1;
     pointer-events: none;
+}
+
+.add-instance-popup {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    z-index: 20;
+    background: rgba( 0, 0, 0, 0.05 );
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.add-instance-popup.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.add-instance-popup .popup-content {
+    background-color: var(--sidebar);
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(15.5px);
+    -webkit-backdrop-filter: blur(15.5px);
+}
+
+.add-instance-popup .popup-content input {
+    width: 80%;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background-color: var(--box);
+    color: #fff;
+}
+
+.add-instance-popup .popup-content button {
+    padding: 0.5rem 1rem;
+    margin: 0.5rem;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    background-color: var(--box-button);
+    color: #fff;
+    transition: background-color 0.2s;
+}
+
+.add-instance-popup .popup-content button:hover {
+    background-color: var(--box-button-hover);
 }
