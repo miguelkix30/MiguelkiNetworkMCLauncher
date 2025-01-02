@@ -858,8 +858,9 @@ class Home {
                         color: result.success ? 'green' : 'red',
                         options: true
                     });
-
-                    // Close the popup
+                    if (result.success) {
+                        await this.instancesSelect();
+                    }
                     addInstancePopup.classList.remove('show');
                     addInstanceInput.value = '';
                 } catch (error) {
