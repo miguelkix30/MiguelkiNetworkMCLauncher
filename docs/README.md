@@ -1,6 +1,6 @@
 <p align="center"><img src="../src/assets/images/icon.png" alt="icon-launcher"></p>
 
-<h1 align="center">Miguelki Network MC Launcher</h1>
+<h1 align="center">Volty Studio Launcher</h1>
 
 [<p align="center">]()
 
@@ -24,7 +24,7 @@ Descarga la última versión para tu sistema operativo aquí.
 ---
 Otras opciones de descarga están también disponibles en las [releases de GitHub](../../../releases).
 ---
- **<ins><p>Este launcher ha sido bifurcado de [luuxis/SelvaniaLauncher](https://github.com/luuxis/Selvania-Launcher) </p>**
+ **<ins><p>Este launcher ha sido bifurcado de [luuxis/SelvaniaLauncher](https://github.com/luuxis/Selvania-Launcher) y de [miguelkix30/MiguelkiNetworkMCLauncher](https://github.com/miguelkix30/MiguelkiNetworkMCLauncher) </p>**
  ---
 ### **<ins><p align="center">Condiciones de uso</p>**
 Si deseas utilizar el código de este fork deberás:
