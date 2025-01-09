@@ -325,10 +325,9 @@ class Home {
         let instanceSelectBTN = document.querySelector('.instance-select');
         let instanceCloseBTN = document.querySelector('.close-popup');
 
-        if (instancesList.length === 1) {
+        /* if (instancesList.length === 1) {
             instanceSelectBTN.style.display = 'none';
-            instanceBTN.style.paddingRight = '0';
-        }
+        } */
 
         if (!instanceSelect) {
             let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);

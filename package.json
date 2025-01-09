@@ -2,8 +2,8 @@
     "name": "VoltyStudio-Launcher",
     "preductname": "Volty Studio Launcher",
     "version": "1.0.0",
-    "sub_version": "",
-    "changelog": "Esta es la primera versión del launcher. Disfruta de la experiencia!",
+    "sub_version": "TESTVER",
+    "changelog": "Esta versión no es final y solo debe ser usada para pruebas.",
     "description": "Launcher de Volty Studio",
     "main": "src/app.js",
     "author": {
