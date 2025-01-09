@@ -30,7 +30,7 @@ RPC.on('ready', async () => {
         buttons: [
             {
                 label: `Discord`,
-                url: `https://discord.gg/yQfeHSWvft`,
+                url: pkg.discord_url,
             }
         ]
     }).catch();
@@ -612,7 +612,7 @@ class Home {
                     buttons: [
                         {
                             label: `Discord`,
-                            url: `https://discord.gg/yQfeHSWvft`,
+                            url: pkg.discord_url,
                         }
                     ]
                 })
@@ -656,7 +656,7 @@ class Home {
                     buttons: [
                         {
                             label: `Discord`,
-                            url: `https://discord.gg/yQfeHSWvft`,
+                            url: pkg.discord_url,
                         }
                     ]
                 }).catch();
@@ -684,7 +684,7 @@ class Home {
                         buttons: [
                             {
                                 label: `Discord`,
-                                url: `https://discord.gg/yQfeHSWvft`,
+                                url: pkg.discord_url,
                             }
                         ]
                     }).catch();
@@ -723,7 +723,7 @@ class Home {
                         buttons: [
                             {
                                 label: `Discord`,
-                                url: `https://discord.gg/yQfeHSWvft`,
+                                url: pkg.discord_url,
                             }
                         ]
                     }).catch();
