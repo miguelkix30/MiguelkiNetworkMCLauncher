@@ -327,7 +327,6 @@ class Home {
 
         if (instancesList.length === 1) {
             instanceSelectBTN.style.display = 'none';
-            instanceBTN.style.paddingRight = '0';
         }
 
         if (!instanceSelect) {
