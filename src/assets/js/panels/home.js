@@ -25,7 +25,7 @@ RPC.on('ready', async () => {
         startTimestamp: startingTime,
         largeImageKey: 'icon',
         smallImageKey: 'verificado',
-        largeImageText: `Volty Studio`,
+        largeImageText: `Miguelki Network`,
         instance: true,
         buttons: [
             {
@@ -125,7 +125,7 @@ class Home {
                     LogBan = true;
                 }
                 notificationTitle.innerHTML = '¡Atención!';
-                notificationContent.innerHTML = "No se ha podido conectar con el Anticheat de Volty Studio y por lo tanto no se podrá jugar a ninguna instancia.";
+                notificationContent.innerHTML = "No se ha podido conectar con el Anticheat de Miguelki Network y por lo tanto no se podrá jugar a ninguna instancia.";
                 notification.style.background = colorRed;
                 notificationIcon.src = 'assets/images/notification/error.png';
                 await this.showNotification();
@@ -231,7 +231,7 @@ class Home {
         let titlechangelog = document.querySelector('.titlechangelog')
         let changelogcontent = document.querySelector('.bbWrapper')
         changelogcontent.innerHTML = `<p>${changelog}</p>`
-        titlechangelog.innerHTML = `Volty Studio Launcher ${version}${subversion ? `-${subversion}` : ''}`;
+        titlechangelog.innerHTML = `Miguelki Network MC Launcher ${version}${subversion ? `-${subversion}` : ''}`;
 
         let newsElement = document.querySelector('.news-list');
         let news = await config.getNews().then(res => res).catch(err => false);
@@ -438,7 +438,7 @@ class Home {
                 let popupError = new popup()
                 popupError.openPopup({
                     title: 'Error',
-                    content: 'No puedes iniciar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Volty Studio.',
+                    content: 'No puedes iniciar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Miguelki Network.',
                     color: 'red',
                     options: true
                 })
@@ -447,7 +447,7 @@ class Home {
                 let popupError = new popup()
                 popupError.openPopup({
                     title: 'Error',
-                    content: 'No se ha podido conectar con el Anticheat de Volty Studio y por lo tanto no se podrá jugar a ninguna instancia.',
+                    content: 'No se ha podido conectar con el Anticheat de Miguelki Network y por lo tanto no se podrá jugar a ninguna instancia.',
                     color: 'red',
                     options: true
                 })
@@ -607,7 +607,7 @@ class Home {
                     startTimestamp: startingTime,
                     largeImageKey: 'icon',
                     smallImageKey: 'verificado',
-                    largeImageText: `Volty Studio`,
+                    largeImageText: `Miguelki Network`,
                     instance: true,
                     buttons: [
                         {
@@ -651,7 +651,7 @@ class Home {
                     startTimestamp: startingTime,
                     largeImageKey: 'icon',
                     smallImageKey: 'verificado',
-                    largeImageText: `Volty Studio`,
+                    largeImageText: `Miguelki Network`,
                     instance: true,
                     buttons: [
                         {
@@ -679,7 +679,7 @@ class Home {
                         startTimestamp: startingTime,
                         largeImageKey: 'icon',
                         smallImageKey: 'verificado',
-                        largeImageText: `Volty Studio`,
+                        largeImageText: `Miguelki Network`,
                         instance: true,
                         buttons: [
                             {
@@ -718,7 +718,7 @@ class Home {
                         state: `En el launcher`,
                         largeImageKey: 'icon',
                         smallImageKey: 'verificado',
-                        largeImageText: `Volty Studio`,
+                        largeImageText: `Miguelki Network`,
                         instance: true,
                         buttons: [
                             {
