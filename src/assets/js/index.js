@@ -25,7 +25,7 @@ class Splash {
     async fetchSplashes() {
         try {
             const url = `${pkg.url}launcher/config-launcher/splashes.json`;
-            const response = await nodeFetch(url);
+            const response = await nodeFetch(url, { timeout: 5000 });
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             return data;
@@ -37,34 +37,7 @@ class Splash {
 
     async startAnimation() {
         let defaultSplashes = [
-            { "message": "Miguelki Network", "author": "Miguelki" },
-            { "message": "Das Leben ist nicht Schwäche verzeihen", "author": "Adolf Hitler" },
-            { "message": "1 de cada 2 personas son gays.", "author": "Miguelki" },
-            { "message": "Zzz", "author": "Miguelki" },
-            { "message": "Messi", "author": "Messi" },
-            { "message": "Aún va sin h miguel", "author": "Carmen" },
-            { "message": "Vaporeon puede tener relaciones con humanos", "author": " " },
-            { "message": "Tienes menos luces que una lampara", "author": "Miguelki" },
-            { "message": "Te llama tu madre", "author": "Miguelki" },
-            { "message": "Argentina ganó 🏳‍🌈. Ups bandera erronea", "author": "Miguelki" },
-            { "message": "Perdon por besar a tu madre", "author": "Miguelki" },
-            { "message": "Bese a tu novia. Ah perdon que no tienes", "author": "Miguelki" },
-            { "message": "Entrando en tu cerebro.", "author": "Miguelki" },
-            { "message": "13, cuanto más me la mamas más me crece.", "author": "Dixo" },
-            { "message": "🕸️🕷️🤘", "author": "Chiquicas" },
-            { "message": "Dixo es super maricón 🏳‍🌈👨🏿‍❤️‍💋‍👨🏿", "author": "Chiquicas" },
-            { "message": "Va llorah, Mateo?", "author": "Dixo" },
-            { "message": "Ayuda.... Foack. Ayuda.... Foack. Ayuda.... Foack.", "author": " " },
-            { "message": "Milleurista???", "author": "Joako Puto" },
-            { "message": "Me aburro", "author": "Miguelki" },
-            { "message": "Yo con Dixo no juego", "author": "El Josefa de Castefa" },
-            { "message": "*Abre war thunder", "author": "El Josefa de Castefa" },
-            { "message": "Me voy al burguer king...", "author": "El Josefa de Castefa" },
-            { "message": "Miguelki Music sessions", "author": "Miguelki" },
-            { "message": "Je parle français pour le plaisir", "author": "Miguelki" },
-            { "message": "Roblox es una plataforma donde usuarios crean EXPERIENCIAS", "author": "Miguelki" },
-            { "message": "Cuidaoo", "author": "Miguelillo el impostor" },
-            { "message": "No dejes que el miedo se interponga en tu camino", "author": "Dixo (autista mode)" }
+            { "message": "Miguelki Network", "author": "Miguelki" }
         ];
 
         let splashes = await this.fetchSplashes();
