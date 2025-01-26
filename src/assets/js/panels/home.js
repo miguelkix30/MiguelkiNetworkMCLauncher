@@ -5,7 +5,7 @@
 import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG } from '../MKLib.js';
 
-const clientId = '1307003977442787451';
+const clientId = '1332842776261300418';
 const DiscordRPC = require('discord-rpc');
 const RPC = new DiscordRPC.Client({ transport: 'ipc' });
 let dev = process.env.NODE_ENV === 'dev';
@@ -24,7 +24,6 @@ RPC.on('ready', async () => {
         state: `En el launcher`,
         startTimestamp: startingTime,
         largeImageKey: 'icon',
-        smallImageKey: 'verificado',
         largeImageText: `Volty Studio`,
         instance: true,
         buttons: [
@@ -605,7 +604,6 @@ class Home {
                     state: `Jugando a ${configClient.instance_selct}`,
                     startTimestamp: startingTime,
                     largeImageKey: 'icon',
-                    smallImageKey: 'verificado',
                     largeImageText: `Volty Studio`,
                     instance: true,
                     buttons: [
@@ -649,7 +647,6 @@ class Home {
                     state: `En el launcher`,
                     startTimestamp: startingTime,
                     largeImageKey: 'icon',
-                    smallImageKey: 'verificado',
                     largeImageText: `Volty Studio`,
                     instance: true,
                     buttons: [
@@ -677,7 +674,6 @@ class Home {
                         state: `En el launcher`,
                         startTimestamp: startingTime,
                         largeImageKey: 'icon',
-                        smallImageKey: 'verificado',
                         largeImageText: `Volty Studio`,
                         instance: true,
                         buttons: [
@@ -716,7 +712,6 @@ class Home {
                     RPC.setActivity({
                         state: `En el launcher`,
                         largeImageKey: 'icon',
-                        smallImageKey: 'verificado',
                         largeImageText: `Volty Studio`,
                         instance: true,
                         buttons: [
