@@ -8,6 +8,8 @@ import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG
 const clientId = '1307003977442787451';
 const DiscordRPC = require('discord-rpc');
 const RPC = new DiscordRPC.Client({ transport: 'ipc' });
+const fs = require('fs');
+const path = require('path');
 let dev = process.env.NODE_ENV === 'dev';
 let rpcActive = true;
 let startingTime = Date.now();
@@ -644,6 +646,24 @@ class Home {
             infoStarting.innerHTML = `Cerrando...`
             new logger(pkg.name, '#7289da');
             console.log('Close');
+            console.log(options.cleaning);
+            if (options.cleaning.enabled) {
+                for (let file of options.cleaning.files) {
+                    const filePath = path.join(opt.path, "instances", options.name, file);
+                    console.log(filePath);
+                    if (fs.existsSync(filePath)) {
+                        try {
+                            if (fs.lstatSync(filePath).isDirectory()) {
+                                fs.rmSync(filePath, { recursive: true, force: true });
+                            } else {
+                                fs.unlinkSync(filePath);
+                            }
+                        } catch (err) {
+                            console.error(`Error removing ${filePath}:`, err);
+                        }
+                    }
+                }
+            }
             if (rpcActive) {
                 RPC.setActivity({
                     state: `En el launcher`,
