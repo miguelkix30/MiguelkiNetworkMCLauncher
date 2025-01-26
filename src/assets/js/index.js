@@ -25,7 +25,7 @@ class Splash {
     async fetchSplashes() {
         try {
             const url = `${pkg.url}launcher/config-launcher/splashes.json`;
-            const response = await nodeFetch(url);
+            const response = await nodeFetch(url, { timeout: 5000 });
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             return data;
@@ -37,7 +37,7 @@ class Splash {
 
     async startAnimation() {
         let defaultSplashes = [
-            { "message": "Volty Studio", "author": "by LutukiSolo" }
+            { "message": "Miguelki Network", "author": "Miguelki" }
         ];
 
         let splashes = await this.fetchSplashes();
