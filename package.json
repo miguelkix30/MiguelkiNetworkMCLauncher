@@ -1,26 +1,26 @@
 {
     "name": "VoltyStudio-Launcher",
     "preductname": "Volty Studio Launcher",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "sub_version": "BETA",
     "changelog": "Esta versión no es final y puede contener errores.",
     "description": "Launcher de Volty Studio",
     "main": "src/app.js",
     "author": {
         "name": "Miguelki",
-        "email": "miguelki@miguelkinetwork.info",
+        "email": "admin@miguelkinetwork.fun",
         "url": "https://github.com/miguelkix30"
     },
-    "url": "http://node1.miguelkinetwork.info:25573/",
-    "store_url": "",
-    "azuriom_url": "",
-    "discord_server_id": "1301913749262831626",
-    "discord_url": "https://discord.gg/mcjNAYj6JX",
+    "url": "http://node1.miguelkinetwork.info:25565/",
+    "store_url": "https://minecraft.miguelkinetwork.info/shop/",
+    "azuriom_url": "https://minecraft.miguelkinetwork.info/",
+    "discord_server_id": "1300477405957329018",
+    "discord_url": "https://dsc.gg/miguelkinetwork",
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",
         "dev": "cross-env-shell DEV_TOOL=open nodemon --exec npm start",
         "build": "node build.js --obf=true --build=platform",
-        "icon": "node build.js --icon=https://github.com/VoltyDev/VoltyStudioLauncher/master/src/assets/images/icon.png"
+        "icon": "node build.js --icon=https://github.com/miguelkix30/MiguelkiNetworkMCLauncher/master/src/assets/images/icon.png"
     },
     "license": "CCANC",
     "nodemonConfig": {
@@ -50,6 +50,6 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/VoltyDev/VoltyStudioLauncher.git"
+        "url": "git+https://github.com/miguelkix30/MiguelkiNetworkMCLauncher.git"
     }
 }

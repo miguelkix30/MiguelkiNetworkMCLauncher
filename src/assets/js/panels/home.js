@@ -8,6 +8,8 @@ import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG
 const clientId = '1332842776261300418';
 const DiscordRPC = require('discord-rpc');
 const RPC = new DiscordRPC.Client({ transport: 'ipc' });
+const fs = require('fs');
+const path = require('path');
 let dev = process.env.NODE_ENV === 'dev';
 let rpcActive = true;
 let startingTime = Date.now();
@@ -124,7 +126,7 @@ class Home {
                     LogBan = true;
                 }
                 notificationTitle.innerHTML = '¡Atención!';
-                notificationContent.innerHTML = "No se ha podido conectar con el Anticheat de Volty Studio y por lo tanto no se podrá jugar a ninguna instancia.";
+                notificationContent.innerHTML = "No se ha podido conectar con el Anticheat de Miguelki Network y por lo tanto no se podrá jugar a ninguna instancia.";
                 notification.style.background = colorRed;
                 notificationIcon.src = 'assets/images/notification/error.png';
                 await this.showNotification();
@@ -230,7 +232,7 @@ class Home {
         let titlechangelog = document.querySelector('.titlechangelog')
         let changelogcontent = document.querySelector('.bbWrapper')
         changelogcontent.innerHTML = `<p>${changelog}</p>`
-        titlechangelog.innerHTML = `Volty Studio Launcher ${version}${subversion ? `-${subversion}` : ''}`;
+        titlechangelog.innerHTML = `Miguelki Network MC Launcher ${version}${subversion ? `-${subversion}` : ''}`;
 
         let newsElement = document.querySelector('.news-list');
         let news = await config.getNews().then(res => res).catch(err => false);
@@ -436,7 +438,7 @@ class Home {
                 let popupError = new popup()
                 popupError.openPopup({
                     title: 'Error',
-                    content: 'No puedes iniciar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Volty Studio.',
+                    content: 'No puedes iniciar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Miguelki Network.',
                     color: 'red',
                     options: true
                 })
@@ -445,7 +447,7 @@ class Home {
                 let popupError = new popup()
                 popupError.openPopup({
                     title: 'Error',
-                    content: 'No se ha podido conectar con el Anticheat de Volty Studio y por lo tanto no se podrá jugar a ninguna instancia.',
+                    content: 'No se ha podido conectar con el Anticheat de Miguelki Network y por lo tanto no se podrá jugar a ninguna instancia.',
                     color: 'red',
                     options: true
                 })
@@ -642,6 +644,24 @@ class Home {
             infoStarting.innerHTML = `Cerrando...`
             new logger(pkg.name, '#7289da');
             console.log('Close');
+            console.log(options.cleaning);
+            if (options.cleaning.enabled) {
+                for (let file of options.cleaning.files) {
+                    const filePath = path.join(opt.path, "instances", options.name, file);
+                    console.log(filePath);
+                    if (fs.existsSync(filePath)) {
+                        try {
+                            if (fs.lstatSync(filePath).isDirectory()) {
+                                fs.rmSync(filePath, { recursive: true, force: true });
+                            } else {
+                                fs.unlinkSync(filePath);
+                            }
+                        } catch (err) {
+                            console.error(`Error removing ${filePath}:`, err);
+                        }
+                    }
+                }
+            }
             if (rpcActive) {
                 RPC.setActivity({
                     state: `En el launcher`,
