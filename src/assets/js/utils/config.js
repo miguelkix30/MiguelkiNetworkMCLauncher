@@ -7,17 +7,17 @@ const pkg = require('../package.json');
 const nodeFetch = require("node-fetch");
 const convert = require('xml-js');
 
-import getKey from '../MKLib.js'
+import { getKey } from '../MKLib.js'
 let url = pkg.user ? `${pkg.url}/${pkg.user}` : pkg.url
 
 let config = `${url}/launcher/config-launcher/config.php`;
 let news = `${url}/launcher/news-launcher/news.json`;
-
+let Launcherkey = await getKey();
 
 class Config {
     GetConfig() {
         return new Promise((resolve, reject) => {
-            let configUrl = `${config}?checksum=${getKey()}`;
+            let configUrl = `${config}?checksum=${Launcherkey}`;
             nodeFetch(configUrl).then(async config => {
                 if (config.status === 200) return resolve(config.json());
                 else return reject({ error: { code: config.statusText, message: 'server not accessible' } });
@@ -28,7 +28,7 @@ class Config {
     }
 
     async getInstanceList() {
-        let urlInstance = `${url}/files`
+        let urlInstance = `${url}/files?checksum=${Launcherkey}`
         let instances = await nodeFetch(urlInstance).then(res => res.json()).catch(err => err)
         let instancesList = []
         instances = Object.entries(instances)
