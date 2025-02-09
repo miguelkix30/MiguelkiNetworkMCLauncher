@@ -6,13 +6,34 @@
 const pkg = require('../package.json');
 const nodeFetch = require("node-fetch");
 const convert = require('xml-js');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
-import { getKey } from '../MKLib.js'
 let url = pkg.user ? `${pkg.url}/${pkg.user}` : pkg.url
+let key;
 
 let config = `${url}/launcher/config-launcher/config.php`;
 let news = `${url}/launcher/news-launcher/news.json`;
-let Launcherkey = await getKey();
+
+async function getLauncherKey() {
+    if (!key) {
+      const files = [
+        path.join(__dirname, '../package.json'),
+        ...fs.readdirSync(__dirname).filter(file => file.endsWith('.js')).map(file => path.join(__dirname, file))
+      ];
+  
+      const hash = crypto.createHash('sha256');
+      for (const file of files) {
+        const data = fs.readFileSync(file);
+        hash.update(data);
+      }
+      key = hash.digest('hex');
+    }
+    return key;
+  };
+
+let Launcherkey = await getLauncherKey();
 
 class Config {
     GetConfig() {
