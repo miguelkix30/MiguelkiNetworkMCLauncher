@@ -264,7 +264,7 @@ input::-webkit-inner-spin-button {
   .log .log-content {
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow: hidden; /* Remove scroll from log-content */
   }
   
   .log .log-content .titlev {
@@ -282,6 +282,7 @@ input::-webkit-inner-spin-button {
     background-color: var(--box);
     overflow-x: hidden;
     word-wrap: break-word;
+    height: auto; /* Ensure the logger is always open */
   }
   
   .log .log-content .logger .header {
@@ -340,17 +341,20 @@ input::-webkit-inner-spin-button {
   
   .log .log-content .logger .content {
     position: relative;
-    top: -8px;
-    padding: 0 20px 0 20px;
+    top: 0px;
+    padding: 0 20px 20px 20px;
     width: 100%;
     transition: height 0.2s, top 0.2s;
-    pointer-events: none;
-    z-index: 0;
+    pointer-events: all;
+    z-index: 1;
     font: normal normal normal 16px/25px Consolas;
     transition: color 0.2s, line-height 0.2s, opacity 0.2s;
-    line-height: 0px;
-    opacity: 0;
+    line-height: 1.6em;
+    opacity: 1;
     user-select: text;
+    overflow-y: scroll;
+    height: 90%;
+    max-height: 90%;
   }
   
   .log .log-content .logger .content .info {
@@ -505,6 +509,41 @@ input::-webkit-inner-spin-button {
 .tooltip-container button:enabled + .tooltip-text {
   visibility: hidden;
   opacity: 0;
+}
+
+/* Custom scrollbar styles */
+.log .log-content .logger .content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.log .log-content .logger .content::-webkit-scrollbar-track {
+  background: var(--box);
+}
+
+.log .log-content .logger .content::-webkit-scrollbar-thumb {
+  background: var(--box-button);
+  border-radius: 5px;
+}
+
+.log .log-content .logger .content::-webkit-scrollbar-thumb:hover {
+  background: var(--box-button-hover);
+}
+
+.scroll-to-bottom {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: var(--box-button);
+  color: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.scroll-to-bottom:hover {
+  background-color: var(--box-button-hover);
 }
 
 

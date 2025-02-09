@@ -37,6 +37,7 @@ let Launcherkey = await getLauncherKey();
 
 class Config {
     GetConfig() {
+        console.log("Obteniendo config....")
         return new Promise((resolve, reject) => {
             let configUrl = `${config}?checksum=${Launcherkey}`;
             nodeFetch(configUrl).then(async config => {

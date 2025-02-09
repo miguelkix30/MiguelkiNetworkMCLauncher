@@ -47,7 +47,7 @@ let dname = await getDiscordUsername();
 
 class Launcher {
   async init() {
-    if (dev) this.initLog();
+    if (!dev) this.initLog();
     else this.initWindow();
 
     console.log("Iniciando Launcher...");
@@ -569,61 +569,63 @@ class Launcher {
 
   initLogs() {
     let logs = document.querySelector(".log-bg");
+    let logContent = document.querySelector(".logger .content");
+    let autoScroll = true;
 
-let block = false;
-document.addEventListener("keydown", (e) => {
-  if (
-    ((e.ctrlKey && e.shiftKey && e.keyCode == 73) ||
-      event.keyCode == 123) &&
-    !block
-  ) {
-    logs.classList.toggle("show");
-    block = true;
-  }
-});
+    // Create and append the scroll-to-bottom button
+    let scrollToBottomButton = document.createElement("div");
+    scrollToBottomButton.classList.add("scroll-to-bottom");
+    scrollToBottomButton.textContent = "Scroll to Bottom";
+    document.body.appendChild(scrollToBottomButton);
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === 'Escape' && logs.classList.contains('show')) {
-    logs.classList.toggle("show");
-  }
-});
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey && e.shiftKey && e.keyCode == 73) || e.keyCode == 123) {
+        logs.classList.toggle("show");
+      }
+    });
 
-document.addEventListener("keyup", (e) => {
-  if ((e.ctrlKey && e.shiftKey && e.keyCode == 73) || event.keyCode == 123)
-    block = false;
-});
+    document.addEventListener("keydown", (e) => {
+      if (e.key === 'Escape' && logs.classList.contains('show')) {
+        logs.classList.toggle("show");
+      }
+    });
 
-let close = document.querySelector(".log-close");
+    let close = document.querySelector(".log-close");
+    close.addEventListener("click", () => {
+      logs.classList.toggle("show");
+    });
 
-close.addEventListener("click", () => {
-  logs.classList.toggle("show");
-});
+    logContent.addEventListener("scroll", () => {
+      if (logContent.scrollTop + logContent.clientHeight < logContent.scrollHeight) {
+        autoScroll = false;
+        scrollToBottomButton.style.display = "block";
+      } else {
+        autoScroll = true;
+        scrollToBottomButton.style.display = "none";
+      }
+    });
 
-
-let launcher = document.querySelector("#launcher.logger");
-
-launcher.querySelector(".header").addEventListener("click", () => {
-  launcher.classList.toggle("open");
-});
-
-    let lcontent = launcher.querySelector(".content");
+    scrollToBottomButton.addEventListener("click", () => {
+      autoScroll = true;
+      logContent.scrollTop = logContent.scrollHeight;
+      scrollToBottomButton.style.display = "none";
+    });
 
     logger2.launcher.on("info", (...args) => {
-      addLog(lcontent, "info", args);
+      addLog(logContent, "info", args);
     });
 
     logger2.launcher.on("warn", (...args) => {
-      addLog(lcontent, "warn", args);
+      addLog(logContent, "warn", args);
     });
 
     logger2.launcher.on("debug", (...args) => {
-      addLog(lcontent, "debug", args);
+      addLog(logContent, "debug", args);
     });
 
     logger2.launcher.on("error", (...args) => {
-      addLog(lcontent, "error", args);
+      addLog(logContent, "error", args);
     });
-
 
     function addLog(content, type, args) {
       let final = [];
@@ -631,7 +633,7 @@ launcher.querySelector(".header").addEventListener("click", () => {
         if (typeof arg == "string") {
           final.push(arg);
         } else if (arg instanceof Error) {
-          final.push(stack);
+          final.push(arg.stack);
         } else if (typeof arg == "object") {
           final.push(JSON.stringify(arg));
         } else {
@@ -645,7 +647,13 @@ launcher.querySelector(".header").addEventListener("click", () => {
         .replace(/\n/g, "<br>");
 
       content.appendChild(span);
+      if (autoScroll) {
+        content.scrollTop = content.scrollHeight;
+      }
     }
+
+    // Ensure logs are automatically scrolled to the bottom by default
+    logContent.scrollTop = logContent.scrollHeight;
   }
 }
 
