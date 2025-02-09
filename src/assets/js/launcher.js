@@ -47,7 +47,7 @@ let dname = await getDiscordUsername();
 
 class Launcher {
   async init() {
-    if (!dev) this.initLog();
+    if (dev) this.initLog();
     else this.initWindow();
 
     console.log("Iniciando Launcher...");
@@ -570,13 +570,8 @@ class Launcher {
   initLogs() {
     let logs = document.querySelector(".log-bg");
     let logContent = document.querySelector(".logger .content");
+    let scrollToBottomButton = document.querySelector(".scroll-to-bottom");
     let autoScroll = true;
-
-    // Create and append the scroll-to-bottom button
-    let scrollToBottomButton = document.createElement("div");
-    scrollToBottomButton.classList.add("scroll-to-bottom");
-    scrollToBottomButton.textContent = "Scroll to Bottom";
-    document.body.appendChild(scrollToBottomButton);
 
     document.addEventListener("keydown", (e) => {
       if ((e.ctrlKey && e.shiftKey && e.keyCode == 73) || e.keyCode == 123) {
@@ -598,17 +593,23 @@ class Launcher {
     logContent.addEventListener("scroll", () => {
       if (logContent.scrollTop + logContent.clientHeight < logContent.scrollHeight) {
         autoScroll = false;
-        scrollToBottomButton.style.display = "block";
+        scrollToBottomButton.classList.add("show");
+        scrollToBottomButton.style.pointerEvents = "auto";
       } else {
         autoScroll = true;
-        scrollToBottomButton.style.display = "none";
+        scrollToBottomButton.classList.remove("show");
+        scrollToBottomButton.style.pointerEvents = "none";
       }
     });
 
     scrollToBottomButton.addEventListener("click", () => {
       autoScroll = true;
-      logContent.scrollTop = logContent.scrollHeight;
-      scrollToBottomButton.style.display = "none";
+      logContent.scrollTo({
+        top: logContent.scrollHeight,
+        behavior: "smooth"
+      });
+      scrollToBottomButton.classList.remove("show");
+      scrollToBottomButton.style.pointerEvents = "none";
     });
 
     logger2.launcher.on("info", (...args) => {
