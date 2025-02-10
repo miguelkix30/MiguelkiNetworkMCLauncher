@@ -6,25 +6,50 @@
 const pkg = require('../package.json');
 const nodeFetch = require("node-fetch");
 const convert = require('xml-js');
-let url = pkg.user ? `${pkg.url}/${pkg.user}` : pkg.url
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
-let config = `${url}/launcher/config-launcher/config.json`;
+let url = pkg.user ? `${pkg.url}/${pkg.user}` : pkg.url
+let key;
+
+let config = `${url}/launcher/config-launcher/config.php`;
 let news = `${url}/launcher/news-launcher/news.json`;
+
+async function getLauncherKey() {
+    if (!key) {
+      const files = [
+        path.join(__dirname, '../package.json'),
+        ...fs.readdirSync(__dirname).filter(file => file.endsWith('.js')).map(file => path.join(__dirname, file))
+      ];
+  
+      const hash = crypto.createHash('sha256');
+      for (const file of files) {
+        const data = fs.readFileSync(file);
+        hash.update(data);
+      }
+      key = hash.digest('hex');
+    }
+    return key;
+  };
+
+let Launcherkey = await getLauncherKey();
 
 class Config {
     GetConfig() {
         return new Promise((resolve, reject) => {
-            nodeFetch(config).then(async config => {
+            let configUrl = `${config}?checksum=${Launcherkey}`;
+            nodeFetch(configUrl).then(async config => {
                 if (config.status === 200) return resolve(config.json());
                 else return reject({ error: { code: config.statusText, message: 'server not accessible' } });
             }).catch(error => {
                 return reject({ error });
-            })
-        })
+            });
+        });
     }
 
     async getInstanceList() {
-        let urlInstance = `${url}/files`
+        let urlInstance = `${url}/files?checksum=${Launcherkey}`
         let instances = await nodeFetch(urlInstance).then(res => res.json()).catch(err => err)
         let instancesList = []
         instances = Object.entries(instances)

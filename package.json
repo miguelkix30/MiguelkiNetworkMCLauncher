@@ -1,9 +1,9 @@
 {
     "name": "VoltyStudio-Launcher",
     "preductname": "Volty Studio Launcher",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "sub_version": "BETA",
-    "changelog": "Esta versión no es final y puede contener errores.",
+    "changelog": "Se han actualizado algunas librerías y optimizado el funcionamiento del lanzador.",
     "description": "Launcher de Volty Studio",
     "main": "src/app.js",
     "author": {
@@ -33,7 +33,7 @@
         "electron-updater": "^6.1.8",
         "express": "^4.19.2",
         "marked": "^14.1.2",
-        "minecraft-java-core": "^3.10.4",
+        "minecraft-java-core": "^4.0.0-alpha.1",
         "node-bdd": "^2.0.4",
         "node-fetch": "^2.7.0",
         "node-machine-id": "^1.0.0",
