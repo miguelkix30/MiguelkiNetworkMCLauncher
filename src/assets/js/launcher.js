@@ -569,61 +569,64 @@ class Launcher {
 
   initLogs() {
     let logs = document.querySelector(".log-bg");
+    let logContent = document.querySelector(".logger .content");
+    let scrollToBottomButton = document.querySelector(".scroll-to-bottom");
+    let autoScroll = true;
 
-let block = false;
-document.addEventListener("keydown", (e) => {
-  if (
-    ((e.ctrlKey && e.shiftKey && e.keyCode == 73) ||
-      event.keyCode == 123) &&
-    !block
-  ) {
-    logs.classList.toggle("show");
-    block = true;
-  }
-});
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey && e.shiftKey && e.keyCode == 73) || e.keyCode == 123) {
+        logs.classList.toggle("show");
+      }
+    });
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === 'Escape' && logs.classList.contains('show')) {
-    logs.classList.toggle("show");
-  }
-});
+    document.addEventListener("keydown", (e) => {
+      if (e.key === 'Escape' && logs.classList.contains('show')) {
+        logs.classList.toggle("show");
+      }
+    });
 
-document.addEventListener("keyup", (e) => {
-  if ((e.ctrlKey && e.shiftKey && e.keyCode == 73) || event.keyCode == 123)
-    block = false;
-});
+    let close = document.querySelector(".log-close");
+    close.addEventListener("click", () => {
+      logs.classList.toggle("show");
+    });
 
-let close = document.querySelector(".log-close");
+    logContent.addEventListener("scroll", () => {
+      if (logContent.scrollTop + logContent.clientHeight < logContent.scrollHeight) {
+        autoScroll = false;
+        scrollToBottomButton.classList.add("show");
+        scrollToBottomButton.style.pointerEvents = "auto";
+      } else {
+        autoScroll = true;
+        scrollToBottomButton.classList.remove("show");
+        scrollToBottomButton.style.pointerEvents = "none";
+      }
+    });
 
-close.addEventListener("click", () => {
-  logs.classList.toggle("show");
-});
-
-
-let launcher = document.querySelector("#launcher.logger");
-
-launcher.querySelector(".header").addEventListener("click", () => {
-  launcher.classList.toggle("open");
-});
-
-    let lcontent = launcher.querySelector(".content");
+    scrollToBottomButton.addEventListener("click", () => {
+      autoScroll = true;
+      logContent.scrollTo({
+        top: logContent.scrollHeight,
+        behavior: "smooth"
+      });
+      scrollToBottomButton.classList.remove("show");
+      scrollToBottomButton.style.pointerEvents = "none";
+    });
 
     logger2.launcher.on("info", (...args) => {
-      addLog(lcontent, "info", args);
+      addLog(logContent, "info", args);
     });
 
     logger2.launcher.on("warn", (...args) => {
-      addLog(lcontent, "warn", args);
+      addLog(logContent, "warn", args);
     });
 
     logger2.launcher.on("debug", (...args) => {
-      addLog(lcontent, "debug", args);
+      addLog(logContent, "debug", args);
     });
 
     logger2.launcher.on("error", (...args) => {
-      addLog(lcontent, "error", args);
+      addLog(logContent, "error", args);
     });
-
 
     function addLog(content, type, args) {
       let final = [];
@@ -631,7 +634,7 @@ launcher.querySelector(".header").addEventListener("click", () => {
         if (typeof arg == "string") {
           final.push(arg);
         } else if (arg instanceof Error) {
-          final.push(stack);
+          final.push(arg.stack);
         } else if (typeof arg == "object") {
           final.push(JSON.stringify(arg));
         } else {
@@ -645,7 +648,13 @@ launcher.querySelector(".header").addEventListener("click", () => {
         .replace(/\n/g, "<br>");
 
       content.appendChild(span);
+      if (autoScroll) {
+        content.scrollTop = content.scrollHeight;
+      }
     }
+
+    // Ensure logs are automatically scrolled to the bottom by default
+    logContent.scrollTop = logContent.scrollHeight;
   }
 }
 

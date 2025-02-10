@@ -39,7 +39,6 @@ input::-webkit-inner-spin-button {
 
 .dragbar {
     position: fixed;
-    /* background: #00000080; */
     top: 0px;
     left: 0px;
     width: 100%;
@@ -163,7 +162,7 @@ input::-webkit-inner-spin-button {
     z-index: 0;
     pointer-events: none;
     transition: max-height 0.2s ease-in-out, opacity 0.2s ease-in-out;
-    transition-delay: 0s, 0.2s; /* Add this line */
+    transition-delay: 0s, 0.2s;
 }
 
 .active {
@@ -171,7 +170,7 @@ input::-webkit-inner-spin-button {
     max-height: 100vh;
     z-index: 1;
     pointer-events: all;
-    transition-delay: 0.2s, 0s; /* Add this line */
+    transition-delay: 0.2s, 0s;
 }
 
 .background-video {
@@ -182,7 +181,7 @@ input::-webkit-inner-spin-button {
     height: 100%;
     object-fit: cover;
     z-index: -1;
-    transition: opacity 1s; /* adjust the duration as needed */
+    transition: opacity 1s;
 }
 
 .background-video.next {
@@ -264,7 +263,7 @@ input::-webkit-inner-spin-button {
   .log .log-content {
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow: hidden;
   }
   
   .log .log-content .titlev {
@@ -282,6 +281,7 @@ input::-webkit-inner-spin-button {
     background-color: var(--box);
     overflow-x: hidden;
     word-wrap: break-word;
+    height: auto;
   }
   
   .log .log-content .logger .header {
@@ -340,17 +340,38 @@ input::-webkit-inner-spin-button {
   
   .log .log-content .logger .content {
     position: relative;
-    top: -8px;
-    padding: 0 20px 0 20px;
+    top: 0px;
+    padding: 0 20px 20px 20px;
     width: 100%;
     transition: height 0.2s, top 0.2s;
-    pointer-events: none;
-    z-index: 0;
+    pointer-events: all;
+    z-index: 1;
     font: normal normal normal 16px/25px Consolas;
     transition: color 0.2s, line-height 0.2s, opacity 0.2s;
-    line-height: 0px;
-    opacity: 0;
+    line-height: 1.6em;
+    opacity: 1;
     user-select: text;
+    overflow-y: scroll;
+    height: 90%;
+    max-height: 90%;
+  }
+  
+  /* Custom scrollbar styles */
+  .log .log-content .logger .content::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  .log .log-content .logger .content::-webkit-scrollbar-track {
+    background: var(--box);
+  }
+  
+  .log .log-content .logger .content::-webkit-scrollbar-thumb {
+    background: var(--box-button);
+    border-radius: 5px;
+  }
+  
+  .log .log-content .logger .content::-webkit-scrollbar-thumb:hover {
+    background: var(--box-button-hover);
   }
   
   .log .log-content .logger .content .info {
@@ -382,7 +403,7 @@ input::-webkit-inner-spin-button {
     opacity: 1;
   }
 
-/* Estilos para el modal de términos y condiciones */
+
 .terms-modal {
   position: fixed;
   top: 0;
@@ -395,7 +416,7 @@ input::-webkit-inner-spin-button {
   align-items: center;
   justify-content: center;
   z-index: 10;
-  padding: 10px; /* Añade espaciado alrededor del modal */
+  padding: 10px;
 }
 
 .terms-header {
@@ -407,7 +428,7 @@ input::-webkit-inner-spin-button {
 .terms-header h2 {
   font-size: 1.8rem;
   margin: 0;
-  margin-bottom: 10px; /* Espaciado adicional debajo del título */
+  margin-bottom: 10px;
 }
 
 .terms-header p {
@@ -416,14 +437,14 @@ input::-webkit-inner-spin-button {
 }
 
 .terms-container {
-  width: 90%; /* Aumenta el ancho del contenedor */
-  max-width: 900px; /* Aumenta el máximo ancho */
+  width: 90%;
+  max-width: 900px;
   height: 60%;
   max-height: 70%;
   background-color: var(--box);
   border-radius: 10px;
   padding: 20px;
-  overflow-y: auto; /* Barra de desplazamiento vertical */
+  overflow-y: auto;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -433,21 +454,21 @@ input::-webkit-inner-spin-button {
 .terms-buttons {
   display: flex;
   justify-content: center;
-  gap: 20px; /* Espaciado entre botones */
-  margin-top: 20px; /* Espaciado adicional arriba de los botones */
+  gap: 20px;
+  margin-top: 20px;
 }
 
 .accept-terms-btn, .decline-terms-btn {
   padding: 10px 20px;
   font-size: 16px;
   border: none;
-  border-radius: 20px; /* Botones redondeados */
+  border-radius: 20px;
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
 }
 
 .accept-terms-btn {
-  background: linear-gradient(45deg, #00FF00, #008000); /* Verde */
+  background: linear-gradient(45deg, #00FF00, #008000);
   color: #fff;
 }
 
@@ -461,7 +482,7 @@ input::-webkit-inner-spin-button {
 }
 
 .decline-terms-btn {
-  background: linear-gradient(45deg, #FF0000, #8B0000); /* Rojo */
+  background: linear-gradient(45deg, #FF0000, #8B0000);
   color: #fff;
 }
 
@@ -469,13 +490,13 @@ input::-webkit-inner-spin-button {
   background: #660000;
 }
 
-/* Contenedor del tooltip */
+
 .tooltip-container {
   position: relative;
   display: inline-block;
 }
 
-/* Tooltip */
+
 .tooltip-text {
   visibility: hidden;
   width: 220px;
@@ -486,26 +507,63 @@ input::-webkit-inner-spin-button {
   padding: 5px 0;
   position: absolute;
   z-index: 1;
-  bottom: 125%; /* Posición del tooltip */
+  bottom: 125%;
   left: 50%;
-  margin-left: -110px; /* Centrando el tooltip */
+  margin-left: -110px;
   opacity: 0;
   transition: opacity 0.3s;
   font-size: 14px;
 }
 
-/* Mostrar tooltip cuando el botón está deshabilitado y el mouse está sobre el contenedor */
 .tooltip-container:hover .tooltip-text,
 .tooltip-container button:disabled:hover + .tooltip-text {
   visibility: visible;
   opacity: 1;
 }
 
-/* Tooltip para el botón habilitado */
 .tooltip-container button:enabled + .tooltip-text {
   visibility: hidden;
   opacity: 0;
 }
 
+.scroll-to-bottom {
+  display: none;
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 50px;
+  height: 50px;
+  background: rgba( 0, 0, 0, 0.9 );
+  color: #fff;
+  border: 1px solid rgba( 255, 255, 255, 0.18 );
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  transition: all 0.5s;
+}
 
+.scroll-to-bottom.show {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.5s;
+}
+
+.scroll-to-bottom:hover {
+  background-color: var(--box-button-hover);
+  transition: all 0.5s;
+}
+
+.scroll-to-bottom::before {
+  content: '\f078';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  font-size: 24px;
+  display: block;
+  margin: auto;
+}
 
