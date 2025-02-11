@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, logger, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername } from '../utils.js'
+import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG } from '../MKLib.js';
 
 const clientId = '1307003977442787451';
@@ -209,7 +209,6 @@ class Home {
     async startMusicButton() {
         let res = await config.GetConfig();
         if (res.musicBeta || dev) {
-            const db = new database();
             let configClient = await this.db.readData('configClient')
             document.querySelector('.music-btn').style.display = 'block';
             document.querySelector('.music-btn').addEventListener('click', function() {if (!playing) toggleMusic();});
@@ -622,7 +621,6 @@ class Home {
                 playing = true;
                 playMSG(configClient.instance_selct);
             }
-            new logger('Minecraft', '#36b030');
             console.log(e);
 
             ipcRenderer.send('main-window-progress-load')
@@ -644,13 +642,10 @@ class Home {
             instanceSelectBTN.disabled = false;
             instanceSelectBTN.classList.remove('disabled');
             infoStarting.innerHTML = `Cerrando...`
-            new logger(pkg.name, '#7289da');
             console.log('Close');
-            console.log(options.cleaning);
             if (options.cleaning.enabled) {
                 for (let file of options.cleaning.files) {
                     const filePath = path.join(opt.path, "instances", options.name, file);
-                    console.log(filePath);
                     if (fs.existsSync(filePath)) {
                         try {
                             if (fs.lstatSync(filePath).isDirectory()) {
@@ -687,7 +682,6 @@ class Home {
         launch.on('error', err => {
             let popupError = new popup()
             if (typeof err.error === 'undefined') {
-                new logger(pkg.name, '#7289da');
                 console.warn('Ha occurrido un error en la descarga de algún archivo. Si el juego no inicia correctamente esto puede ser la causa.');
                 if (configClient.launcher_config.closeLauncher == 'close-launcher') {
                     ipcRenderer.send("main-window-show")
@@ -729,7 +723,6 @@ class Home {
                 instanceSelectBTN.disabled = false;
                 instanceSelectBTN.classList.remove('disabled');
                 infoStarting.innerHTML = `Verificando...`
-                new logger(pkg.name, '#7289da');
                 console.log(err);
                 this.notification()
                 if (rpcActive) {
