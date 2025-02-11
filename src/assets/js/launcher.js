@@ -33,17 +33,15 @@ import {
 import {
   loginMSG,
   quitAPP,
-  verificationError
+  verificationError,
+  sendClientReport
 } from "./MKLib.js";
 const { AZauth, Microsoft, Mojang } = require("minecraft-java-core");
 
 // libs
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
-const path = require("path");
 let dev = process.env.NODE_ENV === "dev";
-let name = await getUsername();
-let dname = await getDiscordUsername();
 
 class Launcher {
   async init() {
@@ -102,7 +100,7 @@ class Launcher {
         )
         .replace(/\n/g, "<br>")
         .replace(/\x20/g, "&nbsp;");
-      popup.showPopup(
+      new popup().openPopup(
         "Une erreur est survenue",
         `
             <b>Erreur:</b> ${error.message}<br>
@@ -612,6 +610,13 @@ class Launcher {
       scrollToBottomButton.style.pointerEvents = "none";
     });
 
+    let reportIssueButton = document.querySelector(".report-issue");
+    reportIssueButton.classList.add("show");
+    reportIssueButton.addEventListener("click", () => {
+      logs.classList.toggle("show");
+      this.confirmReportIssue();
+    });
+
     logger2.launcher.on("info", (...args) => {
       addLog(logContent, "info", args);
     });
@@ -653,8 +658,28 @@ class Launcher {
       }
     }
 
-    // Ensure logs are automatically scrolled to the bottom by default
     logContent.scrollTop = logContent.scrollHeight;
+  }
+
+  async confirmReportIssue() {
+    let reportPopup = new popup();
+    let dialogResult = await new Promise(resolve => {
+      reportPopup.openDialog({
+            title: 'Enviar reporte de rendimiento?',
+            content: 'Si estas experimentando problemas con el launcher, puedes enviar un reporte de rendimiento para ayudarnos a solucionar el problema. <br><br>Quieres enviar un reporte de rendimiento?',
+            options: true,
+            callback: resolve
+        });
+    });
+    if (dialogResult === 'cancel') {
+        return;
+    }
+    this.sendReport();
+  }
+
+  sendReport() {
+    let logContent = document.querySelector(".logger .content").innerText;
+    sendClientReport(logContent, false);
   }
 }
 
