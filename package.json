@@ -2,7 +2,7 @@
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
     "version": "3.2.5",
-    "sub_version": "",
+    "sub_version": "a",
     "changelog": "Se ha mejorado la interfaz de la consola y se ha actualizado la libreria de minecraft-java-core",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
