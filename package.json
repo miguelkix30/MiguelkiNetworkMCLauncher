@@ -2,7 +2,7 @@
     "name": "VoltyStudio-Launcher",
     "preductname": "Volty Studio Launcher",
     "version": "1.0.4",
-    "sub_version": "BETA-b",
+    "sub_version": "BETA-c",
     "changelog": "Se han actualizado algunas librerías y optimizado el funcionamiento del lanzador.",
     "description": "Launcher de Volty Studio",
     "main": "src/app.js",

@@ -223,7 +223,7 @@ input::-webkit-inner-spin-button {
     left: 50%;
     transform: translate(-50%, -50%);
     width: 60%;
-    height: 75%;
+    height: 80%;
     background-color: var(--sidebar);
     background: rgba( 0, 0, 0, 0.9 );
     border: 1px solid rgba( 255, 255, 255, 0.18 );
@@ -267,9 +267,41 @@ input::-webkit-inner-spin-button {
   }
   
   .log .log-content .titlev {
+    display: flex;
+    align-items: center;
     position: relative;
     font: normal normal bold 20px/30px Poppins;
     color: var(--text);
+    transition: color 0.2s;
+    vertical-align: middle;
+    user-select: none;
+  }
+
+  .console-hwid-container {
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    vertical-align: middle;
+    justify-content: left;
+    margin-top: 10px;
+    margin-left: 10px;
+  }
+
+  .log .console-hwid {
+    font: normal normal bold 15px/19px Poppins;
+    margin-right: 10px;
+    margin-left: 5px;
+    user-select: all;
+  }
+
+  .log .copy-console-hwid {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+  }
+
+  .log .copy-console-hwid:hover {
+    color: var(--icon-unselected);
     transition: color 0.2s;
   }
   
@@ -352,11 +384,10 @@ input::-webkit-inner-spin-button {
     opacity: 1;
     user-select: text;
     overflow-y: scroll;
-    height: 90%;
+    height: 85%;
     max-height: 90%;
   }
   
-  /* Custom scrollbar styles */
   .log .log-content .logger .content::-webkit-scrollbar {
     width: 10px;
   }
