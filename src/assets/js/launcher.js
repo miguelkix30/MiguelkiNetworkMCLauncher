@@ -31,6 +31,7 @@ import {
   setBackgroundMusic
 } from "./utils.js";
 import {
+  getHWID,
   loginMSG,
   quitAPP,
   verificationError,
@@ -45,7 +46,7 @@ let dev = process.env.NODE_ENV === "dev";
 
 class Launcher {
   async init() {
-    if (dev) this.initLog();
+    if (!dev) this.initLog();
     else this.initWindow();
 
     console.log("Iniciando Launcher...");
@@ -77,13 +78,23 @@ class Launcher {
     }
   }
 
-  initWindow() {
+  async initWindow() {
     window.logger2 = {
       launcher: new Logger2("Launcher", "#FF7F18"),
       minecraft: new Logger2("Minecraft", "#43B581"),
     };
 
     this.initLogs();
+
+    let hwid = await getHWID();
+    let hwidConsoleLabel = document.querySelector(".console-hwid");
+    hwidConsoleLabel.innerHTML = hwid;
+    
+    let hwidCopyButton = document.querySelector(".copy-console-hwid");
+    hwidCopyButton.addEventListener("click", () => {
+      navigator.clipboard.writeText(hwid);
+    });
+
 
     window.console = window.logger2.launcher;
 
@@ -663,6 +674,7 @@ class Launcher {
 
   async confirmReportIssue() {
     let reportPopup = new popup();
+    let logs = document.querySelector(".log-bg");
     let dialogResult = await new Promise(resolve => {
       reportPopup.openDialog({
             title: 'Enviar reporte de rendimiento?',
@@ -672,6 +684,7 @@ class Launcher {
         });
     });
     if (dialogResult === 'cancel') {
+        logs.classList.toggle("show");
         return;
     }
     this.sendReport();
