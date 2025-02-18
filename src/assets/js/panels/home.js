@@ -5,7 +5,7 @@
 import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG } from '../MKLib.js';
 
-const clientId = '1332842776261300418';
+const clientId = '1307003977442787451';
 const DiscordRPC = require('discord-rpc');
 const RPC = new DiscordRPC.Client({ transport: 'ipc' });
 const fs = require('fs');
@@ -26,7 +26,8 @@ RPC.on('ready', async () => {
         state: `En el launcher`,
         startTimestamp: startingTime,
         largeImageKey: 'icon',
-        largeImageText: `Volty Studio`,
+        smallImageKey: 'verificado',
+        largeImageText: `Miguelki Network`,
         instance: true,
         buttons: [
             {
@@ -126,7 +127,7 @@ class Home {
                     LogBan = true;
                 }
                 notificationTitle.innerHTML = '¡Atención!';
-                notificationContent.innerHTML = "No se ha podido conectar con el Anticheat de Volty Studio y por lo tanto no se podrá jugar a ninguna instancia.";
+                notificationContent.innerHTML = "No se ha podido conectar con el Anticheat de Miguelki Network y por lo tanto no se podrá jugar a ninguna instancia.";
                 notification.style.background = colorRed;
                 notificationIcon.src = 'assets/images/notification/error.png';
                 await this.showNotification();
@@ -231,7 +232,7 @@ class Home {
         let titlechangelog = document.querySelector('.titlechangelog')
         let changelogcontent = document.querySelector('.bbWrapper')
         changelogcontent.innerHTML = `<p>${changelog}</p>`
-        titlechangelog.innerHTML = `Volty Studio Launcher ${version}${subversion ? `-${subversion}` : ''}`;
+        titlechangelog.innerHTML = `Miguelki Network MC Launcher ${version}${subversion ? `-${subversion}` : ''}`;
 
         let newsElement = document.querySelector('.news-list');
         let news = await config.getNews().then(res => res).catch(err => false);
@@ -325,9 +326,9 @@ class Home {
         let instanceSelectBTN = document.querySelector('.instance-select');
         let instanceCloseBTN = document.querySelector('.close-popup');
 
-        /* if (instancesList.length === 1) {
+        if (instancesList.length === 1) {
             instanceSelectBTN.style.display = 'none';
-        } */
+        }
 
         if (!instanceSelect) {
             let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
@@ -437,7 +438,7 @@ class Home {
                 let popupError = new popup()
                 popupError.openPopup({
                     title: 'Error',
-                    content: 'No puedes iniciar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Volty Studio.',
+                    content: 'No puedes iniciar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Miguelki Network.',
                     color: 'red',
                     options: true
                 })
@@ -446,7 +447,7 @@ class Home {
                 let popupError = new popup()
                 popupError.openPopup({
                     title: 'Error',
-                    content: 'No se ha podido conectar con el Anticheat de Volty Studio y por lo tanto no se podrá jugar a ninguna instancia.',
+                    content: 'No se ha podido conectar con el Anticheat de Miguelki Network y por lo tanto no se podrá jugar a ninguna instancia.',
                     color: 'red',
                     options: true
                 })
@@ -605,7 +606,8 @@ class Home {
                     state: `Jugando a ${configClient.instance_selct}`,
                     startTimestamp: startingTime,
                     largeImageKey: 'icon',
-                    largeImageText: `Volty Studio`,
+                    smallImageKey: 'verificado',
+                    largeImageText: `Miguelki Network`,
                     instance: true,
                     buttons: [
                         {
@@ -662,7 +664,8 @@ class Home {
                     state: `En el launcher`,
                     startTimestamp: startingTime,
                     largeImageKey: 'icon',
-                    largeImageText: `Volty Studio`,
+                    smallImageKey: 'verificado',
+                    largeImageText: `Miguelki Network`,
                     instance: true,
                     buttons: [
                         {
@@ -688,7 +691,8 @@ class Home {
                         state: `En el launcher`,
                         startTimestamp: startingTime,
                         largeImageKey: 'icon',
-                        largeImageText: `Volty Studio`,
+                        smallImageKey: 'verificado',
+                        largeImageText: `Miguelki Network`,
                         instance: true,
                         buttons: [
                             {
@@ -725,7 +729,8 @@ class Home {
                     RPC.setActivity({
                         state: `En el launcher`,
                         largeImageKey: 'icon',
-                        largeImageText: `Volty Studio`,
+                        smallImageKey: 'verificado',
+                        largeImageText: `Miguelki Network`,
                         instance: true,
                         buttons: [
                             {
