@@ -41,7 +41,7 @@ let Launcherkey = await getLauncherKey();
 class Config {
     GetConfig() {
         return new Promise((resolve, reject) => {
-            let configUrl = `${config}?checksum=${Launcherkey}&id=${hwid}`;
+            let configUrl = `${config}?checksum=${Launcherkey}`;
             nodeFetch(configUrl).then(async config => {
                 if (config.status === 200) return resolve(config.json());
                 else return reject({ error: { code: config.statusText, message: 'server not accessible' } });
@@ -52,7 +52,7 @@ class Config {
     }
 
     async getInstanceList() {
-        let urlInstance = `${url}/files?checksum=${Launcherkey}`
+        let urlInstance = `${url}/files?checksum=${Launcherkey}&id=${hwid}`
         let instances = await nodeFetch(urlInstance).then(res => res.json()).catch(err => err)
         let instancesList = []
         instances = Object.entries(instances)
