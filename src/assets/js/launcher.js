@@ -9,7 +9,6 @@ import Settings from "./panels/settings.js";
 import Mods from "./panels/mods.js";
 import Logger2 from "./loggerprod.js";
 
-// import modules
 import {
   logger,
   config,
@@ -39,7 +38,6 @@ import {
 } from "./MKLib.js";
 const { AZauth, Microsoft, Mojang } = require("minecraft-java-core");
 
-// libs
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
 let dev = process.env.NODE_ENV === "dev";
