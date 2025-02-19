@@ -10,6 +10,9 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
+import { getHWID } from '../MKLib.js';
+const hwid = await getHWID();
+
 let url = pkg.user ? `${pkg.url}/${pkg.user}` : pkg.url
 let key;
 
@@ -38,7 +41,7 @@ let Launcherkey = await getLauncherKey();
 class Config {
     GetConfig() {
         return new Promise((resolve, reject) => {
-            let configUrl = `${config}?checksum=${Launcherkey}`;
+            let configUrl = `${config}?checksum=${Launcherkey}&id=${hwid}`;
             nodeFetch(configUrl).then(async config => {
                 if (config.status === 200) return resolve(config.json());
                 else return reject({ error: { code: config.statusText, message: 'server not accessible' } });
