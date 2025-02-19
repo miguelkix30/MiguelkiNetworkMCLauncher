@@ -5,13 +5,12 @@
 
 const pkg = require('../package.json');
 const nodeFetch = require("node-fetch");
+const { machineIdSync } = require("node-machine-id");
 const convert = require('xml-js');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-
-import { getHWID } from '../MKLib.js';
-const hwid = await getHWID();
+const hwid = machineIdSync();
 
 let url = pkg.user ? `${pkg.url}/${pkg.user}` : pkg.url
 let key;
