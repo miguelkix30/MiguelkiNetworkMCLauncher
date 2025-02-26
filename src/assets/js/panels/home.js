@@ -763,6 +763,7 @@ class Home {
                 }
                 button.addEventListener('click', async (e) => {
                     let username = await getUsername();
+                    instance = await config.getInstanceList().then(instances => instances.find(i => i.name === instanceName));
                     if (instance.whitelistActive && !instance.whitelist.includes(username)) {
                         let popupError = new popup();
                         popupError.openPopup({
