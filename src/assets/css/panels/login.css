@@ -5,77 +5,116 @@
     --box-button: #0078bd;
     --box-button-hover: #053e8a;
     --box-button-hover-2: #001f47;
-    --box-button-gradient-1: 	#00FFFF;
-    --box-button-gradient-2: 	#0096FF;
+    --box-button-gradient-1: #00FFFF;
+    --box-button-gradient-2: #0096FF;
 }
+
 .login .container {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     height: 100%;
     background-color: var(--sidebar);
     border-right: 1px solid var(--sidebar-border);
     transition: all 0.5s;
-    background: rgba( 0, 0, 0, 0.05 );
-    backdrop-filter: blur( 3px );
-    -webkit-backdrop-filter: blur( 5px );
+    background: rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(5px);
 }
 
-.login-tabs {
-    position: absolute;
-    padding: 15px;
+.login-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 70%;
+}
+
+.login-right {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 30%;
+}
+
+.app-icon {
+    max-width: 70%;
+    height: auto;
+    margin-right: 10rem;
+}
+
+.login-container {
+    padding: 20px;
     border-radius: 15px;
     text-align: center;
-    min-width: 40%;
+    min-width: 60%;
     background-color: var(--sidebar);
     border-right: 1px solid var(--sidebar-border);
     transition: all 0.2s;
-    background: rgba( 0, 0, 0, 0.5 );
+    background: rgba(0, 0, 0, 0.5);
     border-radius: 10px;
-    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    margin-bottom: 20px;
 }
 
 .login-home,
+.login-premium,
 .login-offline,
 .login-AZauth,
 .login-AZauth-A2F {
     display: none;
 }
 
-.login-text {
-    font-size: 1.3rem;
+.login-header {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-header-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.5rem;
 }
 
 .connect,
 .cancel {
     color: #fff;
-    padding: 0.3rem 4rem;
-    font-size: inherit;
+    padding: 0.5rem 3rem;
+    font-size: 1rem;
     font-weight: bold;
-    margin: 15px 10px;
+    margin: 15px auto;
     background-color: var(--box-button);
     box-shadow: 0px 3px 6px #00000029;
     border-radius: 25px;
-    color: #fff;
     cursor: pointer;
-    z-index: 2;
-    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
+
 .connect:hover,
 .cancel:hover {
     background-color: var(--box-button-hover);
+}
+
+.cancel {
+    margin-top: 10px;
 }
 
 .input-login .email,
 .input-login .password,
 .A2F {
     border: 2px solid transparent;
-    width: 18em;
+    width: 95%;
     height: 2.5em;
     padding-left: 0.8em;
     margin-top: 0.8em;
     outline: none;
-    overflow: hidden;
     background-color: #F3F3F3;
     border-radius: 18px;
     transition: all 0.5s;
@@ -88,6 +127,6 @@
 .input-login .password:hover,
 .A2F:hover {
     border: 2px solid #4A9DEC;
-    box-shadow: 0px 0px 0px 7px rgb(74, 157, 236, 20%);
+    box-shadow: 0px 0px 0px 7px rgba(74, 157, 236, 0.2);
     background-color: white;
 }

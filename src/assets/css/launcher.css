@@ -501,6 +501,7 @@ input::-webkit-inner-spin-button {
 .accept-terms-btn {
   background: linear-gradient(45deg, #00FF00, #008000);
   color: #fff;
+  transition: all 0.2s;
 }
 
 .accept-terms-btn:disabled {
@@ -515,6 +516,7 @@ input::-webkit-inner-spin-button {
 .decline-terms-btn {
   background: linear-gradient(45deg, #FF0000, #8B0000);
   color: #fff;
+  transition: all 0.2s;
 }
 
 .decline-terms-btn:hover {

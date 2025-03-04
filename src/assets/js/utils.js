@@ -484,11 +484,19 @@ async function showTermsAndConditions() {
 
             document.querySelector('.terms-modal').style.display = 'flex';
 
-            termsContainer.addEventListener('scroll', () => {
-                if (termsContainer.scrollTop + termsContainer.clientHeight >= termsContainer.scrollHeight) {
-                    acceptButton.disabled = false;
-                }
-            });
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        acceptButton.disabled = false;
+                        observer.disconnect();
+                    }
+                });
+            }, { threshold: 1.0 });
+
+            const lastElement = termsContainer.lastElementChild;
+            if (lastElement) {
+                observer.observe(lastElement);
+            }
 
             acceptButton.addEventListener('click', async () => {
                 document.querySelector('.terms-modal').style.display = 'none';
