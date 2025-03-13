@@ -1,9 +1,9 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.2.8",
-    "sub_version": "",
-    "changelog": "El servicio de anticheat ha sido actualizado a la última versión.",
+    "version": "3.2.9",
+    "sub_version": "BETA",
+    "changelog": "Se ha añadido un modo de rendimiento para los dispositivos de gama baja además de un ajuste para borrar los datos del launcher.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
@@ -28,15 +28,18 @@
         "ignore": "**/test"
     },
     "dependencies": {
+        "detect-gpu": "^5.0.70",
         "discord-rpc": "^4.0.1",
         "discord-webhook-node": "^1.0.0",
         "electron-updater": "^6.1.8",
         "express": "^4.19.2",
+        "html2canvas": "^1.4.1",
         "marked": "^14.1.2",
         "minecraft-java-core": "^4.0.0-alpha.1",
         "node-bdd": "^2.0.4",
         "node-fetch": "^2.7.0",
         "node-machine-id": "^1.0.0",
+        "systeminformation": "^5.25.11",
         "xml-js": "^1.6.11"
     },
     "devDependencies": {

@@ -26,6 +26,388 @@ let musicSource = '';
 let isMusicPlaying = false;
 let videoBusy = false;
 const fadeDuration = 1000;
+let performanceMode = false;
+
+async function setPerformanceMode(mode) {
+  performanceMode = mode;
+  
+  if (mode) {
+    document.body.classList.add('performance-mode');
+    console.log("Activando modo rendimiento - capturando primer frame de video");
+    
+    applyPerformanceModeStyleOverrides();
+    
+    const instanceBackground = document.querySelector('.server-status-icon')?.getAttribute('data-background');
+    
+    if (instanceBackground && instanceBackground.match(/^(http|https):\/\/[^ "]+$/)) {
+        console.log("Using instance background for performance mode");
+        await captureAndSetVideoFrame(instanceBackground);
+    } else {
+        await captureAndSetVideoFrame();
+    }
+    
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    if (loadingOverlay && loadingOverlay.classList.contains('active')) {
+      console.log("Forcing immediate style updates for loading overlay in performance mode");
+      loadingOverlay.style.transition = 'none';
+    }
+  } else {
+    document.body.classList.remove('performance-mode');
+    
+    removePerformanceModeStyleOverrides();
+    
+    const staticBackground = document.querySelector('.static-background');
+    if (staticBackground) {
+      staticBackground.remove();
+    }
+    
+    const videoElements = document.querySelectorAll('.background-video');
+    videoElements.forEach(video => {
+      video.style.display = '';
+    });
+    
+    console.log("Desactivando modo rendimiento - restaurando videos");
+    
+    const instanceBackground = document.querySelector('.server-status-icon')?.getAttribute('data-background');
+    if (instanceBackground && instanceBackground.match(/^(http|https):\/\/[^ "]+$/)) {
+        setVideoSource(instanceBackground);
+    } else {
+        setVideoSource();
+    }
+  }
+  
+  console.log(`Modo de rendimiento ${mode ? 'activado' : 'desactivado'}`);
+}
+
+function applyPerformanceModeStyleOverrides() {
+  const panels = document.querySelectorAll('.panel');
+  panels.forEach(panel => {
+    panel.style.transition = 'none';
+    panel.style.transitionProperty = 'none';
+    panel.style.transitionDuration = '0s';
+    panel.style.transitionDelay = '0s';
+    
+    if (panel.classList.contains('active')) {
+      panel.style.opacity = '1';
+      panel.style.maxHeight = '100vh';
+    }
+  });
+  
+  const settingsContainers = document.querySelectorAll('.container-settings');
+  settingsContainers.forEach(container => {
+    container.style.transition = 'none';
+    container.style.transitionProperty = 'none';
+    
+    if (container.classList.contains('active-container-settings')) {
+      container.style.opacity = '1';
+      container.style.transform = 'translateX(0)';
+    }
+  });
+  
+  const settingsBtns = document.querySelectorAll('.nav-settings-btn');
+  settingsBtns.forEach(btn => {
+    btn.style.transition = 'none';
+  });
+  
+  const settingsContent = document.querySelector('.settings-content');
+  if (settingsContent) {
+    settingsContent.style.transition = 'none';
+  }
+  
+  const loadingOverlay = document.querySelector('.loading-overlay');
+  if (loadingOverlay) {
+    loadingOverlay.style.transition = 'none';
+    if (loadingOverlay.classList.contains('active')) {
+      loadingOverlay.style.opacity = '1';
+      loadingOverlay.style.visibility = 'visible';
+    } else {
+      loadingOverlay.style.opacity = '0';
+      loadingOverlay.style.visibility = 'hidden';
+    }
+  }
+  
+  console.log("Applying direct performance mode style overrides");
+}
+
+function removePerformanceModeStyleOverrides() {
+  const panels = document.querySelectorAll('.panel');
+  panels.forEach(panel => {
+    panel.style.transition = '';
+    panel.style.transitionProperty = '';
+    panel.style.transitionDuration = '';
+    panel.style.transitionDelay = '';
+  });
+  
+  const settingsContainers = document.querySelectorAll('.container-settings');
+  settingsContainers.forEach(container => {
+    container.style.transition = '';
+    container.style.transitionProperty = '';
+    container.style.transform = '';
+  });
+  
+  console.log("Removing direct performance mode style overrides");
+}
+
+function changePanel(id) {
+    let panel = document.querySelector(`.${id}`);
+    let active = document.querySelector(`.active`);
+    
+    if (performanceMode) {
+        if (active) {
+            active.classList.remove("active");
+            active.style.opacity = "0";
+            active.style.maxHeight = "0";
+            active.style.visibility = "hidden";
+            active.style.transition = "none";
+            active.style.transitionProperty = "none";
+        }
+        panel.classList.add("active");
+        panel.style.transition = "none";
+        panel.style.transitionProperty = "none";
+        panel.style.opacity = "1";
+        panel.style.maxHeight = "100vh";
+        panel.style.visibility = "visible";
+    } else {
+        if (active) {
+            active.classList.remove("active");
+            active.style.transition = "";
+            active.style.opacity = "";
+            active.style.maxHeight = "";
+            active.style.visibility = "";
+        }
+        panel.classList.add("active");
+        panel.style.transition = "";
+        panel.style.visibility = "visible";
+    }
+}
+
+function fileExists(filePath) {
+  return new Promise((resolve) => {
+    try {
+      if (filePath.startsWith('./') || filePath.startsWith('../') || !filePath.includes('://')) {
+        const absolutePath = new URL(filePath, window.location.href).href;
+        const video = document.createElement('video');
+        
+        const timeoutId = setTimeout(() => {
+          video.removeEventListener('loadedmetadata', handleLoad);
+          video.removeEventListener('error', handleError);
+          resolve(false);
+        }, 2000);
+        
+        const handleLoad = () => {
+          clearTimeout(timeoutId);
+          video.remove();
+          resolve(true);
+        };
+        
+        const handleError = () => {
+          clearTimeout(timeoutId);
+          video.remove();
+          resolve(false);
+        };
+        
+        video.addEventListener('loadedmetadata', handleLoad);
+        video.addEventListener('error', handleError);
+        
+        video.style.display = 'none';
+        video.src = absolutePath;
+        document.body.appendChild(video);
+      } else {
+        fetch(filePath, { method: 'HEAD' })
+          .then(response => resolve(response.ok))
+          .catch(() => resolve(false));
+      }
+    } catch (error) {
+      console.error(`Error checking if file exists: ${error}`);
+      resolve(false);
+    }
+  });
+}
+
+async function captureAndSetVideoFrame(customUrl = null) {
+  return new Promise(async (resolve) => {
+    try {
+      if (customUrl && customUrl.match(/^(http|https):\/\/[^ "]+$/)) {
+        console.log(`Using instance-specific background for frame capture: ${customUrl}`);
+      }
+      
+      const season = getSeason();
+      const seasonalVideoPath = `./assets/images/background/${season}.mp4`;
+      
+      let configCustomVideoPath = null;
+      if (!customUrl) {
+        try {
+          let res = await config.GetConfig();
+          if (res.custom_background && res.custom_background.match(/^(http|https):\/\/[^ "]+$/)) {
+            configCustomVideoPath = res.custom_background;
+          }
+        } catch (err) {
+          console.error("Error fetching custom background from config:", err);
+        }
+      }
+      
+      const videoPath = customUrl || configCustomVideoPath || seasonalVideoPath;
+      
+      const handleFallback = () => {
+        console.log("Using fallback static background");
+        setStaticBackground();
+        resolve();
+      };
+      
+      const captureFrame = async (videoSrc) => {
+        return new Promise((captureResolve) => {
+          const tempVideo = document.createElement('video');
+          tempVideo.style.display = 'none';
+          document.body.appendChild(tempVideo);
+          
+          const timeoutId = setTimeout(() => {
+            console.warn("Video loading timed out, using fallback");
+            tempVideo.remove();
+            captureResolve(null);
+          }, 5000);
+          
+          tempVideo.addEventListener('error', () => {
+            clearTimeout(timeoutId);
+            console.error(`Error loading video: ${videoSrc}`);
+            tempVideo.remove();
+            captureResolve(null);
+          });
+          
+          tempVideo.addEventListener('loadeddata', async () => {
+            clearTimeout(timeoutId);
+            try {
+              await new Promise(r => setTimeout(r, 200));
+              
+              await tempVideo.play();
+              tempVideo.pause();
+              
+              const canvas = document.createElement('canvas');
+              canvas.width = tempVideo.videoWidth;
+              canvas.height = tempVideo.videoHeight;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+              
+              const frameDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+              tempVideo.remove();
+              captureResolve(frameDataUrl);
+            } catch (err) {
+              console.error("Error capturing video frame:", err);
+              tempVideo.remove();
+              captureResolve(null);
+            }
+          });
+          
+          tempVideo.crossOrigin = "anonymous";
+          tempVideo.preload = "auto";
+          tempVideo.src = videoSrc;
+          tempVideo.load();
+        });
+      };
+      
+      const videoSources = [
+        videoPath,
+        './assets/images/background/default.mp4'
+      ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
+      
+      let frameDataUrl = null;
+      
+      for (const src of videoSources) {
+        frameDataUrl = await captureFrame(src);
+        if (frameDataUrl) {
+          break;
+        }
+      }
+      
+      if (!frameDataUrl) {
+        console.warn("Failed to capture frame from any video source");
+        return handleFallback();
+      }
+      
+      const videoElements = document.querySelectorAll('.background-video');
+      videoElements.forEach(video => {
+        if (!video.paused) {
+          video.pause();
+        }
+        video.style.display = 'none';
+      });
+      
+      let staticBackground = document.querySelector('.static-background');
+      if (!staticBackground) {
+        staticBackground = document.createElement('div');
+        staticBackground.className = 'static-background';
+        staticBackground.style.position = 'fixed';
+        staticBackground.style.top = '0';
+        staticBackground.style.left = '0';
+        staticBackground.style.width = '100%';
+        staticBackground.style.height = '100%';
+        staticBackground.style.backgroundSize = 'cover';
+        staticBackground.style.backgroundPosition = 'center';
+        staticBackground.style.backgroundRepeat = 'no-repeat';
+        staticBackground.style.zIndex = '-1';
+        document.body.appendChild(staticBackground);
+      }
+      
+      staticBackground.style.backgroundImage = `url('${frameDataUrl}')`;
+      resolve();
+    } catch (err) {
+      console.error("Error in captureAndSetVideoFrame:", err);
+      setStaticBackground();
+      resolve();
+    }
+  });
+}
+
+function setStaticBackground() {
+  const season = getSeason();
+  let staticBackground = document.querySelector('.static-background');
+  
+  if (!staticBackground) {
+    staticBackground = document.createElement('div');
+    staticBackground.className = 'static-background';
+    staticBackground.style.position = 'fixed';
+    staticBackground.style.top = '0';
+    staticBackground.style.left = '0';
+    staticBackground.style.width = '100%';
+    staticBackground.style.height = '100%';
+    staticBackground.style.backgroundSize = 'cover';
+    staticBackground.style.backgroundPosition = 'center';
+    staticBackground.style.backgroundRepeat = 'no-repeat';
+    staticBackground.style.zIndex = '-1';
+    document.body.appendChild(staticBackground);
+  }
+  
+  const checkImageExists = (url) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+  };
+  
+  (async () => {
+    const imagePaths = [
+      `assets/images/background/${season}.jpg`,
+      'assets/images/background/default.png'
+    ];
+    
+    let imageFound = false;
+    for (const path of imagePaths) {
+      if (await checkImageExists(path)) {
+        console.log(`Using static background: ${path}`);
+        staticBackground.style.backgroundImage = `url('${path}')`;
+        imageFound = true;
+        break;
+      }
+    }
+    
+    if (!imageFound) {
+      console.warn("No background images found, using fallback color");
+      staticBackground.style.backgroundImage = 'none';
+      staticBackground.style.backgroundColor = '#121212';
+    }
+  })();
+}
 
 async function setBackground(theme) {
     theme = "dark";
@@ -42,68 +424,74 @@ async function setBackground(theme) {
 let currentVideo = document.querySelector('.background-video.current');
 let nextVideo = document.querySelector('.background-video.next');
 async function setVideoSource(game = '') {
+    const db = new database();
+    let configClient = await db.readData('configClient');
+    
+    if (configClient && configClient.launcher_config.performance_mode) {
+        await captureAndSetVideoFrame();
+        return;
+    }
+    
     if (videoBusy) return;
     videoBusy = true;
     let source;
     let sourcePromise = new Promise(async (resolve) => {
-    if (game) {
-        source = `${game}`;
-        resolve();
-    } else {
-        let res = await config.GetConfig();
-        if (res.custom_background.match(/^(http|https):\/\/[^ "]+$/)) {
-            source = res.custom_background;
-        } else {
-            const season = getSeason();
-            switch (season) {
-                case 'spring':
-                    source = './assets/images/background/spring.mp4';
-                    break;
-                case 'summer':
-                    source = './assets/images/background/summer.mp4';
-                    break;
-                case 'autumn':
-                    source = './assets/images/background/autumn.mp4';
-                    break;
-                case 'winter':
-                    source = './assets/images/background/winter.mp4';
-                    break;
-                default:
-                    source = './assets/images/background/winter.mp4';
-                    break;
-            }
-        }
-        resolve();
-    }
-});
+      if (game) {
+          source = `${game}`;
+          resolve();
+      } else {
+          let res = await config.GetConfig();
+          if (res.custom_background && res.custom_background.match(/^(http|https):\/\/[^ "]+$/)) {
+              source = res.custom_background;
+              resolve();
+          } else {
+              const season = getSeason();
+              const seasonVideoExists = await fileExists(`./assets/images/background/${season}.mp4`);
+              if (seasonVideoExists) {
+                  source = `./assets/images/background/${season}.mp4`;
+              } else {
+                  console.warn(`Season video for ${season} not found, trying default background`);
+                  const defaultVideoExists = await fileExists('./assets/images/background/default.mp4');
+                  if (defaultVideoExists) {
+                      source = './assets/images/background/default.mp4';
+                  } else {
+                      console.warn('Default video not found, falling back to static background');
+                      setStaticBackground();
+                  }
+              }
+              resolve();
+          }
+      }
+    });
+    
     let timeoutPromise = new Promise(resolve => setTimeout(resolve, 1000));
     await Promise.all([sourcePromise, timeoutPromise]);
 
     if (source) {
-    nextVideo.src = source;
-    try {
-        await nextVideo.play();
-    } catch (err) {
-        console.error('No se pudo iniciar la reproducción de un video');
+      nextVideo.src = source;
+      try {
+          await nextVideo.play();
+          nextVideo.style.opacity = '1'; 
+          
+          nextVideo.ontransitionend = (event) => {
+              if (event.propertyName === 'opacity') {
+                  let temp = currentVideo;
+                  currentVideo = nextVideo;
+                  nextVideo = temp;
+                  
+                  nextVideo.ontransitionend = null;
+                  nextVideo.style.opacity = '0'; 
+              }
+          };
+      } catch (err) {
+          console.error('No se pudo iniciar la reproducción de un video', err);
+          setStaticBackground();
+      }
+    } else {
+      console.error('No se pudo establecer la fuente del video: source está indefinida');
+      setStaticBackground();
     }
-    nextVideo.style.opacity = '1'; 
-
-    
-    nextVideo.ontransitionend = (event) => {
-        if (event.propertyName === 'opacity') {
-            let temp = currentVideo;
-            currentVideo = nextVideo;
-            nextVideo = temp;
-
-            
-            nextVideo.ontransitionend = null;
-            nextVideo.style.opacity = '0'; 
-        }
-    };
-} else {
-    console.error('No se pudo establecer la fuente del video: source está indefinida');
-}
-videoBusy = false;
+    videoBusy = false;
 }
 
 function getSeason() {
@@ -138,15 +526,6 @@ function getSeason() {
     }
 
     return season;
-}
-
-function changePanel(id) {
-    let panel = document.querySelector(`.${id}`);
-    let active = document.querySelector(`.active`);
-    if (active) {
-        active.classList.remove("active");
-    }
-    panel.classList.add("active");
 }
 
 async function appdata() {
@@ -273,10 +652,22 @@ async function setStatus(opt) {
 
 async function setInstanceBackground(opt) {
     let instancebackground = opt
-    if (instancebackground.match(/^(http|https):\/\/[^ "]+$/)) {
-        setVideoSource(instancebackground)
+    if (instancebackground && instancebackground.match(/^(http|https):\/\/[^ "]+$/)) {
+        const db = new database();
+        let configClient = await db.readData('configClient');
+        
+        if (configClient && configClient.launcher_config.performance_mode) {
+            console.log(`Capturing frame from instance background: ${instancebackground}`);
+            await captureAndSetVideoFrame(instancebackground);
+        } else {
+            setVideoSource(instancebackground);
+        }
     } else {
-        setVideoSource()
+        if (performanceMode) {
+            await captureAndSetVideoFrame();
+        } else {
+            setVideoSource();
+        }
     }
 }
 
@@ -618,9 +1009,9 @@ async function toggleMusic() {
     }
 }
 
-
-
-
+function isPerformanceModeEnabled() {
+  return performanceMode;
+}
 
 export {
     appdata as appdata,
@@ -655,6 +1046,8 @@ export {
     toggleMusic as toggleMusic,
     fadeOutAudio as fadeOutAudio,
     fadeInAudio as fadeInAudio,
-    setBackgroundMusic as setBackgroundMusic
+    setBackgroundMusic as setBackgroundMusic,
+    setPerformanceMode as setPerformanceMode,
+    isPerformanceModeEnabled as isPerformanceModeEnabled
 }
 window.setVideoSource = setVideoSource;

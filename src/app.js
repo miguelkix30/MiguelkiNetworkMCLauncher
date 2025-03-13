@@ -158,8 +158,11 @@ ipcMain.on('open-discord-url', () => {
 });
 
 ipcMain.on('app-restart', () => {
-    app.relaunch();
-    app.quit();
+    console.log('Reiniciando aplicación...');
+    
+    // Clear any cached data
+    app.relaunch({ args: process.argv.slice(1).concat(['--restarted']) });
+    app.exit(0);
 });
 
 ipcMain.handle('open-discord-auth', async () => {

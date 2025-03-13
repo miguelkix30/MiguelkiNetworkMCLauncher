@@ -117,6 +117,17 @@
     </div>
 
     <div id="launcher-tab" class="container-settings content-scroll">
+        <div class="titre-tab">Rendimiento</div>
+        <div class="settings-elements-box">
+            <div class="performance-mode-container">
+                <input type="checkbox" id="performance-mode" class="performance-mode-checkbox">
+                <label for="performance-mode">Activar modo de rendimiento</label>
+            </div>
+            <div class="performance-mode-info">
+                El modo de rendimiento desactiva fondos de video y transiciones visuales para reducir el consumo de recursos.
+            </div>
+        </div>
+
         <div class="titre-tab">Parámetros de descarga</div>
         <div class="settings-elements-box">
             <div class="setting-text">
@@ -135,22 +146,6 @@
             </div>
         </div>
 
-        <!-- <div class="titre-tab">Tema claro y oscuro</div>
-        <div class="settings-elements-box">
-            <div class="setting-text">
-                Elige entre los temas claro y oscuro para personalizar el aspecto del lanzador.. (Aunque si elijes claro puedo determinar tu orientación sexual fácilmente).<br><br>
-
-                Cambiar el tema puede afectar a la legibilidad y a la experiencia visual.<br>
-                Seleccione el que más le convenga según sus preferencias...<br>
-                Para que el tema Sistema funcione correctamente, es necesario reiniciar el lanzador.
-            </div>
-            <div class="settings-elements content-center theme-box">
-                <div class="theme-btn theme-btn-clair">Claro</div>
-                <div class="theme-btn theme-btn-sombre">Oscuro</div>
-                <div class="theme-btn theme-btn-auto">Sistema</div>
-            </div>
-        </div> -->
-
         <div class="titre-tab">
             Comportamiento del launcher al arrancar el juego
         </div>
@@ -160,28 +155,42 @@
                 abierto al iniciar el juego.
             </div>
 
-            <div class="settings-elements content-evenly close-box">
-                <div class="close-launcher close-btn">
-                    Cerrar el launcher después de iniciar el juego
+            <div class="settings-elements content-evenly launcher-behavior-box">
+                <div class="launcher-behavior-option" data-value="close-launcher">
+                    <div class="launcher-behavior-radio"></div>
+                    <div class="launcher-behavior-label">Cerrar el launcher después de iniciar el juego</div>
                 </div>
-                <div class="close-none close-btn">Mantener abierto el launcher</div>
-                <div class="close-all close-btn">
-                    Cerrar el juego al cerrar el launcher
+                <div class="launcher-behavior-option" data-value="close-none">
+                    <div class="launcher-behavior-radio"></div>
+                    <div class="launcher-behavior-label">Mantener abierto el launcher</div>
+                </div>
+                <div class="launcher-behavior-option" data-value="close-all">
+                    <div class="launcher-behavior-radio"></div>
+                    <div class="launcher-behavior-label">Cerrar el juego al cerrar el launcher</div>
                 </div>
             </div>
         </div>
 
-        <!-- <div class="titre-tab">Environnement INTEL</div>
+        <div class="titre-tab">
+            Gestión de datos del launcher
+        </div>
         <div class="settings-elements-box">
             <div class="setting-text">
-                pour les jouer avec les proseceurs apple silicon 
+                Estas opciones te permiten reiniciar la configuración del launcher o eliminar todos los datos descargados.
+                <br><br>
+                <b>Reiniciar configuración:</b> Restablece todos los ajustes a sus valores predeterminados, pero mantiene los archivos del juego descargados.
+                <br>
+                <b>Eliminar todo:</b> Elimina toda la configuración y los archivos descargados del juego (assets, bibliotecas, instancias).
             </div>
-
-            <div class="settings-elements content-evenly close-box">
-                <div class="close-launcher close-btn">Environnement INTEL</div>
-                <div class="close-none close-btn">Environnement SILICON</div>
+            <div class="settings-elements content-evenly">
+                <div class="reset-config-btn data-management-btn">
+                    <i class="fas fa-sync-alt"></i> Reiniciar configuración
+                </div>
+                <div class="delete-all-btn data-management-btn">
+                    <i class="fas fa-trash"></i> Eliminar todo
+                </div>
             </div>
-        </div> -->
+        </div>
     </div>
     <div id="credits-tab" class="container-settings content-scroll">
         <div class="titre-tab">Créditos</div>

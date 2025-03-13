@@ -14,6 +14,19 @@
             <div id="close" class="button-frame icon-close"></div>
         </div>
 
+        <div class="loading-overlay">
+            <div class="spinner">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
+            <div class="loading-text">Iniciando Launcher...</div>
+
+        </div>
+
         <div class="log-bg">
         <div class="log">
           <div class="log-close icon-close"></div>
@@ -57,6 +70,112 @@
         </div>
         <div class="panels"></div>
         <script src="assets/js/launcher.js" type="module"></script>
+        
+        <!-- Initial Setup Modal -->
+        <div class="setup-modal" style="display:none;">
+          <div class="setup-container">
+            <div class="setup-header">
+              <h2>Configuración Inicial de Miguelki Network MC Launcher</h2>
+              <p>Bienvenido! Vamos a configurar algunos parámetros para optimizar tu experiencia.</p>
+              <div class="setup-step-indicator">
+                <span class="step active-step" data-step="1">1</span>
+                <span class="step-line"></span>
+                <span class="step" data-step="2">2</span>
+                <span class="step-line"></span>
+                <span class="step" data-step="3">3</span>
+                <span class="step-line"></span>
+                <span class="step" data-step="4">4</span>
+              </div>
+            </div>
+            
+            <div class="setup-content">
+              <!-- Performance Mode (Step 1) -->
+              <div class="setup-section active" id="setup-step-1">
+                <h3>Modo de Rendimiento</h3>
+                <p>Activa esta opción para mejorar el rendimiento en equipos con recursos limitados.</p>
+                <div class="setup-checkbox-container">
+                  <input type="checkbox" id="setup-performance-mode" class="setup-checkbox">
+                  <label for="setup-performance-mode">Activar modo de rendimiento</label>
+                </div>
+                <p class="setup-note">
+                  Esta opción desactiva los fondos de video animados y las transiciones visuales para reducir el consumo de recursos.
+                </p>
+              </div>
+
+
+              <!-- RAM Configuration (Step 2) -->
+              <div class="setup-section next" id="setup-step-2">
+                <h3>Configuración de Memoria RAM</h3>
+                <p>Memoria RAM Total: <span id="setup-total-ram">8 GB</span></p>
+                
+                <div class="setup-ram-config">
+                  <div class="setup-ram-slider-container">
+                    <div class="setup-memory-slider" min="0.5" max="8" step="0.5">
+                      <div class="setup-slider-touch-left">
+                        <span value="0.5 GB"></span>
+                      </div>
+                      <div class="setup-slider-touch-right">
+                        <span value="4 GB"></span>
+                      </div>
+                      <div class="setup-slider-line">
+                        <span></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="setup-ram-info-block">
+                    <div class="setup-ram-row">
+                      <b>RAM Mínima:</b> <span id="setup-ram-min-display">2 GB</span>
+                    </div>
+                    <div class="setup-ram-row">
+                      <b>RAM Máxima:</b> <span id="setup-ram-max-display">4 GB</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Download Settings (Step 3) -->
+              <div class="setup-section next" id="setup-step-3">
+                <h3>Configuración de Descarga</h3>
+                <p>Define el número máximo de archivos que se pueden descargar simultáneamente.</p>
+                <div class="setup-download-container">
+                  <label for="setup-max-downloads">Número máximo de descargas simultáneas:</label>
+                  <div class="setup-download-input-container">
+                    <input type="number" id="setup-max-downloads" class="setup-download-input" value="3" min="1" max="10">
+                  </div>
+                </div>
+                <p class="setup-note">
+                  Un valor más alto puede acelerar las descargas, pero puede causar problemas en conexiones lentas o inestables. Se recomienda entre 3-5 para la mayoría de las conexiones.
+                </p>
+              </div>
+              
+              <!-- Launcher Behavior (Step 4) -->
+              <div class="setup-section next" id="setup-step-4">
+                <h3>Comportamiento del Launcher</h3>
+                <p>Selecciona cómo quieres que se comporte el launcher al iniciar el juego:</p>
+                <div class="setup-launcher-behavior-box">
+                  <div class="setup-launcher-behavior-option selected" data-value="close-launcher">
+                    <div class="setup-launcher-behavior-radio"></div>
+                    <div class="setup-launcher-behavior-label">Cerrar el launcher después de iniciar el juego (Recomendado)</div>
+                  </div>
+                  <div class="setup-launcher-behavior-option" data-value="close-none">
+                    <div class="setup-launcher-behavior-radio"></div>
+                    <div class="setup-launcher-behavior-label">Mantener abierto el launcher</div>
+                  </div>
+                  <div class="setup-launcher-behavior-option" data-value="close-all">
+                    <div class="setup-launcher-behavior-radio"></div>
+                    <div class="setup-launcher-behavior-label">Cerrar el juego al cerrar el launcher</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="setup-buttons">
+              <button class="setup-prev-btn" style="display:none">Anterior</button>
+              <button class="setup-next-btn">Siguiente</button>
+              <button class="setup-finish-btn" style="display:none">Finalizar</button>
+            </div>
+          </div>
+        </div>
     </body>
     <video autoplay muted loop class="background-video current">
         <source src="" type="video/mp4">

@@ -112,7 +112,13 @@ class Login {
 
         connectOffline.addEventListener('click', async () => {
             connectOffline.disabled = true;
+            popupLogin.openPopup({
+                title: 'Iniciando sesión...',
+                content: 'Por favor, espere...',
+                color: 'var(--color)'
+            });
             if (emailOffline.value.length < 3) {
+                popupLogin.closePopup();
                 popupLogin.openPopup({
                     title: 'Error',
                     content: 'Tu nombre de usuario debe tener al menos 3 caracteres.',
@@ -123,6 +129,7 @@ class Login {
             }
 
             if (emailOffline.value.match(/ /g)) {
+                popupLogin.closePopup();
                 popupLogin.openPopup({
                     title: 'Error',
                     content: 'Su nombre de usuario no debe contener d\'espacios.',
@@ -135,6 +142,7 @@ class Login {
             let MojangConnect = await Mojang.login(emailOffline.value);
 
             if (MojangConnect.error) {
+                popupLogin.closePopup();
                 popupLogin.openPopup({
                     title: 'Error',
                     content: MojangConnect.message,

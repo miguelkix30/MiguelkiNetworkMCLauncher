@@ -97,7 +97,7 @@
 }
 
 .setting-text {
-    font-size: 0.8rem;
+    font-size: 1rem;
 }
 
 .active-container-settings {
@@ -554,6 +554,122 @@
     border: 4px solid var(--element-color);
 }
 
+.performance-mode-container {
+    display: flex;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.performance-mode-checkbox {
+    width: 30px;
+    height: 30px;
+    margin-right: 15px;
+    cursor: pointer;
+}
+
+.performance-mode-container label {
+    font-size: 1.4rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.performance-mode-info {
+    font-size: 1.1rem;
+    margin-top: 15px;
+    color: rgba(255, 255, 255, 0.8);
+    max-width: 90%;
+}
+
+body.performance-mode .container-settings {
+    transition: none !important;
+    transition-property: none !important;
+    animation: none !important;
+}
+
+body.performance-mode .active-container-settings {
+    transform: translateX(0) !important;
+    opacity: 1 !important;
+    transition: none !important;
+    transition-property: none !important;
+    animation: none !important;
+}
+
+body.performance-mode .container-settings:not(.active-container-settings) {
+    transform: translateX(100%) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: none !important;
+    transition-property: none !important;
+    animation: none !important;
+}
+
+body.performance-mode * {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+}
+
+.launcher-behavior-box {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 15px;
+  margin: 15px 0;
+}
+
+.launcher-behavior-option {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+.launcher-behavior-option:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.launcher-behavior-option.selected {
+  background-color: rgba(var(--color-rgb), 0.2);
+  border: 1px solid var(--color);
+}
+
+.launcher-behavior-radio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  margin-right: 15px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.launcher-behavior-option.selected .launcher-behavior-radio {
+  border-color: var(--color);
+}
+
+.launcher-behavior-option.selected .launcher-behavior-radio:after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--color);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.launcher-behavior-label {
+  font-size: 1rem;
+  color: white;
+}
+
+.close-box {
+  display: none;
+}
 
 /*******************************************************************************
  *                                                                             *
@@ -658,4 +774,49 @@
     margin-bottom: 15px;
     font-size: 14px;
     color: #555;
+}
+
+/* Data Management Buttons */
+.data-management-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  font-size: 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin: 10px;
+  width: 250px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.reset-config-btn {
+  background-color: var(--box-button);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.reset-config-btn:hover {
+  background-color: var(--box-button-hover);
+}
+
+.delete-all-btn {
+  background-color: #d32f2f;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.delete-all-btn:hover {
+  background-color: #b71c1c;
+}
+
+.data-management-btn i {
+  margin-right: 8px;
+  font-size: 1.1rem;
+}
+
+body.performance-mode .data-management-btn {
+  transition: none !important;
 }

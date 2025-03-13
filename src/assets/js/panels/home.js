@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername } from '../utils.js'
+import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername, isPerformanceModeEnabled } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG } from '../MKLib.js';
 
 const clientId = '1307003977442787451';
@@ -401,7 +401,21 @@ class Home {
                 let options = instance.find(i => i.name == configClient.instance_selct);
                 setStatus(options);
                 setBackgroundMusic(options.backgroundMusic);
-                setInstanceBackground(options.background);
+                // Check if performance mode is enabled
+                const performanceMode = isPerformanceModeEnabled();
+                if (performanceMode) {
+                    // Update the data attribute for reference
+                    document.querySelector('.server-status-icon')?.setAttribute('data-background', options.background);
+                    // Directly capture and set the frame for the new instance
+                    if (options.background && options.background.match(/^(http|https):\/\/[^ "]+$/)) {
+                        await captureAndSetVideoFrame(options.background);
+                    } else {
+                        await captureAndSetVideoFrame();
+                    }
+                } else {
+                    // Normal behavior with transitions
+                    setInstanceBackground(options.background);
+                }
                 this.updateSelectedInstanceStyle(newInstanceSelect);
             }
         });
@@ -821,8 +835,22 @@ class Home {
         let instance = await config.getInstanceList().then(instances => instances.find(i => i.name === instanceName));
         this.notification();
         setStatus(instance);
-        setBackgroundMusic(instance.backgroundMusic);
-        setInstanceBackground(instance.background);
+        // Check if performance mode is enabled to avoid animation
+        const performanceMode = isPerformanceModeEnabled();
+        if (performanceMode) {
+            setBackgroundMusic(instance.backgroundMusic);
+            // For performance mode, directly set instance background without transitions
+            if (instance.background && instance.background.match(/^(http|https):\/\/[^ "]+$/)) {
+                // Store the background URL as a data attribute for reference
+                document.querySelector('.server-status-icon')?.setAttribute('data-background', instance.background);
+            } else {
+                document.querySelector('.server-status-icon')?.removeAttribute('data-background');
+            }
+        } else {
+            // Normal mode with transitions
+            setBackgroundMusic(instance.backgroundMusic);
+            setInstanceBackground(instance.background);
+        }
         this.updateSelectedInstanceStyle(instanceName);
     }
 
@@ -836,6 +864,17 @@ class Home {
                 button.classList.remove('selected-instance');
             }
         });
+    }
+
+    // Add this helper function to update the background immediately if needed
+    updateInstanceBackground(instance) {
+        const performanceMode = isPerformanceModeEnabled();
+        if (performanceMode) {
+            // For performance mode, immediately set instance background
+            if (instance.background && instance.background.match(/^(http|https):\/\/[^ "]+$/)) {
+                captureAndSetVideoFrame(instance.background);
+            }
+        }
     }
 
     getdate(e) {

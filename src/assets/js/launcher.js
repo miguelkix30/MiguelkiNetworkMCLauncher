@@ -27,7 +27,8 @@ import {
   getDiscordUsername,
   setDiscordPFP,
   showTermsAndConditions,
-  setBackgroundMusic
+  setBackgroundMusic,
+  setPerformanceMode
 } from "./utils.js";
 import {
   getHWID,
@@ -40,6 +41,7 @@ const { AZauth, Microsoft, Mojang } = require("minecraft-java-core");
 
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
+const os = require("os");
 let dev = process.env.NODE_ENV === "dev";
 
 class Launcher {
@@ -48,20 +50,46 @@ class Launcher {
     else this.initWindow();
 
     console.log("Iniciando Launcher...");
-    await setVideoSource();
+    
     this.shortcut();
+    this.db = new database();
+    
+    const configClient = await this.db.readData("configClient");
+    const isFirstRun = !configClient;
+    
+    if (isFirstRun) {
+      console.log("Primera ejecución detectada. Iniciando configuración inicial...");
+      await this.showInitialSetup();
+      this.hideLoadingOverlayWithFade();
+    } else {
+      if (configClient.launcher_config.performance_mode) {
+        console.log("Modo de rendimiento activado");
+        document.body.classList.add('performance-mode');
+        
+        this.applyPerformanceModeOverrides();
+        
+        setPerformanceMode(true);
+      }
+    }
+    this.startLoadingDisplayTimer();
+    
+    await setVideoSource();
     await setBackground();
+    
     if (process.platform == "win32") this.initFrame();
     this.config = await config
       .GetConfig()
       .then((res) => res)
       .catch((err) => err);
     if (await this.config.error) return this.errorConnect();
-    this.db = new database();
-    await this.initConfigClient();
+    
+    if (isFirstRun) {
+      await this.initConfigClient();
+    }
+    
     this.createPanels(Login, Home, Settings, Mods);
     let res = await config.GetConfig();
-    if (res.musicBeta || dev) setBackgroundMusic();
+    if ((res.musicBeta || dev) && (!configClient || !configClient.launcher_config.performance_mode)) setBackgroundMusic();
     if (res.termsDialog) {
       const accepted = await showTermsAndConditions();
       if (!accepted) {
@@ -69,10 +97,449 @@ class Launcher {
         return;
       }
     }
+
+    this.hideLoadingOverlay();
+    
     if (res.discordVerification) {
       await this.verifyDiscordAccount();
     } else {
       await this.startLauncher();
+    }
+  }
+  
+  startLoadingDisplayTimer() {
+    
+    if (this.loadingDisplayTimer) {
+      clearTimeout(this.loadingDisplayTimer);
+    }
+    
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    if (loadingOverlay) {
+      loadingOverlay.classList.add('active');
+      loadingOverlay.style.visibility = 'visible';
+      loadingOverlay.style.opacity = '1';
+      loadingOverlay.style.display = 'flex';
+    }
+    
+    this.loadingDisplayTimer = setTimeout(() => {
+      this.hideLoadingOverlay();
+    }, 3000);
+  }
+  
+  forceHideLoadingOverlay() {
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    if (!loadingOverlay) {
+      console.warn("No se encontró elemento loading-overlay");
+      return;
+    }
+    
+    console.log("Forzando ocultación de la pantalla de carga");
+    
+    loadingOverlay.style.transition = 'none';
+    loadingOverlay.style.opacity = '0';
+    loadingOverlay.style.visibility = 'hidden'; 
+    loadingOverlay.style.display = 'none';
+    loadingOverlay.classList.remove('active');
+  }
+
+  hideLoadingOverlay() {
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    if (!loadingOverlay) {
+      console.warn("No se encontró elemento loading-overlay");
+      return;
+    }
+    
+    
+    const configClient = this.db.readData('configClient');
+    if (configClient && configClient.launcher_config && configClient.launcher_config.performance_mode) {
+      loadingOverlay.style.transition = 'none';
+      loadingOverlay.style.opacity = '0';
+      loadingOverlay.style.visibility = 'hidden';
+      loadingOverlay.classList.remove('active');
+      return;
+    }
+    
+    try {
+      loadingOverlay.classList.remove('active');
+      
+      setTimeout(() => {
+        loadingOverlay.style.opacity = '0';
+        loadingOverlay.style.visibility = 'hidden';
+      }, 800);
+    } catch (err) {
+      console.error("Error al ocultar pantalla de carga:", err);
+      loadingOverlay.style.opacity = '0';
+      loadingOverlay.style.visibility = 'hidden';
+      loadingOverlay.style.display = 'none';
+    }
+  }
+
+  async showInitialSetup() {
+    return new Promise(async (resolve) => {
+      console.log("Mostrando configuración inicial");
+      
+      if (this.loadingDisplayTimer) {
+        clearTimeout(this.loadingDisplayTimer);
+        console.log("Cancelado temporizador de pantalla de carga por configuración inicial");
+      }
+
+      const totalMem = Math.trunc(os.totalmem() / 1073741824 * 10) / 10;
+      const defaultMaxRam = Math.min(4, Math.trunc((70 * totalMem) / 100));
+      const defaultMinRam = Math.min(2, Math.max(1, Math.trunc(defaultMaxRam / 2)));
+      
+      const loadingOverlay = document.querySelector('.loading-overlay');
+      if (loadingOverlay) {
+        loadingOverlay.classList.remove('active');
+        loadingOverlay.style.visibility = 'hidden';
+        loadingOverlay.style.opacity = '0';
+      }
+      
+      document.querySelector('.setup-modal').style.display = 'flex';
+      
+      document.querySelector('#setup-total-ram').textContent = `${totalMem} GB`;
+      
+      const setupSliderElement = document.querySelector(".setup-memory-slider");
+      setupSliderElement.setAttribute("max", Math.trunc((80 * totalMem) / 100));
+      
+      class SetupSlider {
+        constructor(element, minValue, maxValue) {
+          this.element = element;
+          this.min = Math.max(0.5, parseFloat(this.element.getAttribute('min')) || 0.5);
+          this.max = parseFloat(this.element.getAttribute('max')) || 8;
+          this.step = parseFloat(this.element.getAttribute('step')) || 0.5;
+          this.normalizeFact = 18;
+          
+          this.touchLeft = this.element.querySelector('.setup-slider-touch-left');
+          this.touchRight = this.element.querySelector('.setup-slider-touch-right');
+          this.lineSpan = this.element.querySelector('.setup-slider-line span');
+          
+          this.callbacks = [];
+          
+          this.init();
+          
+          minValue = Math.max(this.min, minValue);
+          maxValue = Math.max(minValue + 2, maxValue);
+          
+          const minRatio = (minValue - this.min) / (this.max - this.min);
+          const minPosition = Math.ceil(minRatio * (this.element.offsetWidth - (this.normalizeFact * 2)));
+          this.touchLeft.style.left = `${minPosition}px`;
+          
+          const maxRatio = (maxValue - this.min) / (this.max - this.min);
+          const maxPosition = Math.ceil(maxRatio * (this.element.offsetWidth - (this.normalizeFact * 2))) + this.normalizeFact;
+          this.touchRight.style.left = `${maxPosition}px`;
+          
+          this.lineSpan.style.marginLeft = `${minPosition}px`;
+          this.lineSpan.style.width = `${maxPosition - minPosition}px`;
+          
+          this.updateDisplayValues(minValue, maxValue);
+        }
+        
+        init() {
+          this.touchLeft.addEventListener('mousedown', this.onStart.bind(this, 'left'));
+          this.touchRight.addEventListener('mousedown', this.onStart.bind(this, 'right'));
+          
+          document.addEventListener('mousemove', this.onMove.bind(this));
+          document.addEventListener('mouseup', this.onEnd.bind(this));
+        }
+        
+        onStart(direction, e) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.direction = direction;
+          this.startX = e.clientX;
+          if (direction === 'left') {
+            this.currentX = this.touchLeft.offsetLeft;
+          } else {
+            this.currentX = this.touchRight.offsetLeft;
+          }
+          this.active = true;
+        }
+        
+        onMove(e) {
+          if (!this.active) return;
+          e.preventDefault();
+          
+          let newX = this.currentX + e.clientX - this.startX;
+          newX = Math.max(0, Math.min(newX, this.element.offsetWidth - this.normalizeFact));
+          
+          if (this.direction === 'left') {
+            const minGapInGB = 2;
+            const gapRatio = minGapInGB / (this.max - this.min);
+            const gapPixels = gapRatio * (this.element.offsetWidth - (this.normalizeFact * 2));
+            
+            const rightHandlePosition = this.touchRight.offsetLeft;
+            newX = Math.min(newX, rightHandlePosition - gapPixels);
+            
+            this.touchLeft.style.left = `${newX}px`;
+            this.lineSpan.style.marginLeft = `${newX}px`;
+          } else {
+            const minGapInGB = 2;
+            const gapRatio = minGapInGB / (this.max - this.min);
+            const gapPixels = gapRatio * (this.element.offsetWidth - (this.normalizeFact * 2));
+            
+            const leftHandlePosition = this.touchLeft.offsetLeft;
+            newX = Math.max(newX, leftHandlePosition + gapPixels);
+            
+            this.touchRight.style.left = `${newX}px`;
+          }
+          
+          this.lineSpan.style.width = `${this.touchRight.offsetLeft - this.touchLeft.offsetLeft}px`;
+          
+          let minValue = this.getMinValue();
+          let maxValue = this.getMaxValue();
+          
+          if (maxValue - minValue < 2) {
+            if (this.direction === 'left') {
+              minValue = maxValue - 2;
+            } else {
+              maxValue = minValue + 2;
+            }
+          }
+          
+          this.updateDisplayValues(minValue, maxValue);
+          
+          this.callbacks.forEach(callback => {
+            callback(minValue, maxValue);
+          });
+        }
+        
+        onEnd() {
+          this.active = false;
+        }
+        
+        setMinValue(minValue) {
+          minValue = Math.max(this.min, minValue);
+          
+          const currentMaxValue = this.getMaxValue();
+          if (currentMaxValue && minValue > currentMaxValue) {
+            minValue = currentMaxValue;
+          }
+          
+          const ratio = (minValue - this.min) / (this.max - this.min);
+          const position = Math.ceil(ratio * (this.element.offsetWidth - (this.normalizeFact * 2)));
+          this.touchLeft.style.left = `${position}px`;
+          this.lineSpan.style.marginLeft = `${position}px`;
+          this.lineSpan.style.width = `${this.touchRight.offsetLeft - position}px`;
+          
+          const leftSpan = this.touchLeft.querySelector('span');
+          leftSpan.setAttribute('value', `${minValue} GB`);
+          
+          document.querySelector('#setup-ram-min-display').textContent = `${minValue} GB`;
+        }
+        
+        setMaxValue(maxValue) {
+          maxValue = Math.min(this.max, maxValue);
+          
+          const currentMinValue = this.getMinValue();
+          if (currentMinValue && maxValue < currentMinValue) {
+            maxValue = currentMinValue;
+          }
+          
+          const ratio = (maxValue - this.min) / (this.max - this.min);
+          const position = Math.ceil(ratio * (this.element.offsetWidth - (this.normalizeFact * 2))) + this.normalizeFact;
+          this.touchRight.style.left = `${position}px`;
+          this.lineSpan.style.width = `${position - this.touchLeft.offsetLeft}px`;
+          
+          const rightSpan = this.touchRight.querySelector('span');
+          rightSpan.setAttribute('value', `${maxValue} GB`);
+          
+          document.querySelector('#setup-ram-max-display').textContent = `${maxValue} GB`;
+        }
+        
+        getMinValue() {
+          const ratio = this.touchLeft.offsetLeft / (this.element.offsetWidth - (this.normalizeFact * 2));
+          const rawValue = this.min + ratio * (this.max - this.min);
+          return Math.max(this.min, Math.round(rawValue / this.step) * this.step);
+        }
+        
+        getMaxValue() {
+          const ratio = (this.touchRight.offsetLeft - this.normalizeFact) / (this.element.offsetWidth - (this.normalizeFact * 2));
+          const rawValue = this.min + ratio * (this.max - this.min);
+          return Math.min(this.max, Math.round(rawValue / this.step) * this.step);
+        }
+        
+        updateDisplayValues(min, max) {
+          const leftSpan = this.touchLeft.querySelector('span');
+          leftSpan.setAttribute('value', `${min} GB`);
+          
+          const rightSpan = this.touchRight.querySelector('span');
+          rightSpan.setAttribute('value', `${max} GB`);
+          
+          document.querySelector('#setup-ram-min-display').textContent = `${min} GB`;
+          document.querySelector('#setup-ram-max-display').textContent = `${max} GB`;
+        }
+        
+        on(event, callback) {
+          if (event === 'change') {
+            this.callbacks.push(callback);
+          }
+        }
+      }
+      
+      setTimeout(() => {
+        const setupSlider = new SetupSlider(setupSliderElement, defaultMinRam, defaultMaxRam);
+        
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        const prevBtn = document.querySelector('.setup-prev-btn');
+        const nextBtn = document.querySelector('.setup-next-btn');
+        const finishBtn = document.querySelector('.setup-finish-btn');
+        
+        const stepIndicators = document.querySelectorAll('.step');
+        
+        const updateStepUI = (step) => {
+          document.querySelectorAll('.setup-section').forEach(section => {
+            section.classList.remove('active', 'prev', 'next');
+            section.classList.add('next');
+          });
+          
+          let currentSection = document.querySelector(`#setup-step-${step}`);
+          currentSection.classList.remove('prev', 'next');
+          currentSection.classList.add('active');
+          
+          for (let i = 1; i < step; i++) {
+            let prevSection = document.querySelector(`#setup-step-${i}`);
+            prevSection.classList.remove('active', 'next');
+            prevSection.classList.add('prev');
+          }
+          
+          stepIndicators.forEach(indicator => {
+            const indicatorStep = parseInt(indicator.dataset.step);
+            indicator.classList.remove('active-step');
+            if (indicatorStep === step) {
+              indicator.classList.add('active-step');
+            }
+          });
+          
+          prevBtn.style.display = step > 1 ? 'block' : 'none';
+          nextBtn.style.display = step < totalSteps ? 'block' : 'none';
+          finishBtn.style.display = step === totalSteps ? 'block' : 'none';
+        };
+        
+        updateStepUI(1);
+        
+        prevBtn.addEventListener('click', () => {
+          if (currentStep > 1) {
+            currentStep--;
+            updateStepUI(currentStep);
+          }
+        });
+        
+        nextBtn.addEventListener('click', () => {
+          if (currentStep < totalSteps) {
+            currentStep++;
+            updateStepUI(currentStep);
+          }
+        });
+        
+        const launcherBehaviorOptions = document.querySelectorAll('.setup-launcher-behavior-option');
+        let selectedLauncherBehavior = "close-launcher";
+        
+        launcherBehaviorOptions.forEach(option => {
+          if (option.dataset.value === selectedLauncherBehavior) {
+            option.classList.add('selected');
+          }
+          
+          option.addEventListener('click', () => {
+            launcherBehaviorOptions.forEach(opt => opt.classList.remove('selected'));
+            
+            option.classList.add('selected');
+            
+            selectedLauncherBehavior = option.dataset.value;
+          });
+        });
+        
+        const performanceModeToggle = document.querySelector("#setup-performance-mode");
+        performanceModeToggle.checked = false;
+        
+        const maxDownloadsInput = document.querySelector("#setup-max-downloads");
+        if (maxDownloadsInput) {
+          maxDownloadsInput.value = 3;
+          
+          maxDownloadsInput.addEventListener('input', () => {
+            const value = parseInt(maxDownloadsInput.value);
+            if (isNaN(value) || value < 1) {
+              maxDownloadsInput.value = 1;
+            } else if (value > 10) {
+              maxDownloadsInput.value = 10;
+            }
+          });
+        }
+        
+        finishBtn.addEventListener('click', async () => {
+          const ramMin = setupSlider.getMinValue();
+          const ramMax = setupSlider.getMaxValue();
+          const performanceMode = document.querySelector("#setup-performance-mode").checked;
+          const maxDownloads = maxDownloadsInput ? parseInt(maxDownloadsInput.value) || 3 : 3;
+          
+          document.querySelector('.setup-modal').style.display = 'none';
+          
+          const loadingOverlay = document.querySelector('.loading-overlay');
+          loadingOverlay.classList.add('active');
+          loadingOverlay.style.visibility = 'visible';
+          loadingOverlay.style.opacity = '1';
+          loadingOverlay.style.display = 'flex';
+          
+          await this.db.createData("configClient", {
+            account_selected: null,
+            instance_selct: null,
+            mods_enabled: [],
+            discord_token: null,
+            music_muted: false,
+            java_config: {
+              java_path: null,
+              java_memory: {
+                min: ramMin,
+                max: ramMax,
+              },
+            },
+            game_config: {
+              screen_size: {
+                width: 854,
+                height: 480,
+              },
+            },
+            launcher_config: {
+              download_multi: maxDownloads,
+              theme: "auto",
+              closeLauncher: selectedLauncherBehavior,
+              intelEnabledMac: true,
+              music_muted: false,
+              performance_mode: performanceMode
+            },
+          });
+          
+          if (performanceMode) {
+            setPerformanceMode(true);
+          }
+          resolve();
+        });
+      }, 200);
+    });
+  }
+
+  hideLoadingOverlayWithFade() {
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    if (!loadingOverlay) {
+      console.warn("No se encontró elemento loading-overlay");
+      return;
+    }
+    
+    const configClient = this.db.readData('configClient');
+    if (configClient && configClient.launcher_config && configClient.launcher_config.performance_mode) {
+      loadingOverlay.style.transition = 'none';
+      loadingOverlay.style.opacity = '0';
+      loadingOverlay.style.visibility = 'hidden';
+      loadingOverlay.classList.remove('active');
+    } else {
+      loadingOverlay.style.transition = 'opacity 0.5s ease, visibility 0.5s ease';
+      loadingOverlay.style.opacity = '0';
+      
+      setTimeout(() => {
+        loadingOverlay.style.visibility = 'hidden';
+        loadingOverlay.classList.remove('active');
+      }, 500);
     }
   }
 
@@ -691,6 +1158,34 @@ class Launcher {
   sendReport() {
     let logContent = document.querySelector(".logger .content").innerText;
     sendClientReport(logContent, false);
+  }
+
+  applyPerformanceModeOverrides() {
+    const panels = document.querySelectorAll('.panel');
+    panels.forEach(panel => {
+      panel.style.transition = 'none';
+      panel.style.transitionProperty = 'none';
+      panel.style.transitionDuration = '0s';
+      panel.style.transitionDelay = '0s';
+    });
+    
+    const settingsContainers = document.querySelectorAll('.container-settings');
+    settingsContainers.forEach(container => {
+      container.style.transition = 'none';
+      container.style.transform = 'none';
+    });
+    
+    const settingsBtns = document.querySelectorAll('.nav-settings-btn');
+    settingsBtns.forEach(btn => {
+      btn.style.transition = 'none';
+    });
+    
+    const settingsContent = document.querySelector('.settings-content');
+    if (settingsContent) {
+      settingsContent.style.transition = 'none';
+    }
+    
+    console.log("Aplicados ajustes específicos para el modo rendimiento");
   }
 }
 
