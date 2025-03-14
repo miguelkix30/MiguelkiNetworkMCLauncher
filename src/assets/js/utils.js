@@ -414,9 +414,7 @@ async function setBackground(theme) {
     let background
     let body = document.body;
     body.className = 'dark global';
-    let backgrounds = fs.readdirSync(`${__dirname}/assets/images/background/easterEgg`);
-        let Background = backgrounds[Math.floor(Math.random() * backgrounds.length)];
-        background = `linear-gradient(#00000080, #00000080), url(./assets/images/background/easterEgg/${Background})`;
+    background = `linear-gradient(#00000080, #00000080), url(./assets/images/background/default.png)`;
     body.style.backgroundImage = background ? background : '#000';
     body.style.backgroundSize = 'cover';
 }
