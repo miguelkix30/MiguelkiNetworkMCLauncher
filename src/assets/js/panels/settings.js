@@ -143,14 +143,33 @@ class Settings {
                         document.querySelector('.cancel-home').style.display = 'inline'
                         document.querySelector('.cancel-AZauth').style.display = 'inline'
                         document.querySelector('.cancel-offline').style.display = 'inline'
+                        popupAccount.closePopup();
                         return changePanel('login')
                     }
 
                     let account = await this.db.readData('accounts', id);
+                    if (!account) {
+                        popupAccount.closePopup();
+                        popupAccount.openPopup({
+                            title: 'Error',
+                            content: 'No se pudo encontrar la cuenta seleccionada.',
+                            color: 'red',
+                            options: true
+                        });
+                        return;
+                    }
+
                     let configClient = await this.setInstance(account);
                     await accountSelect(account);
-                    if (account.meta.type == 'AZauth') clickableHead(true); else clickableHead(false);
+                    
+                    if (account.meta && account.meta.type == 'AZauth') {
+                        clickableHead(true);
+                    } else {
+                        clickableHead(false);
+                    }
+                    
                     configClient.account_selected = account.ID;
+                    popupAccount.closePopup();
                     return await this.db.updateData('configClient', configClient);
                 }
 
@@ -179,7 +198,14 @@ class Settings {
                     }
                 }
             } catch (err) {
-                console.error(err)
+                console.error('Error al cambiar de cuenta:', err);
+                popupAccount.closePopup();
+                popupAccount.openPopup({
+                    title: 'Error',
+                    content: `Ha ocurrido un error: ${err.message}`,
+                    color: 'red',
+                    options: true
+                });
             } finally {
                 popupAccount.closePopup();
             }
@@ -187,23 +213,39 @@ class Settings {
     }
 
     async setInstance(auth) {
-        let configClient = await this.db.readData('configClient')
-        let instanceSelect = configClient.instance_selct
-        let instancesList = await config.getInstanceList()
+        if (!auth || typeof auth.name === 'undefined') {
+            console.warn('Invalid account data received in setInstance:', auth);
+            return await this.db.readData('configClient') || { instance_selct: null };
+        }
+
+        let configClient = await this.db.readData('configClient') || { instance_selct: null };
+        let instanceSelect = configClient.instance_selct;
+        let instancesList = await config.getInstanceList();
+        
+        if (!instancesList || instancesList.length === 0) {
+            console.log("No instances available");
+            return configClient;
+        }
 
         for (let instance of instancesList) {
             if (instance.whitelistActive) {
-                let whitelist = instance.whitelist.find(whitelist => whitelist == auth.name)
+                let whitelist = instance.whitelist.find(whitelist => whitelist == auth.name);
                 if (whitelist !== auth.name) {
                     if (instance.name == instanceSelect) {
-                        let newInstanceSelect = instancesList.find(i => i.whitelistActive == false)
-                        configClient.instance_selct = newInstanceSelect.name
-                        await setStatus(newInstanceSelect)
+                        let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
+                        if (!newInstanceSelect && instancesList.length > 0) {
+                            newInstanceSelect = instancesList[0];
+                        }
+                        
+                        if (newInstanceSelect) {
+                            configClient.instance_selct = newInstanceSelect.name;
+                            await setStatus(newInstanceSelect);
+                        }
                     }
                 }
             }
         }
-        return configClient
+        return configClient;
     }
 
     async ram() {

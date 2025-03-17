@@ -326,12 +326,123 @@ class Home {
         let instanceSelectBTN = document.querySelector('.instance-select');
         let instanceCloseBTN = document.querySelector('.close-popup');
 
-        if (instancesList.length === 1) {
-            instanceSelectBTN.style.display = 'none';
+        // Remove any existing event listeners to prevent duplicates
+        if (this.instanceSelectClickHandler) {
+            instanceSelectBTN.removeEventListener('click', this.instanceSelectClickHandler);
+        }
+        if (this.instanceCloseClickHandler) {
+            instanceCloseBTN.removeEventListener('click', this.instanceCloseClickHandler);
         }
 
-        if (!instanceSelect) {
+        // Define the new event handlers
+        this.instanceSelectClickHandler = async () => {
+            if (instanceSelectBTN.disabled) return;
+            
+            let username = await getUsername();
+            instancesGrid.innerHTML = '';
+            
+            // If there are no instances available, show a message
+            if (!instancesList || instancesList.length === 0) {
+                instancesGrid.innerHTML = `
+                    <div class="no-instances-message">
+                        <p>No hay instancias disponibles.</p>
+                        <p>Contacta con un administrador o usa el botón + para agregar una instancia con código.</p>
+                    </div>`;
+            } else {
+                let availableInstances = false;
+                
+                for (let instance of instancesList) {
+                    let color = instance.maintenance ? 'red' : 'green';
+                    let whitelist = instance.whitelistActive && instance.whitelist.includes(username);
+                    let imageUrl = instance.thumbnail || 'assets/images/default/placeholder.jpg';
+                    
+                    // Show the instance if it doesn't have a whitelist or the user is on the whitelist
+                    if (!instance.whitelistActive || whitelist) {
+                        availableInstances = true;
+                        instancesGrid.innerHTML += `
+                            <div id="${instance.name}" class="instance-element ${instance.name === instanceSelect ? 'active-instance' : ''}">
+                                <div class="instance-image" style="background-image: url('${imageUrl}');"></div>
+                                <div class="instance-name">${instance.name}<div class="instance-mkid" style="background-color: ${color};"></div></div>
+                            </div>`;
+                    }
+                }
+                
+                // If no instances are available to the user due to whitelist, show a message
+                if (!availableInstances) {
+                    instancesGrid.innerHTML = `
+                        <div class="no-instances-message">
+                            <p>No tienes acceso a ninguna instancia disponible.</p>
+                            <p>Contacta con un administrador para solicitar acceso.</p>
+                        </div>`;
+                }
+            }
+            
+            // Make sure the popup is displayed
+            instancePopup.classList.add('show');
+        };
+
+        this.instanceCloseClickHandler = () => {
+            instancePopup.classList.remove('show');
+            this.notification();
+        };
+
+        // Add the event listeners
+        instanceSelectBTN.addEventListener('click', this.instanceSelectClickHandler);
+        instanceCloseBTN.addEventListener('click', this.instanceCloseClickHandler);
+
+        // Rest of the function (setup instance click events)
+        instancePopup.addEventListener('click', async e => {
+            let configClient = await this.db.readData('configClient');
+
+            if (e.target.closest('.instance-element')) {
+                let newInstanceSelect = e.target.closest('.instance-element').id;
+                let activeInstanceSelect = document.querySelector('.active-instance');
+
+                if (activeInstanceSelect) activeInstanceSelect.classList.remove('active-instance');
+                e.target.closest('.instance-element').classList.add('active-instance');
+
+                configClient.instance_selct = newInstanceSelect;
+                await this.db.updateData('configClient', configClient);
+                instanceSelect = newInstanceSelect;
+                instancePopup.classList.remove('show');
+                this.notification();
+                let instance = await config.getInstanceList();
+                let options = instance.find(i => i.name == configClient.instance_selct);
+                setStatus(options);
+                setBackgroundMusic(options.backgroundMusic);
+                // Check if performance mode is enabled
+                const performanceMode = isPerformanceModeEnabled();
+                if (performanceMode) {
+                    // Update the data attribute for reference
+                    document.querySelector('.server-status-icon')?.setAttribute('data-background', options.background);
+                    // Directly capture and set the frame for the new instance
+                    if (options.background && options.background.match(/^(http|https):\/\/[^ "]+$/)) {
+                        await captureAndSetVideoFrame(options.background);
+                    } else {
+                        await captureAndSetVideoFrame();
+                    }
+                } else {
+                    // Normal behavior with transitions
+                    setInstanceBackground(options.background);
+                }
+                this.updateSelectedInstanceStyle(newInstanceSelect);
+            }
+        });
+
+        instanceBTN.addEventListener('click', async () => {
+            this.startGame();
+        });
+
+        // Always show the instance select button, even for single instance
+
+        if (!instanceSelect && instancesList.length > 0) {
             let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
+            
+            // If no instance without whitelist is found, just select the first one
+            if (!newInstanceSelect) {
+                newInstanceSelect = instancesList[0];
+            }
+            
             configClient.instance_selct = newInstanceSelect.name;
             instanceSelect = newInstanceSelect.name;
             await this.db.updateData('configClient', configClient);
@@ -339,16 +450,26 @@ class Home {
 
         for (let instance of instancesList) {
             if (instance.whitelistActive) {
-                let whitelist = instance.whitelist.find(whitelist => whitelist == username);
-                if (whitelist !== username) {
+                let whitelist = null;
+                if (instance.whitelist && Array.isArray(instance.whitelist)) {
+                    whitelist = instance.whitelist.find(wlUser => wlUser === username);
+                }
+                
+                if (!whitelist) {
                     if (instance.name == instanceSelect) {
                         let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
-                        configClient.instance_selct = newInstanceSelect.name;
-                        instanceSelect = newInstanceSelect.name;
-                        setStatus(newInstanceSelect);
-                        setBackgroundMusic(newInstanceSelect.backgroundMusic);
-                        setInstanceBackground(newInstanceSelect.background);
-                        await this.db.updateData('configClient', configClient);
+                        if (!newInstanceSelect && instancesList.length > 0) {
+                            newInstanceSelect = instancesList[0];
+                        }
+                        
+                        if (newInstanceSelect) {
+                            configClient.instance_selct = newInstanceSelect.name;
+                            instanceSelect = newInstanceSelect.name;
+                            setStatus(newInstanceSelect);
+                            setBackgroundMusic(newInstanceSelect.backgroundMusic);
+                            setInstanceBackground(newInstanceSelect.background);
+                            await this.db.updateData('configClient', configClient);
+                        }
                     }
                 }
             } else {
@@ -366,18 +487,43 @@ class Home {
             if (instanceSelectBTN.disabled) return;
             let username = await getUsername();
             instancesGrid.innerHTML = '';
-            for (let instance of instancesList) {
-                let color = instance.maintenance ? 'red' : 'green';
-                let whitelist = instance.whitelistActive && instance.whitelist.includes(username);
-                let imageUrl = instance.thumbnail || 'assets/images/default/placeholder.jpg';
-                if (!instance.whitelistActive || whitelist) {
-                    instancesGrid.innerHTML += `
-                        <div id="${instance.name}" class="instance-element ${instance.name === instanceSelect ? 'active-instance' : ''}">
-                            <div class="instance-image" style="background-image: url('${imageUrl}');"></div>
-                            <div class="instance-name">${instance.name}<div class="instance-mkid" style="background-color: ${color};"></div></div>
+            
+            // If there are no instances available, show a message
+            if (instancesList.length === 0) {
+                instancesGrid.innerHTML = `
+                    <div class="no-instances-message">
+                        <p>No hay instancias disponibles.</p>
+                        <p>Contacta con un administrador o usa el botón + para agregar una instancia con código.</p>
+                    </div>`;
+            } else {
+                let availableInstances = false;
+                
+                for (let instance of instancesList) {
+                    let color = instance.maintenance ? 'red' : 'green';
+                    let whitelist = instance.whitelistActive && instance.whitelist.includes(username);
+                    let imageUrl = instance.thumbnail || 'assets/images/default/placeholder.jpg';
+                    
+                    // Show the instance if it doesn't have a whitelist or the user is on the whitelist
+                    if (!instance.whitelistActive || whitelist) {
+                        availableInstances = true;
+                        instancesGrid.innerHTML += `
+                            <div id="${instance.name}" class="instance-element ${instance.name === instanceSelect ? 'active-instance' : ''}">
+                                <div class="instance-image" style="background-image: url('${imageUrl}');"></div>
+                                <div class="instance-name">${instance.name}<div class="instance-mkid" style="background-color: ${color};"></div></div>
+                            </div>`;
+                    }
+                }
+                
+                // If no instances are available to the user due to whitelist, show a message
+                if (!availableInstances) {
+                    instancesGrid.innerHTML = `
+                        <div class="no-instances-message">
+                            <p>No tienes acceso a ninguna instancia disponible.</p>
+                            <p>Contacta con un administrador para solicitar acceso.</p>
                         </div>`;
                 }
             }
+            
             instancePopup.classList.add('show');
         };
         instanceSelectBTN.addEventListener('click', this.instanceSelectClickHandler);
