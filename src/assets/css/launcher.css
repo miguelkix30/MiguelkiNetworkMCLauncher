@@ -879,11 +879,17 @@ input::-webkit-inner-spin-button {
   color: white;
   font-size: 16px;
   font-weight: bold;
+  transition: border-color 0.3s, background-color 0.3s;
 }
 
 .setup-download-input:focus {
   outline: none;
   border-color: var(--color);
+}
+
+.setup-download-input.invalid {
+  border-color: red;
+  background-color: rgba(255, 0, 0, 0.1);
 }
 
 .setup-note {
@@ -955,11 +961,17 @@ input::-webkit-inner-spin-button {
   color: white;
   font-size: 16px;
   font-weight: bold;
+  transition: border-color 0.3s, background-color 0.3s;
 }
 
 .setup-download-input:focus {
   outline: none;
   border-color: var(--color);
+}
+
+.setup-download-input.invalid {
+  border-color: red;
+  background-color: rgba(255, 0, 0, 0.1);
 }
 
 .setup-note {
@@ -1326,7 +1338,7 @@ body.performance-mode .settings-content {
   background-color: rgba(0, 120, 215, 1);
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%);
 }
 
 .setup-launcher-behavior-label {
@@ -1393,7 +1405,7 @@ body.performance-mode .settings-content {
   background-color: rgba(0, 120, 215, 1);
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%);
 }
 
 .setup-launcher-behavior-label {
@@ -1506,5 +1518,23 @@ body.performance-mode .loading-overlay {
 
 body.performance-mode .loading-overlay {
   transition: none !important;
+}
+
+.max-downloads-error {
+  color: red !important;
+  font-size: 12px !important;
+  margin-top: 5px !important;
+  text-align: center;
+  font-weight: normal;
+  width: 100%;
+}
+
+.setup-download-input-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  position: relative;
 }
 

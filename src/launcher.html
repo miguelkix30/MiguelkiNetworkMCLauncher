@@ -141,14 +141,15 @@
                 <div class="setup-download-container">
                   <label for="setup-max-downloads">Número máximo de descargas simultáneas:</label>
                   <div class="setup-download-input-container">
-                    <input type="number" id="setup-max-downloads" class="setup-download-input" value="3" min="1" max="10">
+                    <input type="number" id="setup-max-downloads" class="setup-download-input" value="3" min="1" max="20">
+                    <!-- El mensaje de error aparecerá aquí, justo después del input -->
                   </div>
                 </div>
                 <p class="setup-note">
-                  Un valor más alto puede acelerar las descargas, pero puede causar problemas en conexiones lentas o inestables. Se recomienda entre 3-5 para la mayoría de las conexiones.
+                  Un valor más alto puede acelerar las descargas, pero puede causar problemas en conexiones lentas o inestables. Se recomienda entre 3-5 para la mayoría de las conexiones. El máximo permitido es 20.
                 </p>
               </div>
-              
+
               <!-- Launcher Behavior (Step 4) -->
               <div class="setup-section next" id="setup-step-4">
                 <h3>Comportamiento del Launcher</h3>

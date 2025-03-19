@@ -427,7 +427,55 @@ class Launcher {
           }
         });
         
+        // Mejora para validación del campo de descargas
+        const maxDownloadsInput = document.querySelector("#setup-max-downloads");
+        let isMaxDownloadsValid = true;
+        
+        const validateMaxDownloads = () => {
+          if (!maxDownloadsInput) return true;
+          
+          const value = parseInt(maxDownloadsInput.value);
+          isMaxDownloadsValid = !isNaN(value) && value >= 1 && value <= 20;
+          
+          if (isMaxDownloadsValid) {
+            maxDownloadsInput.style.borderColor = "";
+            maxDownloadsInput.style.backgroundColor = "";
+            
+            // Eliminar mensaje de error si existe
+            const existingError = document.querySelector('.max-downloads-error');
+            if (existingError) {
+              existingError.remove();
+            }
+          } else {
+            maxDownloadsInput.style.borderColor = "red";
+            maxDownloadsInput.style.backgroundColor = "rgba(255, 0, 0, 0.1)";
+            
+            // Mostrar mensaje de error si no existe
+            let errorMsg = document.querySelector('.max-downloads-error');
+            if (!errorMsg) {
+              errorMsg = document.createElement('div');
+              errorMsg.className = 'max-downloads-error';
+              errorMsg.style.color = 'red';
+              errorMsg.style.fontSize = '12px';
+              errorMsg.style.marginTop = '5px';
+              errorMsg.innerText = 'Por favor ingresa un número entre 1 y 20';
+              
+              // Insertar el mensaje justo después del input
+              maxDownloadsInput.insertAdjacentElement('afterend', errorMsg);
+            }
+          }
+          
+          return isMaxDownloadsValid;
+        };
+        
         nextBtn.addEventListener('click', () => {
+          if (currentStep === 3) {
+            // Validar el campo de descargas antes de permitir avanzar
+            if (!validateMaxDownloads()) {
+              return;
+            }
+          }
+          
           if (currentStep < totalSteps) {
             currentStep++;
             updateStepUI(currentStep);
@@ -454,21 +502,24 @@ class Launcher {
         const performanceModeToggle = document.querySelector("#setup-performance-mode");
         performanceModeToggle.checked = false;
         
-        const maxDownloadsInput = document.querySelector("#setup-max-downloads");
         if (maxDownloadsInput) {
           maxDownloadsInput.value = 3;
           
           maxDownloadsInput.addEventListener('input', () => {
             const value = parseInt(maxDownloadsInput.value);
-            if (isNaN(value) || value < 1) {
-              maxDownloadsInput.value = 1;
-            } else if (value > 10) {
-              maxDownloadsInput.value = 10;
-            }
+            validateMaxDownloads();
           });
+          
+          // Validar también cuando pierde el foco
+          maxDownloadsInput.addEventListener('blur', validateMaxDownloads);
         }
         
         finishBtn.addEventListener('click', async () => {
+          // Validar el campo de descargas antes de permitir finalizar
+          if (!validateMaxDownloads()) {
+            return;
+          }
+          
           const ramMin = setupSlider.getMinValue();
           const ramMax = setupSlider.getMaxValue();
           const performanceMode = document.querySelector("#setup-performance-mode").checked;
