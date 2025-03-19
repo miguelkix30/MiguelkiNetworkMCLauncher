@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const pkg = require('../package.json');
 const fetch = require('node-fetch');
-const { marked } = require('marked');
+const { marked, options } = require('marked');
 
 import config from './utils/config.js';
 import database from './utils/database.js';
@@ -1011,6 +1011,195 @@ function isPerformanceModeEnabled() {
   return performanceMode;
 }
 
+async function patchLoader() {
+  try {
+    const patchPopup = new popup();
+    patchPopup.openPopup({
+      title: "Toolkit de Parches",
+      content: "Iniciando proceso de parcheo...",
+      color: "var(--color)",
+      background: true
+    });
+
+    const res = await config.GetConfig();
+    const dataDir = process.platform == 'darwin' ? res.dataDirectory : `.${res.dataDirectory}`;
+    const baseFolder = await appdata();
+    const dataFolder = path.join(baseFolder, dataDir);
+    
+    if (!fs.existsSync(dataFolder)) {
+      console.error("Error: El directorio de datos no existe:", dataFolder);
+      patchPopup.closePopup();
+      
+      new popup().openPopup({
+        title: "Error al iniciar el Toolkit de Parches",
+        content: "No se puede iniciar un parche al no existir la carpeta de assets. Por favor, prueba a iniciar el juego antes de intentar parchear.",
+        color: "red",
+        background: true,
+        options: true
+      });
+      
+      return;
+    }
+    
+    const cacheFolder = path.join(baseFolder, dataDir, 'cache');
+    
+    console.log(`Directorio de caché: ${cacheFolder}`);
+
+    if (!fs.existsSync(cacheFolder)) {
+      console.log("Creando directorio de caché...");
+      fs.mkdirSync(cacheFolder, { recursive: true });
+    }
+
+    // Prepare patch download
+    const patchFilePath = path.join(cacheFolder, 'Patch.zip');
+    const patchUrl = `${pkg.url}api/support/Patch.zip`;
+    
+    patchPopup.closePopup();
+    patchPopup.openPopup({
+      title: "Toolkit de Parches",
+      content: "Descargando parche desde el servidor...<br><br>Por favor, no cierres el launcher durante el proceso.",
+      color: "var(--color)",
+      background: true
+    });
+    
+    console.log(`Descargando parche desde: ${patchUrl}`);
+    console.log(`Guardando en: ${patchFilePath}`);
+
+    const response = await fetch(patchUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Error al descargar el parche: ${response.statusText}`);
+    }
+    
+    const totalSize = parseInt(response.headers.get('content-length') || '0');
+    
+    const fileStream = fs.createWriteStream(patchFilePath);
+    
+    if (response.body && typeof response.body.pipe === 'function') {
+      console.log("Using pipe stream method for download");
+      
+      let downloadedSize = 0;
+      
+      response.body.on('data', (chunk) => {
+        downloadedSize += chunk.length;
+        const progressPercent = totalSize ? Math.round((downloadedSize / totalSize) * 100) : 0;
+        
+        patchPopup.closePopup();
+        patchPopup.openPopup({
+          title: "Toolkit de Parches",
+          content: `Descargando parche... ${progressPercent}%<br><br>Por favor, no cierres el launcher durante el proceso.`,
+          color: "var(--color)",
+          background: true
+        });
+      });
+      
+      await new Promise((resolve, reject) => {
+        response.body.pipe(fileStream)
+          .on('finish', resolve)
+          .on('error', reject);
+      });
+    } else {
+      console.log("Using buffer method for download");
+      const buffer = await response.buffer();
+      
+      await new Promise((resolve, reject) => {
+        fileStream.write(buffer, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    }
+    
+    await new Promise((resolve) => {
+      fileStream.end(resolve);
+    });
+    
+    console.log("Descarga completada");
+    
+    patchPopup.closePopup();
+    patchPopup.openPopup({
+      title: "Toolkit de Parches", 
+      content: "Extrayendo archivos del parche...<br><br>Por favor, no cierres el launcher durante el proceso.",
+      color: "var(--color)",
+      background: true
+    });
+    
+    try {
+      console.log("Iniciando extracción con adm-zip...");
+      const AdmZip = require('adm-zip');
+      
+      const zip = new AdmZip(patchFilePath);
+      const zipEntries = zip.getEntries();
+      
+      const totalFiles = zipEntries.length;
+      
+      for (let i = 0; i < zipEntries.length; i++) {
+        const entry = zipEntries[i];
+        const progress = Math.round(((i + 1) / totalFiles) * 100);
+        
+        console.log(`Extrayendo archivo (${i + 1}/${totalFiles}): ${entry.entryName}`);
+        
+        patchPopup.closePopup();
+        patchPopup.openPopup({
+          title: "Toolkit de Parches",
+          content: `Extrayendo archivos... ${progress}%<br><br>Archivo: ${entry.entryName}<br><br>Por favor, no cierres el launcher durante el proceso.`,
+          color: "var(--color)",
+          background: true
+        });
+        
+        if (!entry.isDirectory) {
+          const entryPath = path.join(dataFolder, entry.entryName);
+          const entryDir = path.dirname(entryPath);
+          
+          if (!fs.existsSync(entryDir)) {
+            fs.mkdirSync(entryDir, { recursive: true });
+          }
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      
+      zip.extractAllTo(dataFolder, true);
+      console.log("Extracción completada con adm-zip");
+      
+    } catch (extractError) {
+      console.error("Error al extraer el archivo:", extractError);
+      throw new Error(`Error al extraer el archivo: ${extractError.message}`);
+    }
+    
+    patchPopup.closePopup();
+    patchPopup.openPopup({
+      title: "Toolkit de Parches",
+      content: "¡Parcheo completado con éxito!<br><br>El launcher se reiniciará para aplicar los cambios.",
+      color: "var(--color)",
+      background: true
+    });
+    
+    try {
+      fs.unlinkSync(patchFilePath);
+      console.log("Archivo de parche eliminado");
+    } catch (err) {
+      console.warn("No se pudo eliminar el archivo de parche", err);
+    }
+    
+    setTimeout(() => {
+      patchPopup.closePopup();
+      ipcRenderer.send('app-restart');
+    }, 3000);
+    
+  } catch (error) {
+    console.error("Error en el proceso de parcheo:", error);
+    
+    new popup().openPopup({
+      title: "Error en el Toolkit de Parches",
+      content: `Ha ocurrido un error durante el proceso de parcheo:<br><br>${error.message}`,
+      color: "red",
+      background: true,
+      options: true
+    });
+  }
+}
+
 export {
     appdata as appdata,
     changePanel as changePanel,
@@ -1046,6 +1235,7 @@ export {
     fadeInAudio as fadeInAudio,
     setBackgroundMusic as setBackgroundMusic,
     setPerformanceMode as setPerformanceMode,
-    isPerformanceModeEnabled as isPerformanceModeEnabled
+    isPerformanceModeEnabled as isPerformanceModeEnabled,
+    patchLoader as patchLoader
 }
 window.setVideoSource = setVideoSource;

@@ -421,6 +421,8 @@ class Home {
                     `;
                 } else {
                     // Add available instances to grid
+                    let visibleInstanceCount = 0;
+                    
                     for (let instance of refreshedInstancesList) {
                         let color = instance.maintenance ? 'red' : 'green';
                         let whitelist = instance.whitelistActive && instance.whitelist.includes(username);
@@ -431,22 +433,34 @@ class Home {
                                     <div class="instance-image" style="background-image: url('${imageUrl}');"></div>
                                     <div class="instance-name">${instance.name}<div class="instance-mkid" style="background-color: ${color};"></div></div>
                                 </div>`;
+                            visibleInstanceCount++;
                         }
                     }
                     
                     // If no instances are visible to this user (all are whitelist-protected)
-                    if (instancesGrid.children.length === 0) {
+                    if (visibleInstanceCount === 0) {
                         instancesGrid.innerHTML = `
                             <div class="no-instances-message">
                                 <p>No hay instancias disponibles para tu cuenta</p>
                                 <p>Contacta con un administrador o usa el botón + para agregar una instancia con código.</p>
                             </div>
                         `;
+                    } else {
+                        // Add classes based on the number of instances in the last row
+                        const remainder = visibleInstanceCount % 3;
+                        instancesGrid.classList.remove('one-item', 'two-items');
+                        
+                        if (remainder === 1) {
+                            instancesGrid.classList.add('one-item');
+                        } else if (remainder === 2) {
+                            instancesGrid.classList.add('two-items');
+                        }
                     }
                 }
                 
                 instancePopup.classList.add('show');
             };
+
             instanceSelectBTN.addEventListener('click', this.instanceSelectClickHandler);
 
             instancePopup.addEventListener('click', async e => {
@@ -540,9 +554,9 @@ class Home {
         let infoStarting = document.querySelector(".info-starting-game-text");
         let progressBar = document.querySelector('.progress-bar');
 
-        // Disable play button while game is starting
-        playInstanceBTN.style.pointerEvents = "none";
-        playInstanceBTN.style.opacity = "0.5";
+        // Elimino la deshabilitación del botón de play
+        // playInstanceBTN.style.pointerEvents = "none";
+        // playInstanceBTN.style.opacity = "0.5";
 
         if (check) {
             if (fetchError == false) {
@@ -788,9 +802,6 @@ class Home {
                 playquitMSG(configClient.instance_selct);
                 playing = false;
             }
-            // Re-enable play button when game closes
-            playInstanceBTN.style.pointerEvents = "";
-            playInstanceBTN.style.opacity = "";
         });
 
         launch.on('error', err => {
@@ -855,9 +866,6 @@ class Home {
                     }).catch();
                 }
             }
-            // Re-enable play button on error
-            playInstanceBTN.style.pointerEvents = "";
-            playInstanceBTN.style.opacity = "";
         });
     }
 

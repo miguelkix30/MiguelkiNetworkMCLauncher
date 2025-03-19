@@ -564,7 +564,7 @@ input::-webkit-inner-spin-button {
 .scroll-to-bottom {
   display: none;
   position: absolute;
-  bottom: 70px;
+  bottom: 150px; /* Changed to position from top to bottom */
   right: 10px;
   width: 50px;
   height: 50px;
@@ -602,9 +602,43 @@ input::-webkit-inner-spin-button {
   margin: auto;
 }
 
+.patch-toolkit {
+  position: absolute;
+  bottom: 80px;
+  right: 10px;
+  width: 50px;
+  height: 50px;
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  opacity: 1;
+  transition: all 0.5s;
+}
+
+.patch-toolkit:hover {
+  background-color: var(--box-button-hover);
+  transition: all 0.5s;
+}
+
+.patch-toolkit::before {
+  content: '\f0ad';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  font-size: 24px;
+  display: block;
+  margin: auto;
+}
+
 .report-issue {
   position: absolute;
-  bottom: 10px;
+  bottom: 10px; /* Keep at bottom */
   right: 10px;
   width: 50px;
   height: 50px;

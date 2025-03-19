@@ -160,6 +160,38 @@
     border-radius: 10px;
     margin: 1rem 0;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.7) rgba(0, 0, 0, 0.2);
+}
+
+.news-list::-webkit-scrollbar {
+    width: 12px; /* Más gruesa */
+}
+
+.news-list::-webkit-scrollbar-track {
+    background: transparent; /* Fondo transparente */
+    margin: 10px 0; /* Mayor espacio para los extremos redondeados */
+}
+
+.news-list::-webkit-scrollbar-thumb {
+    background-color: white; /* Color blanco sólido */
+    border-radius: 20px; /* Más redondeado */
+    border: 4px solid rgba(0, 0, 0, 0); /* Borde invisible para efecto redondeado */
+    background-clip: padding-box; /* Asegura que el background no se extienda más allá del borde */
+    min-height: 50px; /* Más altura mínima */
+}
+
+.news-list::-webkit-scrollbar-thumb:hover {
+    background-color: #e0e0e0; /* Ligeramente más oscuro al hover */
+}
+
+.news-list::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
 }
 
 .changelog-store-list {
@@ -168,6 +200,38 @@
     border-radius: 10px;
     margin: 1rem 0;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.7) rgba(0, 0, 0, 0.2);
+}
+
+.changelog-store-list::-webkit-scrollbar {
+    width: 12px; /* Más gruesa */
+}
+
+.changelog-store-list::-webkit-scrollbar-track {
+    background: transparent; /* Fondo transparente */
+    margin: 10px 0; /* Mayor espacio para los extremos redondeados */
+}
+
+.changelog-store-list::-webkit-scrollbar-thumb {
+    background-color: white; /* Color blanco sólido */
+    border-radius: 20px; /* Más redondeado */
+    border: 4px solid rgba(0, 0, 0, 0); /* Borde invisible para efecto redondeado */
+    background-clip: padding-box; /* Asegura que el background no se extienda más allá del borde */
+    min-height: 50px; /* Más altura mínima */
+}
+
+.changelog-store-list::-webkit-scrollbar-thumb:hover {
+    background-color: #e0e0e0; /* Ligeramente más oscuro al hover */
+}
+
+.changelog-store-list::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
 }
 
 .news-block, .news-blockshop {
@@ -555,7 +619,7 @@
     background: rgba(0, 0, 0, 0.9);
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.18);
-    max-height: 80vh;
+    max-height: 90vh;
     width: 80%;
     overflow: hidden;
 }
@@ -566,17 +630,65 @@
     width: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: calc(80vh - 4rem);
+    max-height: 30rem;
+    padding-right: 8px; 
+    scrollbar-width: thin; 
+    scrollbar-color: white transparent;
+}
+
+.instances-grid-container::-webkit-scrollbar {
+    width: 12px;
+}
+
+.instances-grid-container::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 10px 0;
+}
+
+.instances-grid-container::-webkit-scrollbar-thumb {
+    background-color: white;
+    border-radius: 20px;
+    border: 4px solid rgba(0, 0, 0, 0);
+    background-clip: padding-box;
+    min-height: 50px;
+}
+
+.instances-grid-container::-webkit-scrollbar-thumb:hover {
+    background-color: #e0e0e0;
+}
+
+.instances-grid-container::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+.instances-grid-container::-webkit-scrollbar-corner {
+    background: transparent;
 }
 
 .instances-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(3, 250px);
+    gap: 3rem;
     padding: 1rem;
     width: 100%;
     max-width: 1200px;
     justify-content: center;
+}
+
+@media (min-width: 850px) {
+    .instances-grid > *:nth-child(3n+1):last-child {
+        grid-column: 2;
+    }
+    
+    .instances-grid > *:nth-last-child(2):nth-child(3n+1),
+    .instances-grid > *:last-child:nth-child(3n+2) {
+        margin-left: calc(250px / 2 + 1.5rem);
+    }
 }
 
 .instance-element {
@@ -589,7 +701,6 @@
     cursor: pointer;
     transition: background 0.2s, border 0.2s;
     width: 250px;
-    margin: 0;
     border: 1px solid rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(15.5px);
     -webkit-backdrop-filter: blur(15.5px);
@@ -946,7 +1057,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 80%;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
     padding: 2rem;
     text-align: center;
     color: #fff;
@@ -965,4 +1078,61 @@
     font-size: 1.5rem;
     font-weight: bold;
     margin-bottom: 1rem;
+}
+
+.instances-grid-container::-webkit-scrollbar,
+.news-list::-webkit-scrollbar,
+.changelog-store-list::-webkit-scrollbar {
+    width: 12px;
+}
+
+.instances-grid-container::-webkit-scrollbar-track,
+.news-list::-webkit-scrollbar-track,
+.changelog-store-list::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 10px 0;
+}
+
+.instances-grid-container::-webkit-scrollbar-thumb,
+.news-list::-webkit-scrollbar-thumb,
+.changelog-store-list::-webkit-scrollbar-thumb {
+    background-color: white;
+    border-radius: 20px;
+    border: 4px solid rgba(0, 0, 0, 0);
+    background-clip: padding-box;
+    min-height: 50px;
+}
+
+.instances-grid-container::-webkit-scrollbar-thumb:hover,
+.news-list::-webkit-scrollbar-thumb:hover,
+.changelog-store-list::-webkit-scrollbar-thumb:hover {
+    background-color: #e0e0e0;
+}
+
+.instances-grid-container::-webkit-scrollbar-button,
+.news-list::-webkit-scrollbar-button,
+.changelog-store-list::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+.instances-grid-container,
+.news-list,
+.changelog-store-list {
+    scrollbar-width: thin;
+    scrollbar-color: white transparent;
+}
+
+.instances-grid-container::-webkit-scrollbar-corner,
+.news-list::-webkit-scrollbar-corner,
+.changelog-store-list::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+.instances-grid-container {
+    padding-right: 8px;
 }

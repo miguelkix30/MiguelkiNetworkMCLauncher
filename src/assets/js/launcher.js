@@ -28,7 +28,8 @@ import {
   setDiscordPFP,
   showTermsAndConditions,
   setBackgroundMusic,
-  setPerformanceMode
+  setPerformanceMode,
+  patchLoader
 } from "./utils.js";
 import {
   getHWID,
@@ -46,7 +47,7 @@ let dev = process.env.NODE_ENV === "dev";
 
 class Launcher {
   async init() {
-    if (dev) this.initLog();
+    if (!dev) this.initLog();
     else this.initWindow();
 
     console.log("Iniciando Launcher...");
@@ -1041,7 +1042,7 @@ class Launcher {
     }
   }
 
-  initLogs() {
+  async initLogs() {
     let logs = document.querySelector(".log-bg");
     let logContent = document.querySelector(".logger .content");
     let scrollToBottomButton = document.querySelector(".scroll-to-bottom");
@@ -1085,6 +1086,17 @@ class Launcher {
       scrollToBottomButton.classList.remove("show");
       scrollToBottomButton.style.pointerEvents = "none";
     });
+
+    let patchToolkit = document.querySelector(".patch-toolkit");
+    let res = await config.GetConfig();
+    if (res.patchToolkit) {
+      patchToolkit.addEventListener("click", () => {
+        logs.classList.toggle("show");
+        this.runPatchToolkit();
+      });
+    } else {
+      patchToolkit.style.display = "none";
+    }
 
     let reportIssueButton = document.querySelector(".report-issue");
     reportIssueButton.classList.add("show");
@@ -1158,6 +1170,24 @@ class Launcher {
   sendReport() {
     let logContent = document.querySelector(".logger .content").innerText;
     sendClientReport(logContent, false);
+  }
+
+  async runPatchToolkit() {
+    let patchToolkitPopup = new popup();
+    let logs = document.querySelector(".log-bg");
+    let dialogResult = await new Promise(resolve => {
+      patchToolkitPopup.openDialog({
+            title: 'Ejecutar Toolkit de Parches?',
+            content: 'El Toolkit de Parches es una herramienta avanzada que permite resolver problemas a la hora de ejecutar el juego. <br><br>Quieres ejecutar el Toolkit de Parches?<br>Si es así, se descargará y parcheará el juego de forma automática.',
+            options: true,
+            callback: resolve
+        });
+    });
+    if (dialogResult === 'cancel') {
+      logs.classList.toggle("show");
+      return;
+    }
+    patchLoader();
   }
 
   applyPerformanceModeOverrides() {
