@@ -715,6 +715,9 @@ class Home {
         progressBar.style.display = "";
         ipcRenderer.send('main-window-progress-load')
 
+        // Set up log monitoring for early cleanup
+        this.setupLogMonitoring(launch, opt.path, options);
+
         launch.on('extract', extract => {
             ipcRenderer.send('main-window-progress-load')
             console.log(extract);
@@ -803,22 +806,10 @@ class Home {
             instanceSelectBTN.classList.remove('disabled');
             infoStarting.innerHTML = `Cerrando...`
             console.log('Close');
-            if (options.cleaning.enabled) {
-                for (let file of options.cleaning.files) {
-                    const filePath = path.join(opt.path, "instances", options.name, file);
-                    if (fs.existsSync(filePath)) {
-                        try {
-                            if (fs.lstatSync(filePath).isDirectory()) {
-                                fs.rmSync(filePath, { recursive: true, force: true });
-                            } else {
-                                fs.unlinkSync(filePath);
-                            }
-                        } catch (err) {
-                            console.error(`Error removing ${filePath}:`, err);
-                        }
-                    }
-                }
-            }
+            
+            // Final cleanup when game closes
+            this.performCleanup(opt.path, options, false);
+            
             if (rpcActive) {
                 RPC.setActivity({
                     state: `En el launcher`,
@@ -902,6 +893,123 @@ class Home {
                 }
             }
         });
+    }
+
+    // Add new function to set up log monitoring
+    setupLogMonitoring(launch, basePath, options) {
+        if (!options.cleaning || !options.cleaning.enabled || !options.cleaning.early_cleanup) {
+            return; // Skip if early cleanup is not enabled
+        }
+        
+        console.log('Configurando monitoreo de logs para limpieza temprana...');
+        
+        // Get the logs directory path based on the instance
+        const logsDir = path.join(basePath, "instances", options.name, "logs");
+        const latestLogPath = path.join(logsDir, "latest.log");
+        
+        // Create a variable to track if early cleanup has been performed
+        this.earlyCleanupDone = false;
+        
+        // Setup log data event handler
+        launch.on('data', (data) => {
+            if (this.earlyCleanupDone) return;
+            
+            // Check for loading completion messages in the console output
+            if (typeof data === 'string') {
+                if (
+                    data.includes("Minecraft has finished loading") || 
+                    data.includes("Done (") ||
+                    data.includes("Reloading ResourceManager:") ||
+                    data.includes("Stopping!") ||
+                    data.includes("Completed initialization")
+                ) {
+                    console.log('Detección de carga completa del juego. Iniciando limpieza temprana...');
+                    this.performCleanup(basePath, options, true);
+                    this.earlyCleanupDone = true;
+                }
+            }
+        });
+        
+        // Also check the latest.log file periodically as a fallback
+        setTimeout(() => {
+            this.checkLogFile(latestLogPath, basePath, options);
+        }, 15000); // Start checking after 15 seconds
+    }
+
+    // Function to check log file for game loading completion
+    checkLogFile(logPath, basePath, options) {
+        if (this.earlyCleanupDone) return;
+        
+        try {
+            if (fs.existsSync(logPath)) {
+                // Read the last portion of the log file (up to 50KB to avoid reading huge files)
+                const stats = fs.statSync(logPath);
+                const fileSize = stats.size;
+                const readSize = Math.min(fileSize, 50 * 1024); // 50KB max
+                const position = Math.max(0, fileSize - readSize);
+                
+                const buffer = Buffer.alloc(readSize);
+                const fileDescriptor = fs.openSync(logPath, 'r');
+                fs.readSync(fileDescriptor, buffer, 0, readSize, position);
+                fs.closeSync(fileDescriptor);
+                
+                const logContent = buffer.toString('utf8');
+                
+                if (
+                    logContent.includes("Minecraft has finished loading") || 
+                    logContent.includes("Done (") ||
+                    logContent.includes("Reloading ResourceManager:") ||
+                    logContent.includes("Stopping!") ||
+                    logContent.includes("Completed initialization")
+                ) {
+                    console.log('Detección de carga completa del juego desde archivo de log. Iniciando limpieza temprana...');
+                    this.performCleanup(basePath, options, true);
+                    this.earlyCleanupDone = true;
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('Error al leer archivo de log:', error);
+        }
+        
+        // Continue checking if we haven't detected the game loading yet
+        if (!this.earlyCleanupDone) {
+            setTimeout(() => {
+                this.checkLogFile(logPath, basePath, options);
+            }, 5000); // Check every 5 seconds
+        }
+    }
+
+    // Function to perform the actual cleanup
+    performCleanup(basePath, options, isEarlyCleanup) {
+        if (!options.cleaning || !options.cleaning.enabled) return;
+        
+        const cleanupType = isEarlyCleanup ? 
+            (options.cleaning.early_cleanup_files || options.cleaning.files) : 
+            options.cleaning.files;
+        
+        if (!cleanupType || !Array.isArray(cleanupType) || cleanupType.length === 0) return;
+        
+        console.log(`Ejecutando limpieza ${isEarlyCleanup ? 'temprana' : 'final'} de archivos...`);
+        
+        for (let file of cleanupType) {
+            const filePath = path.join(basePath, "instances", options.name, file);
+            if (fs.existsSync(filePath)) {
+                try {
+                    if (fs.lstatSync(filePath).isDirectory()) {
+                        fs.rmSync(filePath, { recursive: true, force: true });
+                        console.log(`Carpeta eliminada: ${filePath}`);
+                    } else {
+                        fs.unlinkSync(filePath);
+                        console.log(`Archivo eliminado: ${filePath}`);
+                    }
+                } catch (err) {
+                    console.error(`Error removing ${filePath}:`, err);
+                }
+            }
+        }
+        
+        console.log(`Limpieza ${isEarlyCleanup ? 'temprana' : 'final'} completada.`);
     }
 
     async loadRecentInstances() {
