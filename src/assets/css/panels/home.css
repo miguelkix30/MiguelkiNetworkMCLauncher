@@ -940,3 +940,29 @@
     font-size: 1rem;
     margin-bottom: 1rem;
 }
+
+.no-instances-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 80%;
+    padding: 2rem;
+    text-align: center;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    grid-column: 1 / -1;
+}
+
+.no-instances-message p {
+    margin: 0.5rem 0;
+    font-size: 1.2rem;
+}
+
+.no-instances-message p:first-child {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}

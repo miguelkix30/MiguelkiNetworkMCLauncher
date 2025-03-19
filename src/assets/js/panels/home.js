@@ -318,7 +318,7 @@ class Home {
         let auth = await this.db.readData('accounts', configClient.account_selected);
         let username = await getUsername();
         let instancesList = await config.getInstanceList();
-        let instanceSelect = instancesList.find(i => i.name == configClient?.instance_selct) ? configClient?.instance_selct : null;
+        let instanceSelect = instancesList && instancesList.length > 0 && instancesList.find(i => i.name == configClient?.instance_selct) ? configClient?.instance_selct : null;
 
         let instanceBTN = document.querySelector('.play-instance');
         let instancePopup = document.querySelector('.instance-popup');
@@ -326,126 +326,223 @@ class Home {
         let instanceSelectBTN = document.querySelector('.instance-select');
         let instanceCloseBTN = document.querySelector('.close-popup');
 
-        if (instancesList.length === 1) {
-            instanceSelectBTN.style.display = 'none';
+        // Show no instances message if needed
+        if (!instancesList || instancesList.length === 0) {
+            instancesGrid.innerHTML = `
+                <div class="no-instances-message">
+                    <p>No hay instancias disponibles</p>
+                    <p>Contacta con un administrador o usa el botón + para agregar una instancia con código.</p>
+                </div>
+            `;
+            // If there are no instances, don't try to set an instance
+            if (configClient.instance_selct) {
+                configClient.instance_selct = null;
+                await this.db.updateData('configClient', configClient);
+            }
+            return; // Exit the method as there's nothing more to do
         }
 
         if (!instanceSelect) {
             let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
-            configClient.instance_selct = newInstanceSelect.name;
-            instanceSelect = newInstanceSelect.name;
-            await this.db.updateData('configClient', configClient);
-        }
-
-        for (let instance of instancesList) {
-            if (instance.whitelistActive) {
-                let whitelist = instance.whitelist.find(whitelist => whitelist == username);
-                if (whitelist !== username) {
-                    if (instance.name == instanceSelect) {
-                        let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
-                        configClient.instance_selct = newInstanceSelect.name;
-                        instanceSelect = newInstanceSelect.name;
-                        setStatus(newInstanceSelect);
-                        setBackgroundMusic(newInstanceSelect.backgroundMusic);
-                        setInstanceBackground(newInstanceSelect.background);
-                        await this.db.updateData('configClient', configClient);
-                    }
-                }
-            } else {
-                console.log(`Configurando instancia ${instance.name}...`);
-            }
-            if (instance.name == instanceSelect) setStatus(instance);
-            if (instance.name == instanceSelect) setBackgroundMusic(instance.backgroundMusic);
-            if (instance.name == instanceSelect) setInstanceBackground(instance.background);
-            if (instance.name == instanceSelect) this.updateSelectedInstanceStyle(instanceSelect);
-            this.notification();
-        }
-
-        instanceSelectBTN.removeEventListener('click', this.instanceSelectClickHandler);
-        this.instanceSelectClickHandler = async () => {
-            if (instanceSelectBTN.disabled) return;
-            let username = await getUsername();
-            instancesGrid.innerHTML = '';
-            for (let instance of instancesList) {
-                let color = instance.maintenance ? 'red' : 'green';
-                let whitelist = instance.whitelistActive && instance.whitelist.includes(username);
-                let imageUrl = instance.thumbnail || 'assets/images/default/placeholder.jpg';
-                if (!instance.whitelistActive || whitelist) {
-                    instancesGrid.innerHTML += `
-                        <div id="${instance.name}" class="instance-element ${instance.name === instanceSelect ? 'active-instance' : ''}">
-                            <div class="instance-image" style="background-image: url('${imageUrl}');"></div>
-                            <div class="instance-name">${instance.name}<div class="instance-mkid" style="background-color: ${color};"></div></div>
-                        </div>`;
-                }
-            }
-            instancePopup.classList.add('show');
-        };
-        instanceSelectBTN.addEventListener('click', this.instanceSelectClickHandler);
-
-        instancePopup.addEventListener('click', async e => {
-            let configClient = await this.db.readData('configClient');
-
-            if (e.target.closest('.instance-element')) {
-                let newInstanceSelect = e.target.closest('.instance-element').id;
-                let activeInstanceSelect = document.querySelector('.active-instance');
-
-                if (activeInstanceSelect) activeInstanceSelect.classList.remove('active-instance');
-                e.target.closest('.instance-element').classList.add('active-instance');
-
-                configClient.instance_selct = newInstanceSelect;
+            
+            // Only proceed if we found a non-whitelist instance
+            if (newInstanceSelect) {
+                configClient.instance_selct = newInstanceSelect.name;
+                instanceSelect = newInstanceSelect.name;
                 await this.db.updateData('configClient', configClient);
-                instanceSelect = newInstanceSelect;
-                instancePopup.classList.remove('show');
-                this.notification();
-                let instance = await config.getInstanceList();
-                let options = instance.find(i => i.name == configClient.instance_selct);
-                setStatus(options);
-                setBackgroundMusic(options.backgroundMusic);
-                // Check if performance mode is enabled
-                const performanceMode = isPerformanceModeEnabled();
-                if (performanceMode) {
-                    // Update the data attribute for reference
-                    document.querySelector('.server-status-icon')?.setAttribute('data-background', options.background);
-                    // Directly capture and set the frame for the new instance
-                    if (options.background && options.background.match(/^(http|https):\/\/[^ "]+$/)) {
-                        await captureAndSetVideoFrame(options.background);
-                    } else {
-                        await captureAndSetVideoFrame();
+            } else if (instancesList.length > 0) {
+                // If all instances have whitelist, just use the first one
+                configClient.instance_selct = instancesList[0].name;
+                instanceSelect = instancesList[0].name;
+                await this.db.updateData('configClient', configClient);
+            }
+        }
+
+        // Only continue if we have instances to work with
+        if (instancesList && instancesList.length > 0) {
+            for (let instance of instancesList) {
+                if (instance.whitelistActive) {
+                    let whitelist = instance.whitelist.find(whitelist => whitelist == username);
+                    if (whitelist !== username) {
+                        if (instance.name == instanceSelect) {
+                            let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
+                            
+                            // Add this check to handle the case when no non-whitelist instance is found
+                            if (newInstanceSelect) {
+                                configClient.instance_selct = newInstanceSelect.name;
+                                instanceSelect = newInstanceSelect.name;
+                                setStatus(newInstanceSelect);
+                                setBackgroundMusic(newInstanceSelect.backgroundMusic);
+                                setInstanceBackground(newInstanceSelect.background);
+                                await this.db.updateData('configClient', configClient);
+                            } else if (instancesList.length > 0) {
+                                // If all instances have whitelist, just use the first one
+                                configClient.instance_selct = instancesList[0].name;
+                                instanceSelect = instancesList[0].name;
+                                setStatus(instancesList[0]);
+                                setBackgroundMusic(instancesList[0].backgroundMusic);
+                                setInstanceBackground(instancesList[0].background);
+                                await this.db.updateData('configClient', configClient);
+                            }
+                        }
                     }
                 } else {
-                    // Normal behavior with transitions
-                    setInstanceBackground(options.background);
+                    console.log(`Configurando instancia ${instance.name}...`);
                 }
-                this.updateSelectedInstanceStyle(newInstanceSelect);
+                
+                // Only try to set these if instanceSelect exists and matches the current instance
+                if (instanceSelect && instance.name == instanceSelect) {
+                    setStatus(instance);
+                    setBackgroundMusic(instance.backgroundMusic);
+                    setInstanceBackground(instance.background);
+                    this.updateSelectedInstanceStyle(instanceSelect);
+                }
+                
+                this.notification();
             }
-        });
 
-        instanceBTN.addEventListener('click', async () => {
-            this.startGame();
-        });
+            instanceSelectBTN.removeEventListener('click', this.instanceSelectClickHandler);
+            this.instanceSelectClickHandler = async () => {
+                if (instanceSelectBTN.disabled) return;
+                let username = await getUsername();
+                
+                // Get fresh instance list when clicking the button
+                let refreshedInstancesList = await config.getInstanceList();
+                
+                instancesGrid.innerHTML = '';
+                
+                if (!refreshedInstancesList || refreshedInstancesList.length === 0) {
+                    // Show no instances message
+                    instancesGrid.innerHTML = `
+                        <div class="no-instances-message">
+                            <p>No hay instancias disponibles</p>
+                            <p>Contacta con un administrador o usa el botón + para agregar una instancia con código.</p>
+                        </div>
+                    `;
+                } else {
+                    // Add available instances to grid
+                    for (let instance of refreshedInstancesList) {
+                        let color = instance.maintenance ? 'red' : 'green';
+                        let whitelist = instance.whitelistActive && instance.whitelist.includes(username);
+                        let imageUrl = instance.thumbnail || 'assets/images/default/placeholder.jpg';
+                        if (!instance.whitelistActive || whitelist) {
+                            instancesGrid.innerHTML += `
+                                <div id="${instance.name}" class="instance-element ${instance.name === instanceSelect ? 'active-instance' : ''}">
+                                    <div class="instance-image" style="background-image: url('${imageUrl}');"></div>
+                                    <div class="instance-name">${instance.name}<div class="instance-mkid" style="background-color: ${color};"></div></div>
+                                </div>`;
+                        }
+                    }
+                    
+                    // If no instances are visible to this user (all are whitelist-protected)
+                    if (instancesGrid.children.length === 0) {
+                        instancesGrid.innerHTML = `
+                            <div class="no-instances-message">
+                                <p>No hay instancias disponibles para tu cuenta</p>
+                                <p>Contacta con un administrador o usa el botón + para agregar una instancia con código.</p>
+                            </div>
+                        `;
+                    }
+                }
+                
+                instancePopup.classList.add('show');
+            };
+            instanceSelectBTN.addEventListener('click', this.instanceSelectClickHandler);
 
-        instanceCloseBTN.addEventListener('click', () => {
-            instancePopup.classList.remove('show');
-            this.notification();
-        });
+            instancePopup.addEventListener('click', async e => {
+                let configClient = await this.db.readData('configClient');
+
+                if (e.target.closest('.instance-element')) {
+                    let newInstanceSelect = e.target.closest('.instance-element').id;
+                    let activeInstanceSelect = document.querySelector('.active-instance');
+
+                    if (activeInstanceSelect) activeInstanceSelect.classList.remove('active-instance');
+                    e.target.closest('.instance-element').classList.add('active-instance');
+
+                    configClient.instance_selct = newInstanceSelect;
+                    await this.db.updateData('configClient', configClient);
+                    instanceSelect = newInstanceSelect;
+                    instancePopup.classList.remove('show');
+                    this.notification();
+                    let instance = await config.getInstanceList();
+                    let options = instance.find(i => i.name == configClient.instance_selct);
+                    setStatus(options);
+                    setBackgroundMusic(options.backgroundMusic);
+                    // Check if performance mode is enabled
+                    const performanceMode = isPerformanceModeEnabled();
+                    if (performanceMode) {
+                        // Update the data attribute for reference
+                        document.querySelector('.server-status-icon')?.setAttribute('data-background', options.background);
+                        // Directly capture and set the frame for the new instance
+                        if (options.background && options.background.match(/^(http|https):\/\/[^ "]+$/)) {
+                            await captureAndSetVideoFrame(options.background);
+                        } else {
+                            await captureAndSetVideoFrame();
+                        }
+                    } else {
+                        // Normal behavior with transitions
+                        setInstanceBackground(options.background);
+                    }
+                    this.updateSelectedInstanceStyle(newInstanceSelect);
+                }
+            });
+
+            instanceBTN.addEventListener('click', async () => {
+                this.startGame();
+            });
+
+            instanceCloseBTN.addEventListener('click', () => {
+                instancePopup.classList.remove('show');
+                this.notification();
+            });
+        }
     }
 
     async startGame() {
-        let launch = new Launch()
-        let configClient = await this.db.readData('configClient')
-        let instance = await config.getInstanceList()
-        let authenticator = await this.db.readData('accounts', configClient.account_selected)
-        let options = instance.find(i => i.name == configClient.instance_selct)
+        let configClient = await this.db.readData('configClient');
+        
+        // Check if an instance is selected
+        if (!configClient.instance_selct) {
+            let popupError = new popup();
+            popupError.openPopup({
+                title: 'Selecciona una instancia',
+                content: 'Debes seleccionar una instancia antes de iniciar el juego.',
+                color: 'var(--color)',
+                options: true
+            });
+            return;
+        }
+        
+        let launch = new Launch();
+        let instance = await config.getInstanceList();
+        let authenticator = await this.db.readData('accounts', configClient.account_selected);
+        let options = instance.find(i => i.name == configClient.instance_selct);
+        
+        // If the selected instance no longer exists
+        if (!options) {
+            let popupError = new popup();
+            popupError.openPopup({
+                title: 'Instancia no encontrada',
+                content: 'La instancia seleccionada ya no existe. Por favor, selecciona otra instancia.',
+                color: 'var(--color)',
+                options: true
+            });
+            return;
+        }
 
         let hwid = await getHWID();
         let check = await checkHWID(hwid);
         let fetchError = await getFetchError();
 
-        let playInstanceBTN = document.querySelector('.play-instance')
-        let infoStartingBOX = document.querySelector('.info-starting-game')
-        let instanceSelectBTN = document.querySelector('.instance-select')
-        let infoStarting = document.querySelector(".info-starting-game-text")
-        let progressBar = document.querySelector('.progress-bar')
+        let playInstanceBTN = document.querySelector('.play-instance');
+        let infoStartingBOX = document.querySelector('.info-starting-game');
+        let instanceSelectBTN = document.querySelector('.instance-select');
+        let infoStarting = document.querySelector(".info-starting-game-text");
+        let progressBar = document.querySelector('.progress-bar');
+
+        // Disable play button while game is starting
+        playInstanceBTN.style.pointerEvents = "none";
+        playInstanceBTN.style.opacity = "0.5";
 
         if (check) {
             if (fetchError == false) {
@@ -691,6 +788,9 @@ class Home {
                 playquitMSG(configClient.instance_selct);
                 playing = false;
             }
+            // Re-enable play button when game closes
+            playInstanceBTN.style.pointerEvents = "";
+            playInstanceBTN.style.opacity = "";
         });
 
         launch.on('error', err => {
@@ -755,6 +855,9 @@ class Home {
                     }).catch();
                 }
             }
+            // Re-enable play button on error
+            playInstanceBTN.style.pointerEvents = "";
+            playInstanceBTN.style.opacity = "";
         });
     }
 
