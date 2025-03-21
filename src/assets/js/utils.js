@@ -17,6 +17,7 @@ import logger from './utils/logger.js';
 import popup from './utils/popup.js';
 import { skin2D } from './utils/skin.js';
 import slider from './utils/slider.js';
+import cleanupManager from './utils/cleanup-manager.js';
 let username = '';
 let DiscordUsername = '';
 let DiscordPFP = '';
@@ -628,7 +629,7 @@ async function setStatus(opt) {
         playersOnline.innerHTML = '0'
         return
     }
-    instanceIcon.src = opt.icon || opt.thumbnail || './assets/images/icon.png'
+    instanceIcon.src = opt.icon || './assets/images/icon.png'
     let { ip, port, nameServer } = opt.status
     nameServerElement.innerHTML = nameServer
     let status = new Status(ip, port);
@@ -1236,6 +1237,7 @@ export {
     setBackgroundMusic as setBackgroundMusic,
     setPerformanceMode as setPerformanceMode,
     isPerformanceModeEnabled as isPerformanceModeEnabled,
-    patchLoader as patchLoader
+    patchLoader as patchLoader,
+    cleanupManager as cleanupManager
 }
 window.setVideoSource = setVideoSource;

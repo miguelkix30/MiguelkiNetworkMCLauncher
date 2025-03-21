@@ -633,8 +633,24 @@ class Settings {
                 color: 'var(--color)'
             });
             
+            // Primero, vaciar la tabla de cuentas
+            const accounts = await this.db.readAllData("accounts");
+            if (accounts && accounts.length > 0) {
+                console.log(`Eliminando ${accounts.length} cuentas...`);
+                for (const account of accounts) {
+                    await this.db.deleteData('accounts', account.ID);
+                }
+            }
+            
+            // Luego eliminar configClient
             await this.db.deleteData('configClient');
-            await this.db.deleteData('accounts');
+            
+            // Doble verificación - comprobar si realmente se eliminaron las cuentas
+            const remainingAccounts = await this.db.readAllData("accounts");
+            if (remainingAccounts && remainingAccounts.length > 0) {
+                console.warn(`Aún quedan ${remainingAccounts.length} cuentas, forzando limpieza completa...`);
+                await this.db.clearDatabase(); // Método que elimina todo el contenido de la base de datos
+            }
         
             await new Promise(resolve => setTimeout(resolve, 1000));
             

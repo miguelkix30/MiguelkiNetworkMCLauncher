@@ -8,6 +8,7 @@ import Home from "./panels/home.js";
 import Settings from "./panels/settings.js";
 import Mods from "./panels/mods.js";
 import Logger2 from "./loggerprod.js";
+import cleanupManager from './utils/cleanup-manager.js';
 
 import {
   logger,
@@ -106,6 +107,8 @@ class Launcher {
     } else {
       await this.startLauncher();
     }
+    
+    await cleanupManager.initialize();
   }
   
   startLoadingDisplayTimer() {
@@ -650,6 +653,12 @@ class Launcher {
     window.onclose = () => {
       localStorage.removeItem("distribution");
     };
+    
+    ipcRenderer.on('process-cleanup-queue', async () => {
+      console.log('Processing cleanup queue before app close...');
+      await cleanupManager.processQueue();
+      cleanupManager.stopAllLogWatchers();
+    });
   }
 
   initLog() {
@@ -982,114 +991,338 @@ class Launcher {
     let configClient = await this.db.readData("configClient");
     let account_selected = configClient ? configClient.account_selected : null;
     let popupRefresh = new popup();
+    let redirectToPanel = false; // Variable para controlar si necesitamos redirigir al final
+
+    // Verificar que la estructura de configClient sea correcta
+    // Si es null o undefined, crear uno nuevo con valores predeterminados
+    if (!configClient) {
+        console.log("No se encontró configuración, creando una nueva...");
+        await this.initConfigClient();
+        configClient = await this.db.readData("configClient");
+        // Si sigue siendo nulo, hay un problema grave
+        if (!configClient) {
+            console.error("Error crítico: No se pudo crear la configuración");
+            popupRefresh.openPopup({
+                title: 'Error crítico',
+                content: 'No se pudo crear la configuración del launcher. Por favor, reinicia la aplicación.',
+                color: 'red',
+                options: true
+            });
+            return;
+        }
+        // Asegurarnos que account_selected está definido
+        account_selected = null;
+    }
 
     if (accounts?.length) {
-      for (let account of accounts) {
-        let account_ID = account.ID;
-        if (account.error) {
-          await this.db.deleteData("accounts", account_ID);
-          continue;
+        const serverConfig = await config.GetConfig();
+        const hwid = await getHWID();
+        
+        // Verificar inicialmente si hay cuentas protegidas que deban removerse
+        if (serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
+            let accountsRemoved = 0;
+            // Revisar todas las cuentas antes de refrescarlas
+            for (let account of accounts) {
+                if (serverConfig.protectedUsers[account.name]) {
+                    const allowedHWIDs = serverConfig.protectedUsers[account.name];
+                    if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
+                        // Eliminar cuenta no autorizada
+                        await this.db.deleteData("accounts", account.ID);
+                        accountsRemoved++;
+                        
+                        // Si era la cuenta seleccionada, actualizar la referencia
+                        if (account.ID == account_selected) {
+                            configClient.account_selected = null;
+                            await this.db.updateData("configClient", configClient);
+                            
+                            // Registrar intento de acceso no autorizado
+                            await verificationError(account.name, true);
+                            
+                            // Mostrar mensaje (solo si era la cuenta seleccionada)
+                            popupRefresh.closePopup();
+                            let popupError = new popup();
+                            
+                            // Usamos una promesa para esperar a que el usuario cierre el popup
+                            await new Promise(resolve => {
+                                popupError.openPopup({
+                                    title: 'Cuenta protegida',
+                                    content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo. Por favor, contacta con el administrador si crees que esto es un error.',
+                                    color: 'red',
+                                    options: {
+                                        value: "Entendido",
+                                        event: resolve
+                                    }
+                                });
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // Si se eliminaron cuentas, verificar si la lista quedó vacía
+            if (accountsRemoved > 0) {
+                accounts = await this.db.readAllData("accounts");
+                if (!accounts || accounts.length === 0) {
+                    console.log("No quedan cuentas disponibles después de eliminar las protegidas, redirigiendo a login");
+                    changePanel("login");
+                    return; // Importante: salir para no continuar con el proceso
+                }
+            }
         }
-        if (account.meta.type === "Xbox") {
-          console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
-          popupRefresh.openPopup({
-            title: "Conectando...",
-            content: `Plataforma: ${account.meta.type} | Usuario: ${account.name}`,
-            color: "var(--color)",
-            background: false,
-          });
-          let refresh_accounts = await new Microsoft(this.config.client_id).refresh(account);
-          if (refresh_accounts.error) {
+        
+        // Continuar con el refresco normal de cuentas
+        for (let account of accounts) {
+          let account_ID = account.ID;
+          if (account.error) {
             await this.db.deleteData("accounts", account_ID);
-            if (account_ID == account_selected) {
-              configClient.account_selected = null;
-              await this.db.updateData("configClient", configClient);
-            }
-            console.error(`[Account] ${account.name}: ${refresh_accounts.errorMessage}`);
             continue;
           }
-          refresh_accounts.ID = account_ID;
-          await this.db.updateData("accounts", refresh_accounts, account_ID);
-          await addAccount(refresh_accounts);
-          if (account_ID == account_selected) {
-            accountSelect(refresh_accounts);
-            clickableHead(false);
-            await setUsername(account.name);
-            await loginMSG();
-          }
-        } else if (account.meta.type == "AZauth") {
-          console.log(`Plataforma: MKNetworkID | Usuario: ${account.name}`);
-          popupRefresh.openPopup({
-            title: "Conectando...",
-            content: `Plataforma: MKNetworkID | Usuario: ${account.name}`,
-            color: "var(--color)",
-            background: false,
-          });
-          let refresh_accounts = await new AZauth(this.config.online).verify(account);
-          if (refresh_accounts.error) {
-            await this.db.deleteData("accounts", account_ID);
-            if (account_ID == account_selected) {
-              configClient.account_selected = null;
-              await this.db.updateData("configClient", configClient);
+          if (account.meta.type === "Xbox") {
+            console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
+            popupRefresh.openPopup({
+              title: "Conectando...",
+              content: `Plataforma: ${account.meta.type} | Usuario: ${account.name}`,
+              color: "var(--color)",
+              background: false,
+            });
+            let refresh_accounts = await new Microsoft(this.config.client_id).refresh(account);
+            if (refresh_accounts.error) {
+              await this.db.deleteData("accounts", account_ID);
+              if (account_ID == account_selected) {
+                configClient.account_selected = null;
+                await this.db.updateData("configClient", configClient);
+              }
+              console.error(`[Account] ${account.name}: ${refresh_accounts.errorMessage}`);
+              continue;
             }
-            console.error(`[Account] ${account.name}: ${refresh_accounts.message}`);
-            continue;
-          }
-          refresh_accounts.ID = account_ID;
-          await this.db.updateData("accounts", refresh_accounts, account_ID);
-          await addAccount(refresh_accounts);
-          if (account_ID == account_selected) {
-            accountSelect(refresh_accounts);
-            clickableHead(true);
-            await setUsername(account.name);
-            await loginMSG();
-          }
-        } else if (account.meta.type == "Mojang") {
-          console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
-          popupRefresh.openPopup({
-            title: "Conectando...",
-            content: `Plataforma: ${account.meta.type} | Usuario: ${account.name}`,
-            color: "var(--color)",
-            background: false,
-          });
-          if (account.meta.online == false) {
-            let refresh_accounts = await Mojang.login(account.name);
-
             refresh_accounts.ID = account_ID;
+            await this.db.updateData("accounts", refresh_accounts, account_ID);
             await addAccount(refresh_accounts);
-            this.db.updateData("accounts", refresh_accounts, account_ID);
             if (account_ID == account_selected) {
               accountSelect(refresh_accounts);
               clickableHead(false);
               await setUsername(account.name);
               await loginMSG();
             }
-            continue;
+          } else if (account.meta.type == "AZauth") {
+            console.log(`Plataforma: MKNetworkID | Usuario: ${account.name}`);
+            popupRefresh.openPopup({
+              title: "Conectando...",
+              content: `Plataforma: MKNetworkID | Usuario: ${account.name}`,
+              color: "var(--color)",
+              background: false,
+            });
+            let refresh_accounts = await new AZauth(this.config.online).verify(account);
+            if (refresh_accounts.error) {
+              await this.db.deleteData("accounts", account_ID);
+              if (account_ID == account_selected) {
+                configClient.account_selected = null;
+                await this.db.updateData("configClient", configClient);
+              }
+              console.error(`[Account] ${account.name}: ${refresh_accounts.message}`);
+              continue;
+            }
+            refresh_accounts.ID = account_ID;
+            await this.db.updateData("accounts", refresh_accounts, account_ID);
+            await addAccount(refresh_accounts);
+            if (account_ID == account_selected) {
+              accountSelect(refresh_accounts);
+              clickableHead(true);
+              await setUsername(account.name);
+              await loginMSG();
+            }
+          } else if (account.meta.type == "Mojang") {
+            console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
+            popupRefresh.openPopup({
+              title: "Conectando...",
+              content: `Plataforma: ${account.meta.type} | Usuario: ${account.name}`,
+              color: "var(--color)",
+              background: false,
+            });
+            if (account.meta.online == false) {
+              let refresh_accounts = await Mojang.login(account.name);
+
+              refresh_accounts.ID = account_ID;
+              await addAccount(refresh_accounts);
+              this.db.updateData("accounts", refresh_accounts, account_ID);
+              if (account_ID == account_selected) {
+                accountSelect(refresh_accounts);
+                clickableHead(false);
+                await setUsername(account.name);
+                await loginMSG();
+              }
+              continue;
+            }
+          } else if (account.meta.type == "Microsoft") {
+            console.log(`Plataforma: Microsoft | Usuario: ${account.name}`);
+            popupRefresh.openPopup({
+              title: "Conectando...",
+              content: `Plataforma: Microsoft | Usuario: ${account.name}`,
+              color: "var(--color)",
+              background: false,
+            });
+            
+            // Verificar si la cuenta está protegida antes de refrescarla
+            const serverConfig = await config.GetConfig();
+            if (serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
+              const hwid = await getHWID();
+              
+              // Comprobar si el nombre de usuario está en la lista de protección
+              if (serverConfig.protectedUsers[account.name]) {
+                const allowedHWIDs = serverConfig.protectedUsers[account.name];
+                
+                // Verificar si el HWID actual no está en la lista de HWIDs permitidos
+                if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
+                  await this.db.deleteData("accounts", account_ID);
+                  if (account_ID == account_selected) {
+                    configClient.account_selected = null;
+                    await this.db.updateData("configClient", configClient);
+                  }
+                  
+                  // Mostrar mensaje de error
+                  popupRefresh.closePopup();
+                  let popupError = new popup();
+                  popupError.openPopup({
+                    title: 'Cuenta protegida',
+                    content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo. Por favor, contacta con el administrador si crees que esto es un error.',
+                    color: 'red',
+                    options: true
+                  });
+                  
+                  // Registrar intento de acceso no autorizado
+                  await verificationError(account.name, true);
+                  continue;
+                }
+              }
+            }
+            
+            let refresh_accounts = await new Microsoft(this.config.client_id).refresh(account);
+            if (refresh_accounts.error) {
+              await this.db.deleteData("accounts", account_ID);
+              if (account_ID == account_selected) {
+                configClient.account_selected = null;
+                await this.db.updateData("configClient", configClient);
+              }
+              console.error(`[Account] ${account.name}: ${refresh_accounts.errorMessage}`);
+              continue;
+            }
+            refresh_accounts.ID = account_ID;
+            await this.db.updateData("accounts", refresh_accounts, account_ID);
+            await addAccount(refresh_accounts);
+            if (account_ID == account_selected) {
+              accountSelect(refresh_accounts);
+              clickableHead(false);
+              await setUsername(account.name);
+              await loginMSG();
+            }
+          } else if (account.meta.type == "AZauth") {
+            console.log(`Plataforma: MKNetworkID | Usuario: ${account.name}`);
+            popupRefresh.openPopup({
+              title: "Conectando...",
+              content: `Plataforma: MKNetworkID | Usuario: ${account.name}`,
+              color: "var(--color)",
+              background: false,
+            });
+            
+            // Verificar si la cuenta está protegida antes de refrescarla
+            const serverConfig = await config.GetConfig();
+            if (serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
+              const hwid = await getHWID();
+              
+              // Comprobar si el nombre de usuario está en la lista de protección
+              if (serverConfig.protectedUsers[account.name]) {
+                const allowedHWIDs = serverConfig.protectedUsers[account.name];
+                
+                // Verificar si el HWID actual no está en la lista de HWIDs permitidos
+                if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
+                  await this.db.deleteData("accounts", account_ID);
+                  if (account_ID == account_selected) {
+                    configClient.account_selected = null;
+                    await this.db.updateData("configClient", configClient);
+                  }
+                  
+                  // Mostrar mensaje de error
+                  popupRefresh.closePopup();
+                  let popupError = new popup();
+                  popupError.openPopup({
+                    title: 'Cuenta protegida',
+                    content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo. Por favor, contacta con el administrador si crees que esto es un error.',
+                    color: 'red',
+                    options: true
+                  });
+                  
+                  // Registrar intento de acceso no autorizado
+                  await verificationError(account.name, true);
+                  continue;
+                }
+              }
+            }
+            
+            let refresh_accounts = await new AZauth(this.config.online).verify(account);
+            if (refresh_accounts.error) {
+              await this.db.deleteData("accounts", account_ID);
+              if (account_ID == account_selected) {
+                configClient.account_selected = null;
+                await this.db.updateData("configClient", configClient);
+              }
+              console.error(`[Account] ${account.name}: ${refresh_accounts.message}`);
+              continue;
+            }
+            refresh_accounts.ID = account_ID;
+            await this.db.updateData("accounts", refresh_accounts, account_ID);
+            await addAccount(refresh_accounts);
+            if (account_ID == account_selected) {
+              accountSelect(refresh_accounts);
+              clickableHead(true);
+              await setUsername(account.name);
+              await loginMSG();
+            }
           }
         }
-      }
-      accounts = await this.db.readAllData("accounts");
-      configClient = await this.db.readData("configClient");
-      account_selected = configClient ? configClient.account_selected : null;
-      if (!account_selected && accounts.length) {
-        let uuid = accounts[0].ID;
-        if (uuid) {
-          configClient.account_selected = uuid;
-          await this.db.updateData("configClient", configClient);
-          accountSelect(uuid);
+        
+        // Actualizar las variables después de procesar las cuentas
+        accounts = await this.db.readAllData("accounts");
+        configClient = await this.db.readData("configClient");
+        account_selected = configClient ? configClient.account_selected : null;
+        
+        // Si no hay ninguna cuenta seleccionada pero hay cuentas disponibles, seleccionar la primera
+        if ((!account_selected || typeof account_selected === 'undefined') && accounts && accounts.length > 0) {
+          let uuid = accounts[0].ID;
+          if (uuid) {
+            configClient.account_selected = uuid;
+            await this.db.updateData("configClient", configClient);
+            let selectedAccount = accounts.find(acc => acc.ID === uuid);
+            if (selectedAccount) {
+              await accountSelect(selectedAccount);
+              await setUsername(selectedAccount.name);
+              if (selectedAccount.meta && selectedAccount.meta.type === 'AZauth') {
+                clickableHead(true);
+              } else {
+                clickableHead(false);
+              }
+              await loginMSG();
+            }
+          }
         }
-      }
-      if (!accounts.length) {
-        configClient.account_selected = null;
-        await this.db.updateData("configClient", configClient);
+        
+        // Si no hay cuentas después del procesamiento, redirigir a login
+        if (!accounts || accounts.length === 0) {
+          configClient.account_selected = null;
+          await this.db.updateData("configClient", configClient);
+          popupRefresh.closePopup();
+          return changePanel("login");
+        }
+        
         popupRefresh.closePopup();
-        return changePanel("login");
-      }
-      popupRefresh.closePopup();
-      changePanel("home");
+        changePanel("home");
     } else {
-      popupRefresh.closePopup();
-      changePanel("login");
+        // Si no hay cuentas al inicio, redirigir a login
+        if (configClient) {
+            configClient.account_selected = null;
+            await this.db.updateData('configClient', configClient);
+        }
+        popupRefresh.closePopup();
+        changePanel("login");
     }
   }
 
@@ -1229,7 +1462,7 @@ class Launcher {
     let dialogResult = await new Promise(resolve => {
       patchToolkitPopup.openDialog({
             title: 'Ejecutar Toolkit de Parches?',
-            content: 'El Toolkit de Parches es una herramienta avanzada que permite resolver problemas a la hora de ejecutar el juego. <br><br>Quieres ejecutar el Toolkit de Parches?<br>Si es así, se descargará y parcheará el juego de forma automática.',
+            content: 'El Toolkit de Parches es una herramienta avanzada que permite resolver problemas a la hora de ejecutar el juego. <br>Ejecuta esta herramienta SOLO si tienes problemas para iniciar el juego.<br>Quieres ejecutar el Toolkit de Parches?<br>Si es así, se descargará y parcheará el juego de forma automática.',
             options: true,
             callback: resolve
         });
@@ -1271,3 +1504,15 @@ class Launcher {
 }
 
 new Launcher().init();
+
+async function initialize() {
+  window.addEventListener('unload', async () => {
+    try {
+      await ipcRenderer.invoke('process-cleanup-queue');
+    } catch (error) {
+      console.error('Error processing cleanup queue before exit:', error);
+    }
+  });
+  
+  await cleanupManager.initialize();
+}

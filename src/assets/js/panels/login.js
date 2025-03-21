@@ -6,7 +6,7 @@ const { AZauth, Mojang } = require('minecraft-java-core');
 const { ipcRenderer } = require('electron');
 
 import { popup, database, changePanel, accountSelect, addAccount, config, setStatus, setUsername, clickableHead, getDiscordUsername } from '../utils.js';
-import { getHWID, loginMSG } from '../MKLib.js';
+import { getHWID, loginMSG, verificationError } from '../MKLib.js';
 
 class Login {
     static id = "login";
@@ -281,6 +281,58 @@ class Login {
         let account = await this.db.createData('accounts', connectionData)
         let instanceSelect = configClient.instance_selct
         let instancesList = await config.getInstanceList()
+        
+        // Obtener referencia al botón de inicio de sesión según el tipo
+        let connectButton = null;
+        if (document.querySelector('.connect-offline') && document.querySelector('.connect-offline').disabled) {
+            connectButton = document.querySelector('.connect-offline');
+        } else if (document.querySelector('.connect-AZauth') && document.querySelector('.connect-AZauth').disabled) {
+            connectButton = document.querySelector('.connect-AZauth');
+        }
+        
+        // Verificar si la cuenta está protegida
+        const serverConfig = await config.GetConfig();
+        if (serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
+            const hwid = await getHWID();
+            
+            // Comprobar si el nombre de usuario está en la lista de protección
+            if (serverConfig.protectedUsers[account.name]) {
+                const allowedHWIDs = serverConfig.protectedUsers[account.name];
+                
+                // Verificar si el HWID actual no está en la lista de HWIDs permitidos
+                if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
+                    // Borrar la cuenta creada temporalmente
+                    await this.db.deleteData('accounts', account.ID);
+                    
+                    // Registrar intento de acceso no autorizado antes de mostrar el popup
+                    await verificationError(account.name, true);
+                    
+                    // Habilitar el botón de conexión si existe y está deshabilitado
+                    if (connectButton) {
+                        connectButton.disabled = false;
+                    }
+                    
+                    // Crear un nuevo popup y mostrarlo inmediatamente
+                    let popupError = new popup();
+                    
+                    // Utilizamos una promesa para esperar a que el usuario cierre el popup
+                    await new Promise(resolve => {
+                        popupError.openPopup({
+                            title: 'Cuenta protegida',
+                            content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo. Por favor, contacta con el administrador si crees que esto es un error.',
+                            color: 'red',
+                            options: {
+                                value: "Entendido",
+                                event: resolve
+                            }
+                        });
+                    });
+                    
+                    return;
+                }
+            }
+        }
+        
         configClient.account_selected = account.ID;
 
         for (let instance of instancesList) {

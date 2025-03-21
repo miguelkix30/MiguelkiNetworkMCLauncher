@@ -4,6 +4,7 @@
  */
 import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername, isPerformanceModeEnabled } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG } from '../MKLib.js';
+import cleanupManager from '../utils/cleanup-manager.js';
 
 const clientId = '1307003977442787451';
 const DiscordRPC = require('discord-rpc');
@@ -53,6 +54,9 @@ class Home {
     async init(config) {
         this.config = config;
         this.db = new database();
+        
+        await cleanupManager.initialize();
+        
         this.news();
         this.showstore();
         this.notification();
@@ -768,22 +772,13 @@ class Home {
             instanceSelectBTN.classList.remove('disabled');
             infoStarting.innerHTML = `Cerrando...`
             console.log('Close');
-            if (options.cleaning.enabled) {
-                for (let file of options.cleaning.files) {
-                    const filePath = path.join(opt.path, "instances", options.name, file);
-                    if (fs.existsSync(filePath)) {
-                        try {
-                            if (fs.lstatSync(filePath).isDirectory()) {
-                                fs.rmSync(filePath, { recursive: true, force: true });
-                            } else {
-                                fs.unlinkSync(filePath);
-                            }
-                        } catch (err) {
-                            console.error(`Error removing ${filePath}:`, err);
-                        }
-                    }
-                }
+            
+            // Now that the game has closed, use the dedicated method to trigger cleanup
+            if (options.cleaning && options.cleaning.enabled) {
+                console.log(`Game closed - triggering cleanup for instance '${options.name}'`);
+                cleanupManager.cleanupOnGameClose(options.name);
             }
+            
             if (rpcActive) {
                 RPC.setActivity({
                     state: `En el launcher`,
@@ -867,6 +862,30 @@ class Home {
                 }
             }
         });
+        
+        if (options.cleaning && options.cleaning.enabled && cleanupManager.enabled) {
+            console.log(`Setting up cleanup for instance '${options.name}' with ${options.cleaning.files.length} files`);
+            
+            await cleanupManager.queueCleanup(options.name, opt.path, options.cleaning.files, false);
+            
+            let gameStartMonitoringStarted = false;
+            let lastGameState = "initializing";
+            
+            launch.on('data', e => {
+                if (typeof e !== 'string') return;
+                
+                cleanupManager.processGameOutput(options.name, e);
+                
+                if (lastGameState === "initializing" && cleanupManager.isGameFullyStarted(options.name)) {
+                    lastGameState = "started";
+                    console.log(`Minecraft for instance '${options.name}' has fully loaded and reached the main menu.`);
+                }
+                
+                if (!gameStartMonitoringStarted) {
+                    gameStartMonitoringStarted = true;
+                }
+            });
+        }
     }
 
     async loadRecentInstances() {
@@ -1084,6 +1103,50 @@ class Home {
         playerOptions.addEventListener('mouseleave', () => hideTooltip(playerOptions));
         playerHead.addEventListener('mouseenter', () => showTooltip(playerHead));
         playerHead.addEventListener('mouseleave', () => hideTooltip(playerHead));
+    }
+    
+    // Find and run cleanup batch files
+    async runCleanupBatchFiles() {
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            const glob = require('glob');
+            const { exec } = require('child_process');
+            
+            // Get the path to the instances folder
+            const appDir = await appdata();
+            const instancesDir = path.join(appDir, process.platform === 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`, 'instances');
+            
+            if (!fs.existsSync(instancesDir)) {
+                console.log("Instances directory doesn't exist yet, skipping cleanup batch scan");
+                return;
+            }
+            
+            // Find all batch files starting with _cleanup_
+            const batchFiles = glob.sync(path.join(instancesDir, '**', '_cleanup_*.bat'));
+            
+            if (batchFiles.length > 0) {
+                console.log(`Found ${batchFiles.length} cleanup batch files to run`);
+                
+                // Execute each batch file
+                for (const batchFile of batchFiles) {
+                    console.log(`Executing cleanup batch file: ${batchFile}`);
+                    exec(`"${batchFile}"`, (error, stdout, stderr) => {
+                        if (error) {
+                            console.error(`Error executing batch file: ${error.message}`);
+                            return;
+                        }
+                        if (stderr) {
+                            console.error(`Batch file stderr: ${stderr}`);
+                            return;
+                        }
+                        console.log(`Batch file output: ${stdout}`);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error running cleanup batch files:', error);
+        }
     }
 }
 export default Home;

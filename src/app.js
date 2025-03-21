@@ -82,7 +82,13 @@ else app.whenReady().then(() => {
 ipcMain.on('main-window-open', () => MainWindow.createWindow());
 ipcMain.on('main-window-dev-tools', () => MainWindow.getWindow().webContents.openDevTools({ mode: 'detach' }));
 ipcMain.on('main-window-dev-tools-close', () => MainWindow.getWindow().webContents.closeDevTools());
-ipcMain.on('main-window-close', () => MainWindow.destroyWindow());
+ipcMain.on('main-window-close', async () => {
+    const mainWindow = MainWindow.getWindow();
+    if (mainWindow) {
+        await processCleanupQueue(mainWindow);
+    }
+    MainWindow.destroyWindow();
+});
 ipcMain.on('main-window-reload', () => MainWindow.getWindow().reload());
 ipcMain.on('main-window-progress', (event, options) => MainWindow.getWindow().setProgressBar(options.progress / options.size));
 ipcMain.on('main-window-progress-reset', () => MainWindow.getWindow().setProgressBar(-1));
@@ -249,4 +255,58 @@ autoUpdater.on('download-progress', (progress) => {
 autoUpdater.on('error', (err) => {
     const updateWindow = UpdateWindow.getWindow();
     if (updateWindow) updateWindow.webContents.send('error', err);
+});
+
+// Add this function to handle cleanup before app close
+async function processCleanupQueue(win) {
+    if (win && !win.isDestroyed()) {
+        try {
+            // Send synchronous message to process cleanup queue
+            win.webContents.send('process-cleanup-queue');
+            
+            // Give it a little time to process
+            await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (err) {
+            console.error('Error processing cleanup queue on close:', err);
+        }
+    }
+}
+
+// Add a new handler for app-quit that processes the cleanup queue
+ipcMain.on('app-quit', async () => {
+    const mainWindow = MainWindow.getWindow();
+    if (mainWindow) {
+        await processCleanupQueue(mainWindow);
+    }
+    app.quit();
+});
+
+// Add a new handler for processing the cleanup queue
+ipcMain.handle('process-cleanup-queue', async () => {
+    try {
+        const mainWindow = MainWindow.getWindow();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            // Send message to process cleanup queue
+            mainWindow.webContents.send('process-cleanup-queue');
+            
+            // Give it some time to process
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return { success: true };
+        }
+        return { success: false, error: 'Window not available' };
+    } catch (error) {
+        console.error('Error processing cleanup queue:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// Modify the existing beforeQuit handler to use the new IPC handler
+app.on('before-quit', async (event) => {
+    const mainWindow = MainWindow.getWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        event.preventDefault();
+        await processCleanupQueue(mainWindow);
+        // Quit after a small delay to allow cleanup to finish
+        setTimeout(() => app.quit(), 500);
+    }
 });

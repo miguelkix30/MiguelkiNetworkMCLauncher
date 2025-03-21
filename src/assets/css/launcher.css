@@ -564,7 +564,7 @@ input::-webkit-inner-spin-button {
 .scroll-to-bottom {
   display: none;
   position: absolute;
-  bottom: 150px; /* Changed to position from top to bottom */
+  bottom: 150px; /* Posición predeterminada cuando patch-toolkit está visible */
   right: 10px;
   width: 50px;
   height: 50px;
@@ -582,24 +582,16 @@ input::-webkit-inner-spin-button {
   transition: all 0.5s;
 }
 
-.scroll-to-bottom.show {
-  opacity: 1;
-  transform: translateY(0);
-  transition: all 0.5s;
+/* Cuando patch-toolkit no está visible, scroll-to-bottom toma su posición */
+.patch-toolkit[style*="display: none"] ~ .scroll-to-bottom,
+.patch-toolkit:not(:visible) ~ .scroll-to-bottom {
+  bottom: 80px;
 }
 
-.scroll-to-bottom:hover {
-  background-color: var(--box-button-hover);
-  transition: all 0.5s;
-}
-
-.scroll-to-bottom::before {
-  content: '\f078';
-  font-family: 'Font Awesome 5 Free';
-  font-weight: 900;
-  font-size: 24px;
-  display: block;
-  margin: auto;
+/* Regla alternativa para cuando la visibilidad se controla por JS */
+body:has(.patch-toolkit[style*="display: none"]) .scroll-to-bottom,
+body:has(.patch-toolkit:not(:visible)) .scroll-to-bottom {
+  bottom: 80px;
 }
 
 .patch-toolkit {
@@ -1319,14 +1311,14 @@ body.performance-mode .settings-content {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.8);
   margin-right: 15px;
   position: relative;
   flex-shrink: 0;
 }
 
 .setup-launcher-behavior-option.selected .setup-launcher-behavior-radio {
-  border-color: rgba(0, 120, 215, 1);
+  border-color: white;
 }
 
 .setup-launcher-behavior-option.selected .setup-launcher-behavior-radio:after {
@@ -1335,10 +1327,11 @@ body.performance-mode .settings-content {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background-color: rgba(0, 120, 215, 1);
+  background-color: white;
   top: 50%;
   left: 50%;
-  transform: translate(-50%);
+  transform: translate(-50%, -50%);
+  margin: 0;
 }
 
 .setup-launcher-behavior-label {
@@ -1386,14 +1379,14 @@ body.performance-mode .settings-content {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.8);
   margin-right: 15px;
   position: relative;
   flex-shrink: 0;
 }
 
 .setup-launcher-behavior-option.selected .setup-launcher-behavior-radio {
-  border-color: rgba(0, 120, 215, 1);
+  border-color: white;
 }
 
 .setup-launcher-behavior-option.selected .setup-launcher-behavior-radio:after {
@@ -1402,10 +1395,11 @@ body.performance-mode .settings-content {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background-color: rgba(0, 120, 215, 1);
+  background-color: white;
   top: 50%;
   left: 50%;
-  transform: translate(-50%);
+  transform: translate(-50%, -50%);
+  margin: 0;
 }
 
 .setup-launcher-behavior-label {
@@ -1419,6 +1413,19 @@ body.performance-mode .settings-content {
 
 #setup-step-4 .setup-select-container {
   display: none;
+}
+
+.launcher-behavior-option.selected .launcher-behavior-radio:after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: white;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
 }
 
 .loading-overlay {
@@ -1536,5 +1543,71 @@ body.performance-mode .loading-overlay {
   justify-content: center;
   margin-top: 10px;
   position: relative;
+}
+
+/* Estilo de las barras de progreso */
+.progress-bar::-webkit-progress-bar {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+}
+
+.progress-bar::-webkit-progress-value {
+  background-color: white;
+  border-radius: 5px;
+}
+
+/* Estilo para el slider de memoria */
+.setup-slider-line span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--color);
+}
+
+.setup-slider-touch-left span,
+.setup-slider-touch-right span {
+  display: block;
+  width: 20px;
+  height: 20px;
+  background: #bbb;
+  border: 4px solid var(--color);
+  transition: background-color .2s, border .2s;
+  border-radius: 18px;
+  cursor: pointer;
+}
+
+/* Estilo para los elementos de radio en la configuración normal */
+.launcher-behavior-radio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  margin-right: 15px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.launcher-behavior-option.selected .launcher-behavior-radio {
+  border-color: white;
+}
+
+/* Estilo para la barra de memoria en configuración normal */
+.slider-line span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--color);
+}
+
+.slider-touch-left span,
+.slider-touch-right span {
+  display: block;
+  width: 20px;
+  height: 20px;
+  background: #bbb;
+  border: 4px solid var(--color);
+  transition: background-color .2s, border .2s;
+  border-radius: 18px;
+  cursor: pointer;
 }
 
