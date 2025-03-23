@@ -166,7 +166,6 @@ ipcMain.on('open-discord-url', () => {
 ipcMain.on('app-restart', () => {
     console.log('Reiniciando aplicación...');
     
-    // Clear any cached data
     app.relaunch({ args: process.argv.slice(1).concat(['--restarted']) });
     app.exit(0);
 });
@@ -257,39 +256,32 @@ autoUpdater.on('error', (err) => {
     if (updateWindow) updateWindow.webContents.send('error', err);
 });
 
-// Add this function to handle cleanup before app close
 async function processCleanupQueue(win) {
     if (win && !win.isDestroyed()) {
         try {
-            // Send synchronous message to process cleanup queue
             win.webContents.send('process-cleanup-queue');
             
-            // Give it a little time to process
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 800));
         } catch (err) {
             console.error('Error processing cleanup queue on close:', err);
         }
     }
 }
 
-// Add a new handler for app-quit that processes the cleanup queue
 ipcMain.on('app-quit', async () => {
     const mainWindow = MainWindow.getWindow();
     if (mainWindow) {
         await processCleanupQueue(mainWindow);
     }
-    app.quit();
+    app.exit(0);
 });
 
-// Add a new handler for processing the cleanup queue
 ipcMain.handle('process-cleanup-queue', async () => {
     try {
         const mainWindow = MainWindow.getWindow();
         if (mainWindow && !mainWindow.isDestroyed()) {
-            // Send message to process cleanup queue
             mainWindow.webContents.send('process-cleanup-queue');
             
-            // Give it some time to process
             await new Promise(resolve => setTimeout(resolve, 500));
             return { success: true };
         }
@@ -300,13 +292,11 @@ ipcMain.handle('process-cleanup-queue', async () => {
     }
 });
 
-// Modify the existing beforeQuit handler to use the new IPC handler
 app.on('before-quit', async (event) => {
     const mainWindow = MainWindow.getWindow();
     if (mainWindow && !mainWindow.isDestroyed()) {
         event.preventDefault();
         await processCleanupQueue(mainWindow);
-        // Quit after a small delay to allow cleanup to finish
-        setTimeout(() => app.quit(), 500);
+        setTimeout(() => app.exit(0), 800);
     }
 });

@@ -50,6 +50,29 @@ function createWindow() {
         },
     });
     Menu.setApplicationMenu(null);
+    
+    mainWindow.on('close', async (event) => {
+        event.preventDefault();
+        
+        try {
+            if (!mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('process-cleanup-queue');
+                
+                setTimeout(() => {
+                    try {
+                        if (!mainWindow.isDestroyed()) {
+                            app.exit(0);
+                        }
+                    } catch (error) {
+                        app.exit(1);
+                    }
+                }, 1000);
+            }
+        } catch (error) {
+            app.exit(1);
+        }
+    });
+    
     mainWindow.setMenuBarVisibility(false);
     mainWindow.loadFile(path.join(`${app.getAppPath()}/src/launcher.html`));
     mainWindow.once('ready-to-show', () => {
