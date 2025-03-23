@@ -277,10 +277,50 @@ class Login {
     }
 
     async saveData(connectionData) {
+        if (!connectionData) {
+            console.error("Error: connectionData es undefined en saveData");
+            let errorPopup = new popup();
+            errorPopup.openPopup({
+                title: 'Error de autenticación',
+                content: 'Ha ocurrido un error durante la autenticación. Por favor, inténtalo de nuevo.',
+                color: 'red',
+                options: true
+            });
+            return;
+        }
+
         let configClient = await this.db.readData('configClient');
-        let account = await this.db.createData('accounts', connectionData)
-        let instanceSelect = configClient.instance_selct
-        let instancesList = await config.getInstanceList()
+        let account = await this.db.createData('accounts', connectionData);
+        
+        // Verificar que account se creó correctamente
+        if (!account) {
+            console.error("Error: No se pudo crear la cuenta en la base de datos");
+            let errorPopup = new popup();
+            errorPopup.openPopup({
+                title: 'Error al guardar cuenta',
+                content: 'No se pudo guardar la información de la cuenta. Por favor, inténtalo de nuevo.',
+                color: 'red',
+                options: true
+            });
+            return;
+        }
+        
+        // Verificar que account.name existe
+        if (!account.name) {
+            console.error("Error: account.name es undefined");
+            await this.db.deleteData('accounts', account.ID);
+            let errorPopup = new popup();
+            errorPopup.openPopup({
+                title: 'Error de datos de cuenta',
+                content: 'La información de la cuenta está incompleta. Por favor, inténtalo de nuevo.',
+                color: 'red',
+                options: true
+            });
+            return;
+        }
+        
+        let instanceSelect = configClient.instance_selct;
+        let instancesList = await config.getInstanceList();
         
         // Obtener referencia al botón de inicio de sesión según el tipo
         let connectButton = null;
@@ -292,7 +332,7 @@ class Login {
         
         // Verificar si la cuenta está protegida
         const serverConfig = await config.GetConfig();
-        if (serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
+        if (serverConfig && serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
             const hwid = await getHWID();
             
             // Comprobar si el nombre de usuario está en la lista de protección
@@ -335,14 +375,22 @@ class Login {
         
         configClient.account_selected = account.ID;
 
-        for (let instance of instancesList) {
-            if (instance.whitelistActive) {
-                let whitelist = instance.whitelist.find(whitelist => whitelist == account.name)
-                if (whitelist !== account.name) {
-                    if (instance.name == instanceSelect) {
-                        let newInstanceSelect = instancesList.find(i => i.whitelistActive == false)
-                        configClient.instance_selct = newInstanceSelect.name
-                        await setStatus(newInstanceSelect)
+        // Verificar que instancesList existe antes de iterarlo
+        if (Array.isArray(instancesList)) {
+            for (let instance of instancesList) {
+                if (instance && instance.whitelistActive) {
+                    // Verificar que whitelist es un array antes de usar find
+                    if (Array.isArray(instance.whitelist)) {
+                        let whitelist = instance.whitelist.find(whitelist => whitelist == account.name);
+                        if (whitelist !== account.name) {
+                            if (instance.name == instanceSelect) {
+                                let newInstanceSelect = instancesList.find(i => i && i.whitelistActive == false);
+                                if (newInstanceSelect) {
+                                    configClient.instance_selct = newInstanceSelect.name;
+                                    await setStatus(newInstanceSelect);
+                                }
+                            }
+                        }
                     }
                 }
             }
