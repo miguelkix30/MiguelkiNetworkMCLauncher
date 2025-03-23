@@ -37,13 +37,15 @@ import {
   loginMSG,
   quitAPP,
   verificationError,
-  sendClientReport
+  sendClientReport,
+  checkBaseVersion
 } from "./MKLib.js";
 const { AZauth, Microsoft, Mojang } = require("minecraft-java-core");
 
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
 const os = require("os");
+const fetch = require("node-fetch");
 let dev = process.env.NODE_ENV === "dev";
 
 class Launcher {
@@ -52,6 +54,8 @@ class Launcher {
     else this.initWindow();
 
     console.log("Iniciando Launcher...");
+    
+    await checkBaseVersion();
     
     this.shortcut();
     this.db = new database();
@@ -659,6 +663,25 @@ class Launcher {
       await cleanupManager.processQueue();
       cleanupManager.stopAllLogWatchers();
     });
+    
+    // Log version information to console
+    console.info(`Versión del Launcher: ${pkg.version}${pkg.sub_version ? `-${pkg.sub_version}` : ''}`);
+    
+    // Display base version information if available
+    const baseVersionInfoElement = document.getElementById('base-version-info');
+    
+    if (pkg.baseVersionInfo && baseVersionInfoElement) {
+      if (pkg.baseVersionInfo.isOfficial) {
+        baseVersionInfoElement.textContent = '';
+        baseVersionInfoElement.style.display = 'none';
+      } else if (pkg.baseVersionInfo.isUndetermined) {
+        baseVersionInfoElement.textContent = `(Base desconocida)`;
+        baseVersionInfoElement.style.display = 'inline';
+      } else {
+        baseVersionInfoElement.textContent = `(Base v${pkg.baseVersionInfo.version})`;
+        baseVersionInfoElement.style.display = 'inline';
+      }
+    }
   }
 
   initLog() {
@@ -1533,3 +1556,8 @@ async function initialize() {
   
   await cleanupManager.initialize();
 }
+
+// Call initialize function to set up event listeners
+initialize().catch(error => {
+  console.error('Error during initialization:', error);
+});

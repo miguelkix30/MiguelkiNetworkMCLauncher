@@ -230,13 +230,14 @@ class Home {
     
     async news() {
 
+        let name = pkg.preductname
         let version = pkg.version
         let subversion = pkg.sub_version
         let changelog = pkg.changelog
         let titlechangelog = document.querySelector('.titlechangelog')
         let changelogcontent = document.querySelector('.bbWrapper')
         changelogcontent.innerHTML = `<p>${changelog}</p>`
-        titlechangelog.innerHTML = `Miguelki Network MC Launcher ${version}${subversion ? `-${subversion}` : ''}`;
+        titlechangelog.innerHTML = `${name} ${version}${subversion ? `-${subversion}` : ''}`;
 
         let newsElement = document.querySelector('.news-list');
         let news = await config.getNews().then(res => res).catch(err => false);
