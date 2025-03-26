@@ -1201,6 +1201,26 @@ async function patchLoader() {
   }
 }
 
+async function removeUserFromQueue(hwid) {
+  try {
+      const username = await getUsername();
+      const formData = new URLSearchParams();
+      formData.append('hwid', hwid);
+      formData.append('username', username);
+      
+      await fetch(`${pkg.url}/api/quit-queue.php`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+          }
+      });
+      console.log('User removed from queue');
+  } catch (error) {
+      console.error('Error removing user from queue');
+  }
+}
+
 export {
     appdata as appdata,
     changePanel as changePanel,
@@ -1238,6 +1258,7 @@ export {
     setPerformanceMode as setPerformanceMode,
     isPerformanceModeEnabled as isPerformanceModeEnabled,
     patchLoader as patchLoader,
-    cleanupManager as cleanupManager
+    cleanupManager as cleanupManager,
+    removeUserFromQueue as removeUserFromQueue
 }
 window.setVideoSource = setVideoSource;
