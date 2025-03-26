@@ -473,19 +473,15 @@ class Home {
                     let options = instance.find(i => i.name == configClient.instance_selct);
                     setStatus(options);
                     setBackgroundMusic(options.backgroundMusic);
-                    // Check if performance mode is enabled
                     const performanceMode = isPerformanceModeEnabled();
                     if (performanceMode) {
-                        // Update the data attribute for reference
                         document.querySelector('.server-status-icon')?.setAttribute('data-background', options.background);
-                        // Directly capture and set the frame for the new instance
                         if (options.background && options.background.match(/^(http|https):\/\/[^ "]+$/)) {
                             await captureAndSetVideoFrame(options.background);
                         } else {
                             await captureAndSetVideoFrame();
                         }
                     } else {
-                        // Normal behavior with transitions
                         setInstanceBackground(options.background);
                     }
                     this.updateSelectedInstanceStyle(newInstanceSelect);
@@ -493,7 +489,6 @@ class Home {
             });
 
             instanceBTN.addEventListener('click', async () => {
-                // Disable button immediately when clicked
                 this.disablePlayButton();
                 this.startGame();
             });
@@ -522,9 +517,8 @@ class Home {
     async startGame() {
         let configClient = await this.db.readData('configClient');
         
-        // Check if an instance is selected
         if (!configClient.instance_selct) {
-            this.enablePlayButton(); // Re-enable if no instance selected
+            this.enablePlayButton();
             let popupError = new popup();
             popupError.openPopup({
                 title: 'Selecciona una instancia',
@@ -540,9 +534,8 @@ class Home {
         let authenticator = await this.db.readData('accounts', configClient.account_selected);
         let options = instance.find(i => i.name == configClient.instance_selct);
         
-        // If the selected instance no longer exists
         if (!options) {
-            this.enablePlayButton(); // Re-enable if instance not found
+            this.enablePlayButton();
             let popupError = new popup();
             popupError.openPopup({
                 title: 'Instancia no encontrada',
@@ -569,7 +562,7 @@ class Home {
 
         if (check) {
             if (fetchError == false) {
-                this.enablePlayButton(); // Re-enable on HWID block
+                this.enablePlayButton();
                 let popupError = new popup()
                 popupError.openPopup({
                     title: 'Error',
@@ -579,7 +572,7 @@ class Home {
                 })
                 return;
             } else {
-                this.enablePlayButton(); // Re-enable on anticheat error
+                this.enablePlayButton();
                 let popupError = new popup()
                 popupError.openPopup({
                     title: 'Error',
@@ -591,7 +584,7 @@ class Home {
             }
         }
         if (options.maintenance) {
-            this.enablePlayButton(); // Re-enable on maintenance
+            this.enablePlayButton();
             let popupError = new popup()
             if (options.maintenancemsg == '') {
                 popupError.openPopup({
@@ -613,7 +606,7 @@ class Home {
 
         let username = await getUsername();
         if (options.whitelistActive && !options.whitelist.includes(username)) {
-            this.enablePlayButton(); // Re-enable if not whitelisted
+            this.enablePlayButton();
             let popupError = new popup();
             popupError.openPopup({
                 title: 'Error',
@@ -636,19 +629,17 @@ class Home {
                 });
             });
             if (dialogResult === 'cancel') {
-                this.enablePlayButton(); // Re-enable if dialog cancelled
+                this.enablePlayButton();
                 return;
             }
         }
 
-        // Setup UI for queue/launching
         playInstanceBTN.style.display = "none";
         infoStartingBOX.style.display = "block";
         instanceSelectBTN.disabled = true;
         instanceSelectBTN.classList.add('disabled');
         progressBar.style.display = "none";
         
-        // Check queue status before proceeding
         try {
             const queueResult = await this.checkQueueStatus(hwid, username);
             if (queueResult.cancelled) {
@@ -677,11 +668,9 @@ class Home {
             return;
         }
         
-        // Continue with normal launch process
         progressBar.style.display = "";
         ipcRenderer.send('main-window-progress-load');
         
-        // Update recent instances
         let recentInstances = configClient.recent_instances || [];
         recentInstances = recentInstances.filter(name => name !== options.name);
         recentInstances.unshift(options.name);
@@ -691,7 +680,6 @@ class Home {
         await this.loadRecentInstances();
         await this.loadRecentInstances();
 
-        //iniciar cola de espera
 
         let launch = new Launch();
         let opt = {
@@ -776,7 +764,6 @@ class Home {
         });
 
         launch.on('data', (e) => {
-            // Only remove from queue when game actually starts (not during downloads or extraction)
             if (!musicMuted && musicPlaying) {
                 musicPlaying = false;
                 fadeOutAudio();
@@ -786,16 +773,13 @@ class Home {
                 ipcRenderer.send("main-window-hide")
             };
 
-            // Only do this once when the game actually starts
             if (!playing) {
                 playing = true;
                 playMSG(configClient.instance_selct);
                 
-                // Remove user from queue when game successfully launches
                 removeUserFromQueue(hwid);
             }
             
-            // ...existing code...
             ipcRenderer.send('main-window-progress-load')
             infoStarting.innerHTML = `Iniciando...`
         })
@@ -817,7 +801,6 @@ class Home {
             infoStarting.innerHTML = `Cerrando...`
             console.log('Close');
             
-            // Re-enable play button when game closes
             this.enablePlayButton();
             
             if (rpcActive) {
@@ -889,7 +872,6 @@ class Home {
                 console.log(err);
                 this.notification()
                 
-                // Re-enable play button on error
                 this.enablePlayButton();
                 
                 if (rpcActive) {
@@ -940,7 +922,6 @@ class Home {
             let cancelled = false;
             let infoStarting = document.querySelector(".info-starting-game-text");
             
-            // Create cancel button
             let cancelButton = document.createElement('button');
             cancelButton.textContent = 'Cancelar';
             cancelButton.classList.add('cancel-queue-button');
@@ -978,7 +959,6 @@ class Home {
                     console.log(data.message);
                     
                     if (data.status === 'open') {
-                        // Remove cancel button
                         if (document.querySelector('.info-starting-game').contains(cancelButton)) {
                             document.querySelector('.info-starting-game').removeChild(cancelButton);
                         }
@@ -988,7 +968,6 @@ class Home {
                     } else if (data.status === 'on_queue') {
                         infoStarting.innerHTML = `En cola, posición: ${data.position}`;
                         
-                        // Poll again after 30 seconds
                         if (!cancelled) {
                             setTimeout(checkStatus, 30000);
                         }
@@ -998,7 +977,6 @@ class Home {
                 } catch (error) {
                     console.error('Error checking queue status:', error);
                     
-                    // Remove cancel button
                     if (document.querySelector('.info-starting-game').contains(cancelButton)) {
                         document.querySelector('.info-starting-game').removeChild(cancelButton);
                     }
@@ -1007,7 +985,6 @@ class Home {
                 }
             };
             
-            // Initial check
             await checkStatus();
         });
     }
@@ -1120,11 +1097,9 @@ class Home {
         });
     }
 
-    // Add this helper function to update the background immediately if needed
     updateInstanceBackground(instance) {
         const performanceMode = isPerformanceModeEnabled();
         if (performanceMode) {
-            // For performance mode, immediately set instance background
             if (instance.background && instance.background.match(/^(http|https):\/\/[^ "]+$/)) {
                 captureAndSetVideoFrame(instance.background);
             }
@@ -1229,7 +1204,6 @@ class Home {
         playerHead.addEventListener('mouseleave', () => hideTooltip(playerHead));
     }
     
-    // Find and run cleanup batch files
     async runCleanupBatchFiles() {
         try {
             const fs = require('fs');
@@ -1237,7 +1211,6 @@ class Home {
             const glob = require('glob');
             const { exec } = require('child_process');
             
-            // Get the path to the instances folder
             const appDir = await appdata();
             const instancesDir = path.join(appDir, process.platform === 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`, 'instances');
             
@@ -1246,13 +1219,11 @@ class Home {
                 return;
             }
             
-            // Find all batch files starting with _cleanup_
             const batchFiles = glob.sync(path.join(instancesDir, '**', '_cleanup_*.bat'));
             
             if (batchFiles.length > 0) {
                 console.log(`Found ${batchFiles.length} cleanup batch files to run`);
                 
-                // Execute each batch file
                 for (const batchFile of batchFiles) {
                     console.log(`Executing cleanup batch file: ${batchFile}`);
                     exec(`"${batchFile}"`, (error, stdout, stderr) => {
