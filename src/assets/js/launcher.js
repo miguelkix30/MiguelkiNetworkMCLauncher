@@ -726,31 +726,26 @@ class Launcher {
   }
 
   initFrame() {
-    console.log("Iniciando Interfaz...");
     const platform = os.platform() === 'darwin' ? "darwin" : "other";
-
-        console.log('Initializing Frame...');
-        document.querySelector(`.${platform} .frame`).classList.toggle('hide')
+    
+    document.querySelector(`.${platform} .frame`).classList.toggle('hide');
+    
     if (platform === "darwin") document.querySelector(".dragbar").classList.toggle("hide");
 
-    document.querySelector("#minimize").addEventListener("click", () => {
-      ipcRenderer.send("main-window-minimize");
-    });
+    const minimizeBtn = document.querySelector(`.${platform} #minimize`);
+    const closeBtn = document.querySelector(`.${platform} #close`);
 
-    /* let maximized = false;
-        let maximize = document.querySelector('#maximize')
-        maximize.addEventListener('click', () => {
-            if (maximized) ipcRenderer.send('main-window-maximize')
-            else ipcRenderer.send('main-window-maximize');
-            maximized = !maximized
-            maximize.classList.toggle('icon-maximize')
-            maximize.classList.toggle('icon-restore-down')
-        }); */
+    if (minimizeBtn) {
+      minimizeBtn.addEventListener("click", () => {
+        ipcRenderer.send("main-window-minimize");
+      });
+    }
 
-    document.querySelector("#close").addEventListener("click", async () => {
+    if (closeBtn) {
+      closeBtn.addEventListener("click", async () => {
         quitAPP();
-      /* ipcRenderer.send('main-window-close'); */
-    });
+      });
+    }
   }
 
   async initConfigClient() {
