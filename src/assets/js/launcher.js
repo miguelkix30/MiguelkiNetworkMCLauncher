@@ -82,7 +82,7 @@ class Launcher {
     await setVideoSource();
     await setBackground();
     
-    if (process.platform == "win32") this.initFrame();
+    this.initFrame();
     this.config = await config
       .GetConfig()
       .then((res) => res)
@@ -727,8 +727,11 @@ class Launcher {
 
   initFrame() {
     console.log("Iniciando Interfaz...");
-    document.querySelector(".frame").classList.toggle("hide");
-    document.querySelector(".dragbar").classList.toggle("hide");
+    const platform = os.platform() === 'darwin' ? "darwin" : "other";
+
+        console.log('Initializing Frame...');
+        document.querySelector(`.${platform} .frame`).classList.toggle('hide')
+    if (platform === "darwin") document.querySelector(".dragbar").classList.toggle("hide");
 
     document.querySelector("#minimize").addEventListener("click", () => {
       ipcRenderer.send("main-window-minimize");
