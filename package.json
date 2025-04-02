@@ -2,8 +2,8 @@
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
     "version": "3.2.12",
-    "sub_version": "",
-    "changelog": "Se ha implementado el sistema de cola.",
+    "sub_version": "b",
+    "changelog": "Arreglo de bugs en la pantalla de inicio.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
