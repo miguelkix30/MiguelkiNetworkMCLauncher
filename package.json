@@ -1,9 +1,9 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.2.12",
-    "sub_version": "b",
-    "changelog": "Arreglo de bugs en la pantalla de inicio.",
+    "version": "3.2.13",
+    "sub_version": "",
+    "changelog": "Actualizada la librería minecraft-java-core.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
@@ -36,7 +36,7 @@
         "express": "^4.19.2",
         "html2canvas": "^1.4.1",
         "marked": "^14.1.2",
-        "minecraft-java-core": "^4.0.0-alpha.1",
+        "minecraft-java-core": "^4.0.0",
         "node-bdd": "^2.0.4",
         "node-fetch": "^2.7.0",
         "node-machine-id": "^1.0.0",
