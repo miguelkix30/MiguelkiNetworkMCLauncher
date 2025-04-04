@@ -128,12 +128,12 @@ img {
 }
 
 .progress::-webkit-progress-bar {
-    background-color: var(--background);
-    border: solid 1px var(--element-color);
+    background-color: transparent;
+    border: solid 1px white;
     border-radius: 10px;
 }
 
 .progress::-webkit-progress-value {
-    background-color: var(--element-color);
+    background-color: white;
     border-radius: 10px;
 }

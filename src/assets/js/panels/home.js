@@ -668,31 +668,23 @@ class Home {
         await this.db.updateData('configClient', configClient);
         await this.loadRecentInstances();
 
-        // Create a deep copy of the ignored array to avoid modifying the original
         const ignoredFiles = [...options.ignored];
 
-        // Install MKLib special mod
         try {
             infoStarting.innerHTML = `Descargando librerias extra...`;
             const loaderType = options.loadder.loadder_type;
             const minecraftVersion = options.loadder.minecraft_version;
             
-            // Get install result including the mod filename
-            console.log(`Iniciando instalación del mod especial para ${options.name} con ${loaderType} ${minecraftVersion}...`);
             const installResult = await installMKLibMods(options.name, minecraftVersion, loaderType);
             
-            // If mod was installed successfully and we have a filename, add it to ignored files
             if (installResult.success && installResult.modFile) {
                 if (!ignoredFiles.includes(installResult.modFile)) {
                     ignoredFiles.push(installResult.modFile);
-                } else {
-                    console.log(`El mod ya estaba en la lista de archivos ignorados`);
                 }
             }
             
             await new Promise(resolve => setTimeout(resolve, 500));
             infoStarting.innerHTML = `Conectando...`;
-            progressBar.style.display = "none";
         } catch (error) {
             console.error("Error al instalar las librerias extra:", error);
         }
@@ -769,7 +761,6 @@ class Home {
             ipcRenderer.send('main-window-progress', { progress, size })
             progressBar.value = progress;
             progressBar.max = size;
-            console.log(`Progreso de descarga: ${progress}/${size} - ${((progress / size) * 100).toFixed(0)}%`); // Restaurado log de progreso
         });
 
         launch.on('check', (progress, size) => {
@@ -777,7 +768,6 @@ class Home {
             ipcRenderer.send('main-window-progress', { progress, size })
             progressBar.value = progress;
             progressBar.max = size;
-            console.log(`Verificación: ${progress}/${size} - ${((progress / size) * 100).toFixed(0)}%`); // Restaurado log de verificación
         });
 
         launch.on('data', async (e) => {
@@ -834,11 +824,11 @@ class Home {
             let hours = Math.floor(time / 3600);
             let minutes = Math.floor((time - hours * 3600) / 60);
             let seconds = Math.floor(time - hours * 3600 - minutes * 60);
-            console.log(`Tiempo de descarga estimado: ${hours}h ${minutes}m ${seconds}s`); // Restaurado log de tiempo estimado
+            console.log(`Tiempo de descarga estimado: ${hours}h ${minutes}m ${seconds}s`);
         })
 
         launch.on('speed', (speed) => {
-            console.log(`Velocidad de descarga: ${(speed / 1067008).toFixed(2)} Mb/s`); // Restaurado log de velocidad
+            console.log(`Velocidad de descarga: ${(speed / 1067008).toFixed(2)} Mb/s`)
         })
 
         launch.on('patch', patch => {
