@@ -3,7 +3,7 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername, isPerformanceModeEnabled, removeUserFromQueue } from '../utils.js'
-import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG } from '../MKLib.js';
+import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG, installMKLibMods } from '../MKLib.js';
 import cleanupManager from '../utils/cleanup-manager.js';
 
 const clientId = '1307003977442787451';
@@ -79,7 +79,6 @@ class Home {
         try {
             const response = await fetch(pkg.store_url).catch(err => console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda.'));
             if (response.ok) {
-                /* document.querySelector('.storebutton').setAttribute('href', pkg.store_url); */
                 document.querySelector('.news-blockshop').style.display = 'block';
 
             } else {
@@ -138,13 +137,7 @@ class Home {
                 await this.showNotification();
             }
             
-        } /* else if (process.env.NODE_ENV === 'dev') {
-            notificationTitle.innerHTML = '¡Atención!';
-                notificationContent.innerHTML = "Estas ejecutando el launcher desde la consola, recuerda que si utilizas el código de este launcher deberás cumplir con las condiciones de uso disponibles en el Github.";
-                notification.style.background = colorRed;
-                notificationIcon.src = 'assets/images/notification/exclamation2.png';
-                await this.showNotification();
-        } */ else if (res.notification.enabled) {
+        } else if (res.notification.enabled) {
             notificationTitle.innerHTML = res.notification.title;
             notificationContent.innerHTML = res.notification.content;
             if (notificationContent.innerHTML.length > 160) {
@@ -675,6 +668,36 @@ class Home {
         await this.db.updateData('configClient', configClient);
         await this.loadRecentInstances();
 
+        // Create a deep copy of the ignored array to avoid modifying the original
+        const ignoredFiles = [...options.ignored];
+
+        // Install MKLib special mod
+        try {
+            infoStarting.innerHTML = `Descargando librerias extra...`;
+            const loaderType = options.loadder.loadder_type;
+            const minecraftVersion = options.loadder.minecraft_version;
+            
+            // Get install result including the mod filename
+            console.log(`Iniciando instalación del mod especial para ${options.name} con ${loaderType} ${minecraftVersion}...`);
+            const installResult = await installMKLibMods(options.name, minecraftVersion, loaderType);
+            
+            // If mod was installed successfully and we have a filename, add it to ignored files
+            if (installResult.success && installResult.modFile) {
+                if (!ignoredFiles.includes(installResult.modFile)) {
+                    ignoredFiles.push(installResult.modFile);
+                } else {
+                    console.log(`El mod ya estaba en la lista de archivos ignorados`);
+                }
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            infoStarting.innerHTML = `Conectando...`;
+            progressBar.style.display = "none";
+        } catch (error) {
+            console.error("Error al instalar las librerias extra:", error);
+        }
+
+        console.log("Configurando opciones de lanzamiento...");
         let launch = new Launch();
         let opt = {
             url: options.url,
@@ -695,7 +718,7 @@ class Home {
 
             verify: options.verify,
 
-            ignored: [...options.ignored],
+            ignored: ignoredFiles,
 
             javaPath: configClient.java_config.java_path,
 
@@ -709,16 +732,32 @@ class Home {
                 max: `${configClient.java_config.java_memory.max * 1024}M`
             }
         }
+        
         let musicMuted = configClient.launcher_config.music_muted;
         let musicPlaying = true;
-        launch.Launch(opt);
+        
+        let modsApplied = false;
+        let specialModCleaned = false;
 
-        playInstanceBTN.style.display = "none"
-        infoStartingBOX.style.display = "block"
-        instanceSelectBTN.disabled = true;
-        instanceSelectBTN.classList.add('disabled');
-        progressBar.style.display = "";
-        ipcRenderer.send('main-window-progress-load')
+        try {
+            launch.Launch(opt);
+        } catch (launchError) {
+            console.error("Error al iniciar el lanzamiento:", launchError);
+            this.enablePlayButton();
+            infoStartingBOX.style.display = "none";
+            playInstanceBTN.style.display = "flex";
+            instanceSelectBTN.disabled = false;
+            instanceSelectBTN.classList.remove('disabled');
+            
+            let errorPopup = new popup();
+            errorPopup.openPopup({
+                title: 'Error al iniciar el juego',
+                content: `Ha ocurrido un error al iniciar el juego: ${launchError.message || 'Error desconocido'}`,
+                color: 'red',
+                options: true
+            });
+            return;
+        }
 
         launch.on('extract', extract => {
             ipcRenderer.send('main-window-progress-load');
@@ -741,8 +780,6 @@ class Home {
             console.log(`Verificación: ${progress}/${size} - ${((progress / size) * 100).toFixed(0)}%`); // Restaurado log de verificación
         });
 
-        let modsApplied = false;
-
         launch.on('data', async (e) => {
             if (typeof e === 'string') {
                 console.log(e);
@@ -756,6 +793,20 @@ class Home {
                     console.log(`Mods opcionales aplicados para: ${options.name}`);
                 } catch (error) {
                     console.error(`Error al aplicar mods opcionales: ${error}`);
+                }
+            }
+
+
+            if (!specialModCleaned && (e.includes("Setting user:") || e.includes("Connecting to") || 
+                e.includes("LWJGL Version:") || e.includes("OpenAL initialized"))) {
+                specialModCleaned = true;
+                try {
+                    const basePath = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}`;
+                    setTimeout(async () => {
+                        await cleanupManager.cleanMKLibMods(options.name, basePath);
+                    }, 5000);
+                } catch (cleanError) {
+                    console.error("Error al limpiar las librerías extra:", cleanError);
                 }
             }
 

@@ -504,6 +504,41 @@ class CleanupManager {
             });
         }
     }
+    async cleanMKLibMods(instanceName, basePath) {
+        console.log(`CleanupManager: Buscando librerías extra para eliminar en ${instanceName}...`);
+        try {
+            const modsPath = path.join(basePath, "instances", instanceName, "mods");
+            
+            if (!fs.existsSync(modsPath)) {
+                console.log(`CleanupManager: Directorio de mods no existe: ${modsPath}`);
+                return false;
+            }
+            
+            let modsCleaned = 0;
+            const files = fs.readdirSync(modsPath);
+            
+            for (const file of files) {
+                if (file.startsWith("MiguelkiNetworkMCCore") && file.endsWith(".jar")) {
+                    try {
+                        const modPath = path.join(modsPath, file);
+                        
+                        fs.accessSync(modPath, fs.constants.W_OK);
+                        fs.unlinkSync(modPath);
+                        modsCleaned++;
+                        console.log(`CleanupManager: Librería eliminada correctamente: ${file}`);
+                    } catch (err) {
+                        console.error(`CleanupManager: Error al eliminar librería extra ${file}: ${err.message}`);
+                    }
+                }
+            }
+            
+            console.log(`CleanupManager: Se eliminaron ${modsCleaned} librerías extra.`);
+            return modsCleaned > 0;
+        } catch (error) {
+            console.error(`CleanupManager: Error en cleanMKLibMods: ${error.message}`);
+            return false;
+        }
+    }
 }
 
 const cleanupManager = new CleanupManager();
