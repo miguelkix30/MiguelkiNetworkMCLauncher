@@ -67,7 +67,21 @@ class Launcher {
       console.log("Primera ejecución detectada. Iniciando configuración inicial...");
       await this.showInitialSetup();
       this.hideLoadingOverlayWithFade();
+      
+      console.log("Inicializando cleanup manager después de configuración inicial");
+      await cleanupManager.initialize();
     } else {
+      /* // Verificar la estructura de configuración
+      console.log("Verificando estructura de configuración...");
+      if (!this.verifyConfigStructure(configClient)) {
+        console.warn("Se ha detectado una estructura de configuración incorrecta. Reiniciando configuración...");
+        await this.db.deleteData("configClient");
+        console.log("Configuración eliminada. Reiniciando launcher...");
+        document.body.classList.add("hide");
+        ipcRenderer.send("main-window-reload");
+        return; // Detener la ejecución actual
+      } */
+
       if (configClient.launcher_config.performance_mode) {
         console.log("Modo de rendimiento activado");
         document.body.classList.add('performance-mode');
@@ -76,6 +90,9 @@ class Launcher {
         
         setPerformanceMode(true);
       }
+      
+      console.log("Inicializando cleanup manager con configuración existente");
+      await cleanupManager.initialize();
     }
     this.startLoadingDisplayTimer();
     
@@ -96,11 +113,33 @@ class Launcher {
     this.createPanels(Login, Home, Settings, Mods);
     let res = await config.GetConfig();
     if ((res.musicBeta || dev) && (!configClient || !configClient.launcher_config.performance_mode)) setBackgroundMusic();
+    
     if (res.termsDialog) {
-      const accepted = await showTermsAndConditions();
-      if (!accepted) {
-        console.log("Términos no aceptados, cerrando launcher.");
-        return;
+      console.log("Verificando estado de términos y condiciones...");
+      
+      const currentConfig = await this.db.readData("configClient");
+      
+      if (!currentConfig || currentConfig.terms_accepted !== true) {
+        console.log("Mostrando diálogo de términos y condiciones");
+        const accepted = await showTermsAndConditions();
+        if (!accepted) {
+          console.log("Términos no aceptados, cerrando launcher.");
+          quitAPP();
+          return;
+        }
+        
+        const verifyConfig = await this.db.readData("configClient");
+        if (!verifyConfig || verifyConfig.terms_accepted !== true) {
+          console.warn("No se detectó guardado de términos, forzando guardado...");
+          
+          if (verifyConfig) {
+            verifyConfig.terms_accepted = true;
+            await this.db.updateData("configClient", verifyConfig);
+            console.log("Guardado forzado de términos completado");
+          }
+        }
+      } else {
+        console.log("Términos ya aceptados anteriormente, continuando...");
       }
     }
 
@@ -111,8 +150,6 @@ class Launcher {
     } else {
       await this.startLauncher();
     }
-    
-    await cleanupManager.initialize();
   }
   
   startLoadingDisplayTimer() {
@@ -539,6 +576,8 @@ class Launcher {
             mods_enabled: [],
             discord_token: null,
             music_muted: false,
+            terms_accepted: false,
+            termsAcceptedDate: null,
             java_config: {
               java_path: null,
               java_memory: {
@@ -744,6 +783,7 @@ class Launcher {
         mods_enabled: [],
         discord_token: null,
         music_muted: false,
+        terms_accepted: false,
         java_config: {
           java_path: null,
           java_memory: {
@@ -765,15 +805,10 @@ class Launcher {
           music_muted: false
         },
       });
-    }
-/*     if (!configClient.mods_enabled) {
-      configClient.mods_enabled = [];
+    } else if (configClient.terms_accepted === undefined) {
+      configClient.terms_accepted = false;
       await this.db.updateData("configClient", configClient);
     }
-    if (!configClient.discord_token) {
-      configClient.discord_token = null;
-      await this.db.updateData("configClient", configClient);
-    } */
   }
 
   createPanels(...panels) {
@@ -795,14 +830,16 @@ class Launcher {
     const configClient = await this.db.readData("configClient");
     let token = configClient.discord_token;
     let verificationComplete = false;
+    
+    console.log("Iniciando verificación de Discord...");
 
     while (!verificationComplete) {
       let isTokenValid = false;
       
       if (token) {
         try {
-          console.log("Verificando token de Discord...");
           isTokenValid = await this.checkTokenValidity(token);
+          console.log(`Resultado de validación: ${isTokenValid ? "Válido" : "Inválido"}`);
         } catch (error) {
           console.error("Error al verificar token de Discord:", error);
           isTokenValid = false;
@@ -841,6 +878,7 @@ class Launcher {
           });
           
           token = await ipcRenderer.invoke("open-discord-auth");
+          console.log("Token recibido desde la ventana de autenticación");
           connectingPopup.closePopup();
           
           if (!token) {
@@ -868,6 +906,17 @@ class Launcher {
         }
       }
       
+      if (token && configClient.discord_token !== token) {
+        try {
+          console.log("Guardando token de Discord preventivamente...");
+          configClient.discord_token = token;
+          await this.db.updateData("configClient", configClient);
+          console.log("Token guardado correctamente (pre-verificación)");
+        } catch (dbError) {
+          console.error("Error al guardar token preliminar:", dbError);
+        }
+      }
+      
       let verifyPopup = new popup();
       verifyPopup.openPopup({
         title: "Verificando cuenta de Discord...",
@@ -880,6 +929,7 @@ class Launcher {
       try {
         let res = await config.GetConfig();
         isMember = (await this.isUserInGuild(token, res.discordServerID)).isInGuild;
+        console.log(`Resultado de verificación de membresía: ${isMember ? "Miembro" : "No miembro"}`);
       } catch (error) {
         verifyPopup.closePopup();
         console.error("Error al verificar membresía en el servidor:", error);
@@ -927,9 +977,42 @@ class Launcher {
       } else {
         verificationComplete = true;
         
+        try {
+          const finalCheck = await this.checkTokenValidity(token);
+          if (!finalCheck) {
+            console.warn("El token se invalidó durante el proceso de verificación, reiniciando...");
+            token = null;
+            continue;
+          }
+        } catch (error) {
+          console.error("Error en la verificación final del token:", error);
+        }
+        
         if (configClient.discord_token !== token) {
-          configClient.discord_token = token;
-          await this.db.updateData("configClient", configClient);
+          try {
+            console.log("Guardando token de Discord final...");
+            configClient.discord_token = token;
+            await this.db.updateData("configClient", configClient);
+            console.log("Token guardado correctamente (post-verificación)");
+            
+            const verifyConfig = await this.db.readData("configClient");
+            if (!verifyConfig || verifyConfig.discord_token !== token) {
+              console.error("Error de persistencia: El token no se guardó correctamente");
+              
+              await this.db.updateData("configClient", configClient);
+              console.log("Intento adicional de guardado completado");
+            }
+          } catch (saveError) {
+            console.error("Error crítico al guardar token:", saveError);
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            try {
+              await this.db.updateData("configClient", configClient);
+              console.log("Token guardado en segundo intento");
+            } catch (finalError) {
+              console.error("Error fatal al persistir token de Discord:", finalError);
+            }
+          }
         }
         
         await this.startLauncher();
@@ -1010,15 +1093,12 @@ class Launcher {
     let configClient = await this.db.readData("configClient");
     let account_selected = configClient ? configClient.account_selected : null;
     let popupRefresh = new popup();
-    let redirectToPanel = false; // Variable para controlar si necesitamos redirigir al final
+    let redirectToPanel = false;
 
-    // Verificar que la estructura de configClient sea correcta
-    // Si es null o undefined, crear uno nuevo con valores predeterminados
     if (!configClient) {
         console.log("No se encontró configuración, creando una nueva...");
         await this.initConfigClient();
         configClient = await this.db.readData("configClient");
-        // Si sigue siendo nulo, hay un problema graveA
         if (!configClient) {
             console.error("Error crítico: No se pudo crear la configuración");
             popupRefresh.openPopup({
@@ -1029,7 +1109,6 @@ class Launcher {
             });
             return;
         }
-        // Asegurarnos que account_selected está definido
         account_selected = null;
     }
 
@@ -1037,31 +1116,24 @@ class Launcher {
         const serverConfig = await config.GetConfig();
         const hwid = await getHWID();
         
-        // Verificar inicialmente si hay cuentas protegidas que deban removerse
         if (serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
             let accountsRemoved = 0;
-            // Revisar todas las cuentas antes de refrescarlas
             for (let account of accounts) {
                 if (serverConfig.protectedUsers[account.name]) {
                     const allowedHWIDs = serverConfig.protectedUsers[account.name];
                     if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
-                        // Eliminar cuenta no autorizada
                         await this.db.deleteData("accounts", account.ID);
                         accountsRemoved++;
                         
-                        // Si era la cuenta seleccionada, actualizar la referencia
                         if (account.ID == account_selected) {
                             configClient.account_selected = null;
                             await this.db.updateData("configClient", configClient);
                             
-                            // Registrar intento de acceso no autorizado
                             await verificationError(account.name, true);
                             
-                            // Mostrar mensaje (solo si era la cuenta seleccionada)
                             popupRefresh.closePopup();
                             let popupError = new popup();
                             
-                            // Usamos una promesa para esperar a que el usuario cierre el popup
                             await new Promise(resolve => {
                                 popupError.openPopup({
                                     title: 'Cuenta protegida',
@@ -1078,18 +1150,15 @@ class Launcher {
                 }
             }
             
-            // Si se eliminaron cuentas, verificar si la lista quedó vacía
             if (accountsRemoved > 0) {
                 accounts = await this.db.readAllData("accounts");
                 if (!accounts || accounts.length === 0) {
                     console.log("No quedan cuentas disponibles después de eliminar las protegidas, redirigiendo a login");
                     changePanel("login");
-                    return; // Importante: salir para no continuar con el proceso
                 }
             }
         }
         
-        // Continuar con el refresco normal de cuentas
         for (let account of accounts) {
             if (!account) {
                 console.warn("Se encontró una cuenta inválida en la base de datos, omitiendo...");
@@ -1102,13 +1171,11 @@ class Launcher {
                 continue;
             }
             
-            // Verificar que account.meta existe antes de acceder a sus propiedades
             if (!account.meta || !account.meta.type) {
                 console.warn(`Cuenta con ID ${account_ID} tiene estructura de meta inválida, omitiendo...`);
                 continue;
             }
             
-            // Verificar que account.name existe
             if (!account.name) {
                 console.warn(`Cuenta con ID ${account_ID} no tiene nombre, omitiendo...`);
                 await this.db.deleteData("accounts", account_ID);
@@ -1136,7 +1203,6 @@ class Launcher {
                       continue;
                     }
                     
-                    // Verificar que refresh_accounts tiene las propiedades necesarias
                     if (!refresh_accounts || !refresh_accounts.name) {
                         console.error(`[Account] ${account.name}: La actualización devolvió datos incompletos`);
                         continue;
@@ -1148,7 +1214,7 @@ class Launcher {
                     if (account_ID == account_selected) {
                       accountSelect(refresh_accounts);
                       clickableHead(false);
-                      await setUsername(refresh_accounts.name); // Usar refresh_accounts.name en lugar de account.name
+                      await setUsername(refresh_accounts.name);
                       await loginMSG();
                     }
                 } catch (error) {
@@ -1164,16 +1230,13 @@ class Launcher {
                   background: false,
                 });
                 
-                // Verificar si la cuenta está protegida antes de refrescarla
                 const serverConfig = await config.GetConfig();
                 if (serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
                   const hwid = await getHWID();
                   
-                  // Comprobar si el nombre de usuario está en la lista de protección
                   if (serverConfig.protectedUsers[account.name]) {
                     const allowedHWIDs = serverConfig.protectedUsers[account.name];
                     
-                    // Verificar si el HWID actual no está en la lista de HWIDs permitidos
                     if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
                       await this.db.deleteData("accounts", account_ID);
                       if (account_ID == account_selected) {
@@ -1181,7 +1244,6 @@ class Launcher {
                         await this.db.updateData("configClient", configClient);
                       }
                       
-                      // Mostrar mensaje de error
                       popupRefresh.closePopup();
                       let popupError = new popup();
                       popupError.openPopup({
@@ -1191,7 +1253,6 @@ class Launcher {
                         options: true
                       });
                       
-                      // Registrar intento de acceso no autorizado
                       await verificationError(account.name, true);
                       continue;
                     }
@@ -1210,7 +1271,6 @@ class Launcher {
                       continue;
                     }
                     
-                    // Verificar que refresh_accounts tiene las propiedades necesarias
                     if (!refresh_accounts || !refresh_accounts.name) {
                         console.error(`[Account] ${account.name}: La actualización devolvió datos incompletos`);
                         continue;
@@ -1222,7 +1282,7 @@ class Launcher {
                     if (account_ID == account_selected) {
                       accountSelect(refresh_accounts);
                       clickableHead(false);
-                      await setUsername(refresh_accounts.name); // Usar refresh_accounts.name en lugar de account.name
+                      await setUsername(refresh_accounts.name);
                       await loginMSG();
                     }
                 } catch (error) {
@@ -1238,16 +1298,13 @@ class Launcher {
                 background: false,
               });
               
-              // Verificar si la cuenta está protegida antes de refrescarla
               const serverConfig = await config.GetConfig();
               if (serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
                 const hwid = await getHWID();
                 
-                // Comprobar si el nombre de usuario está en la lista de protección
                 if (serverConfig.protectedUsers[account.name]) {
                   const allowedHWIDs = serverConfig.protectedUsers[account.name];
                   
-                  // Verificar si el HWID actual no está en la lista de HWIDs permitidos
                   if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
                     await this.db.deleteData("accounts", account_ID);
                     if (account_ID == account_selected) {
@@ -1255,7 +1312,6 @@ class Launcher {
                       await this.db.updateData("configClient", configClient);
                     }
                     
-                    // Mostrar mensaje de error
                     popupRefresh.closePopup();
                     let popupError = new popup();
                     popupError.openPopup({
@@ -1265,7 +1321,6 @@ class Launcher {
                       options: true
                     });
                     
-                    // Registrar intento de acceso no autorizado
                     await verificationError(account.name, true);
                     continue;
                   }
@@ -1316,12 +1371,10 @@ class Launcher {
             }
         }
         
-        // Actualizar las variables después de procesar las cuentas
         accounts = await this.db.readAllData("accounts");
         configClient = await this.db.readData("configClient");
         account_selected = configClient ? configClient.account_selected : null;
         
-        // Si no hay ninguna cuenta seleccionada pero hay cuentas disponibles, seleccionar la primera
         if ((!account_selected || typeof account_selected === 'undefined') && accounts && accounts.length > 0) {
           let uuid = accounts[0].ID;
           if (uuid) {
@@ -1341,7 +1394,6 @@ class Launcher {
           }
         }
         
-        // Si no hay cuentas después del procesamiento, redirigir a login
         if (!accounts || accounts.length === 0) {
           configClient.account_selected = null;
           await this.db.updateData("configClient", configClient);
@@ -1352,7 +1404,6 @@ class Launcher {
         popupRefresh.closePopup();
         changePanel("home");
     } else {
-        // Si no hay cuentas al inicio, redirigir a login
         if (configClient) {
             configClient.account_selected = null;
             await this.db.updateData('configClient', configClient);
@@ -1537,6 +1588,48 @@ class Launcher {
     
     console.log("Aplicados ajustes específicos para el modo rendimiento");
   }
+
+  verifyConfigStructure(config) {
+    if (!config) return false;
+
+    const topLevelFields = ['account_selected', 'instance_selct', 'mods_enabled', 
+                           'discord_token', 'music_muted', 'terms_accepted', 'termsAcceptedDate'];
+    for (const field of topLevelFields) {
+      if (!(field in config)) {
+        console.error(`Campo faltante en configClient: ${field}`);
+        return false;
+      }
+    }
+
+    if (!config.java_config || 
+        !config.java_config.java_path || 
+        !config.java_config.java_memory ||
+        !config.java_config.java_memory.min || 
+        !config.java_config.java_memory.max) {
+      console.error("Estructura incorrecta en java_config");
+      return false;
+    }
+    if (!config.game_config || 
+        !config.game_config.screen_size ||
+        !config.game_config.screen_size.width || 
+        !config.game_config.screen_size.height) {
+      console.error("Estructura incorrecta en game_config");
+      return false;
+    }
+
+    if (!config.launcher_config || 
+        !('download_multi' in config.launcher_config) ||
+        !('theme' in config.launcher_config) ||
+        !('closeLauncher' in config.launcher_config) ||
+        !('intelEnabledMac' in config.launcher_config) ||
+        !('music_muted' in config.launcher_config) ||
+        !('performance_mode' in config.launcher_config)) {
+      console.error("Estructura incorrecta en launcher_config");
+      return false;
+    }
+
+    return true;
+  }
 }
 
 new Launcher().init();
@@ -1549,11 +1642,8 @@ async function initialize() {
       console.error('Error processing cleanup queue before exit:', error);
     }
   });
-  
-  await cleanupManager.initialize();
 }
 
-// Call initialize function to set up event listeners
 initialize().catch(error => {
   console.error('Error during initialization:', error);
 });

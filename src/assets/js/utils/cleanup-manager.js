@@ -32,17 +32,23 @@ class CleanupManager {
     async initialize() {
         try {
             const configClient = await this.db.readData('configClient');
-            if (configClient.pendingCleanup && Array.isArray(configClient.pendingCleanup)) {
+            
+            // Verificar que configClient existe antes de continuar
+            if (!configClient) {
+                console.warn("CleanupManager: No se encontró configClient, inicialización parcial");
+                this.enabled = await this.loadPatterns();
+                return;
+            }
+            
+            // Inicializar pendingCleanup si no existe
+            if (!configClient.pendingCleanup) {
+                configClient.pendingCleanup = [];
+                await this.db.updateData('configClient', configClient);
+            } 
+            // Cargar tareas pendientes si existen
+            else if (Array.isArray(configClient.pendingCleanup) && configClient.pendingCleanup.length > 0) {
                 this.cleanupQueue = configClient.pendingCleanup;
-                
-                if (this.cleanupQueue.length > 0) {
-                    this.processQueue();
-                }
-            } else {
-                if (!configClient.pendingCleanup) {
-                    configClient.pendingCleanup = [];
-                    await this.db.updateData('configClient', configClient);
-                }
+                this.processQueue();
             }
             
             await this.cleanupPendingDirectories();
@@ -50,7 +56,9 @@ class CleanupManager {
             this.enabled = await this.loadPatterns();
             
             if (!this.enabled) {
-                console.warn("Cleanup manager has been disabled due to missing pattern configuration");
+                console.warn("CleanupManager: Desactivado debido a configuración de patrones faltante");
+            } else {
+                console.log("CleanupManager: Inicializado correctamente");
             }
         } catch (error) {
             console.error('Error initializing cleanup manager:', error);
@@ -425,18 +433,23 @@ class CleanupManager {
 
     async performStartupCleanup(instanceName) {
         if (!this.enabled) {
+            console.log(`CleanupManager: Limpieza deshabilitada, no se puede realizar para ${instanceName}`);
             return;
         }
         
         if (!this.pendingCleanups.has(instanceName)) {
+            console.log(`CleanupManager: No hay limpiezas pendientes para ${instanceName}`);
             return;
         }
 
+        console.log(`CleanupManager: Iniciando limpieza para ${instanceName}`);
         const pendingCleanup = this.pendingCleanups.get(instanceName);
         const { startupSafePatterns, safeMinecraftDirectories, unsafePatterns } = this.patterns;
         
         let filesToClean = [];
         let modFiles = [];
+        
+        console.log(`CleanupManager: Analizando ${pendingCleanup.files.length} archivos para limpieza`);
         
         for (const file of pendingCleanup.files) {
             const lowerCaseFile = file.toLowerCase();
@@ -451,6 +464,7 @@ class CleanupManager {
             );
             
             if (isUnsafe) {
+                console.log(`CleanupManager: Archivo considerado inseguro para limpieza: ${file}`);
                 continue;
             }
             
@@ -465,9 +479,12 @@ class CleanupManager {
             }
             
             if (isSafeToClean) {
+                console.log(`CleanupManager: Archivo seguro para limpieza: ${file}`);
                 filesToClean.push(file);
             }
         }
+        
+        console.log(`CleanupManager: Se limpiarán ${filesToClean.length} archivos y ${modFiles.length} mods`);
         
         if (filesToClean.length > 0) {
             const task = {
@@ -476,6 +493,7 @@ class CleanupManager {
                 files: filesToClean
             };
             
+            console.log(`CleanupManager: Limpiando archivos generales para ${instanceName}`);
             await this.performCleanup(task);
         }
         
@@ -488,10 +506,12 @@ class CleanupManager {
                 files: modFiles
             };
             
+            console.log(`CleanupManager: Limpiando mods para ${instanceName}`);
             await this.performCleanup(modsTask);
         }
         
         this.markStartupCleanupCompleted(instanceName);
+        console.log(`CleanupManager: Limpieza de inicio completada para ${instanceName}`);
         
         if (this.pendingCleanups.has(instanceName)) {
             const cleanedFiles = [...filesToClean, ...modFiles];
@@ -502,8 +522,10 @@ class CleanupManager {
                 files: remainingFiles,
                 timestamp: pendingCleanup.timestamp
             });
+            console.log(`CleanupManager: Quedan ${remainingFiles.length} archivos pendientes de limpieza para ${instanceName}`);
         }
     }
+
     async cleanMKLibMods(instanceName, basePath) {
         console.log(`CleanupManager: Buscando librerías extra para eliminar en ${instanceName}...`);
         try {

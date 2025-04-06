@@ -730,11 +730,21 @@ class Home {
         
         let modsApplied = false;
         let specialModCleaned = false;
+        
+        // Inicializar el proceso de limpieza antes del lanzamiento
+        let gameStartMonitoringStarted = false;
+        let cleanupTriggered = false;
+        
+        if (options.cleaning && options.cleaning.enabled && cleanupManager.enabled) {
+            console.log(`Configurando limpieza para la instancia: ${options.name}`);
+            await cleanupManager.queueCleanup(options.name, opt.path, options.cleaning.files, false);
+        } else {
+            console.log(`Limpieza no configurada o desactivada para la instancia: ${options.name}`);
+        }
 
         try {
             launch.Launch(opt);
         } catch (launchError) {
-            console.error("Error al iniciar el lanzamiento:", launchError);
             this.enablePlayButton();
             infoStartingBOX.style.display = "none";
             playInstanceBTN.style.display = "flex";
@@ -773,6 +783,50 @@ class Home {
         launch.on('data', async (e) => {
             if (typeof e === 'string') {
                 console.log(e);
+
+                if (rpcActive) {
+                    RPC.setActivity({
+                        state: `Jugando a ${configClient.instance_selct}`,
+                        startTimestamp: startingTime,
+                        largeImageKey: 'icon',
+                        smallImageKey: 'verificado',
+                        largeImageText: `Miguelki Network`,
+                        instance: true,
+                        buttons: [
+                            {
+                                label: `Discord`,
+                                url: pkg.discord_url,
+                            }
+                        ]
+                    })
+                }
+                
+                // Procesar la salida para detectar patrones de limpieza si la limpieza está activada
+                if (options.cleaning && options.cleaning.enabled && cleanupManager.enabled) {
+                    // Procesa la salida para detectar patrones que indiquen que el juego se inició completamente
+                    cleanupManager.processGameOutput(options.name, e);
+                    
+                    // Si el juego ya se inició completamente y no hemos ejecutado la limpieza
+                    if (cleanupManager.isGameFullyStarted(options.name) && !cleanupTriggered) {
+                        cleanupTriggered = true;
+                        console.log(`Juego completamente iniciado. Ejecutando limpieza de archivos para: ${options.name}`);
+                        
+                        try {
+                            // Esperar un poco para asegurar que el juego esté estable
+                            setTimeout(async () => {
+                                await cleanupManager.performStartupCleanup(options.name);
+                                console.log(`Limpieza de archivos completada para: ${options.name}`);
+                            }, 5000);
+                        } catch (error) {
+                            console.error(`Error durante la limpieza de archivos: ${error.message}`);
+                        }
+                    }
+                    
+                    if (!gameStartMonitoringStarted) {
+                        gameStartMonitoringStarted = true;
+                        console.log(`Monitoreo de inicio del juego activado para: ${options.name}`);
+                    }
+                }
             }
             
             if (!modsApplied) {
@@ -837,7 +891,7 @@ class Home {
             infoStarting.innerHTML = `Parcheando...`;
         });
 
-        launch.on('close', code => {
+        launch.on('close', async code => {
             if (configClient.launcher_config.closeLauncher == 'close-launcher') {
                 ipcRenderer.send("main-window-show")
             };
@@ -855,6 +909,16 @@ class Home {
             console.log('Close');
             
             this.enablePlayButton();
+            
+            // Ejecutar limpieza en cierre si está configurada
+            if (options.cleaning && options.cleaning.enabled && cleanupManager.enabled) {
+                try {
+                    await cleanupManager.cleanupOnGameClose(options.name);
+                    console.log(`Limpieza en cierre del juego completada para: ${options.name}`);
+                } catch (error) {
+                    console.error(`Error durante limpieza en cierre: ${error.message}`);
+                }
+            }
             
             if (rpcActive) {
                 RPC.setActivity({
@@ -942,27 +1006,6 @@ class Home {
                 }
             }
         });
-        
-        if (options.cleaning && options.cleaning.enabled && cleanupManager.enabled) {
-            await cleanupManager.queueCleanup(options.name, opt.path, options.cleaning.files, false);
-            
-            let gameStartMonitoringStarted = false;
-            let lastGameState = "initializing";
-            
-            launch.on('data', e => {
-                if (typeof e !== 'string') return;
-                
-                cleanupManager.processGameOutput(options.name, e);
-                
-                if (lastGameState === "initializing" && cleanupManager.isGameFullyStarted(options.name)) {
-                    lastGameState = "started";
-                }
-                
-                if (!gameStartMonitoringStarted) {
-                    gameStartMonitoringStarted = true;
-                }
-            });
-        }
     }
 
     async applyOptionalMods(instanceName) {

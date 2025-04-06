@@ -18,7 +18,7 @@ let config = {
     "redirectUri": "http://localhost:3030/auth/discord/"
   }
 
-  function startServer() {
+async function startServer() {
     const expressApp = express();
     const port = 3030;
 
@@ -38,15 +38,90 @@ let config = {
         .then(json => {
             // Guardar token
             const token = json.access_token;
+            
+            if (!token) {
+                console.error("Error: No se recibió un token de acceso válido");
+                response.status(500).send("Error: No se recibió un token de acceso válido");
+                return;
+            }
+            
             authToken = token;
-            console.log("Token de Discord:", token);
-            response.send(`<script>window.close();</script>`);
-            server.close();
-
+            console.log("Token de Discord recibido con éxito");
+            
+            // Enviar respuesta con verificación de cierre
+            response.send(`
+                <html>
+                <head>
+                    <title>Autenticación completada</title>
+                    <script>
+                        window.onload = function() {
+                            // Pequeño retraso para asegurar que el token se procese correctamente
+                            setTimeout(function() {
+                                window.close();
+                            }, 300);
+                        }
+                    </script>
+                    <style>
+                        body { 
+                            font-family: Arial, sans-serif;
+                            text-align: center; 
+                            margin-top: 50px;
+                            background-color: #36393f;
+                            color: white;
+                        }
+                        h3 { margin-bottom: 10px; }
+                    </style>
+                </head>
+                <body>
+                    <h3>Autenticación completada</h3>
+                    <p>Esta ventana se cerrará automáticamente...</p>
+                </body>
+                </html>
+            `);
+            
+            // Cerrar el servidor después de un breve retraso
+            setTimeout(() => {
+                try {
+                    server.close();
+                    console.log('Servidor cerrado correctamente');
+                } catch (err) {
+                    console.error('Error al cerrar servidor:', err);
+                }
+            }, 1000);
         })
         .catch(err => {
             console.error("Error al obtener la token de Discord:", err);
-            response.status(500).send("Error al obtener la token de Discord.");
+            response.status(500).send(`
+                <html>
+                <head>
+                    <title>Error de autenticación</title>
+                    <style>
+                        body { 
+                            font-family: Arial, sans-serif;
+                            text-align: center; 
+                            margin-top: 50px;
+                            background-color: #36393f;
+                            color: white;
+                        }
+                        h3 { color: #ed4245; }
+                        button {
+                            background-color: #5865f2;
+                            color: white;
+                            border: none;
+                            padding: 8px 16px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            margin-top: 20px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h3>Error al obtener el token de Discord</h3>
+                    <p>Ha ocurrido un error durante la autenticación.</p>
+                    <button onclick="window.close()">Cerrar ventana</button>
+                </body>
+                </html>
+            `);
         });
     });
 
@@ -54,7 +129,6 @@ let config = {
         console.log(`Servidor escuchando en http://localhost:${port}`);
     });
 }
-
 
 function stopServer() {
     if (server) {
