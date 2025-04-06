@@ -434,7 +434,6 @@ class Launcher {
           }
         });
         
-        // Mejora para validación del campo de descargas
         const maxDownloadsInput = document.querySelector("#setup-max-downloads");
         let isMaxDownloadsValid = true;
         
@@ -448,7 +447,6 @@ class Launcher {
             maxDownloadsInput.style.borderColor = "";
             maxDownloadsInput.style.backgroundColor = "";
             
-            // Eliminar mensaje de error si existe
             const existingError = document.querySelector('.max-downloads-error');
             if (existingError) {
               existingError.remove();
@@ -457,7 +455,6 @@ class Launcher {
             maxDownloadsInput.style.borderColor = "red";
             maxDownloadsInput.style.backgroundColor = "rgba(255, 0, 0, 0.1)";
             
-            // Mostrar mensaje de error si no existe
             let errorMsg = document.querySelector('.max-downloads-error');
             if (!errorMsg) {
               errorMsg = document.createElement('div');
@@ -467,7 +464,6 @@ class Launcher {
               errorMsg.style.marginTop = '5px';
               errorMsg.innerText = 'Por favor ingresa un número entre 1 y 20';
               
-              // Insertar el mensaje justo después del input
               maxDownloadsInput.insertAdjacentElement('afterend', errorMsg);
             }
           }
@@ -477,7 +473,6 @@ class Launcher {
         
         nextBtn.addEventListener('click', () => {
           if (currentStep === 3) {
-            // Validar el campo de descargas antes de permitir avanzar
             if (!validateMaxDownloads()) {
               return;
             }
@@ -517,12 +512,10 @@ class Launcher {
             validateMaxDownloads();
           });
           
-          // Validar también cuando pierde el foco
           maxDownloadsInput.addEventListener('blur', validateMaxDownloads);
         }
         
         finishBtn.addEventListener('click', async () => {
-          // Validar el campo de descargas antes de permitir finalizar
           if (!validateMaxDownloads()) {
             return;
           }
@@ -664,10 +657,8 @@ class Launcher {
       cleanupManager.stopAllLogWatchers();
     });
     
-    // Log version information to console
     console.info(`Versión del Launcher: ${pkg.version}${pkg.sub_version ? `-${pkg.sub_version}` : ''}`);
     
-    // Display base version information if available
     const baseVersionInfoElement = document.getElementById('base-version-info');
     
     if (pkg.baseVersionInfo && baseVersionInfoElement) {
@@ -690,12 +681,6 @@ class Launcher {
         ipcRenderer.send("main-window-dev-tools-close");
         ipcRenderer.send("main-window-dev-tools");
       }
-      if (e.keyCode == 119) {
-        const db = new database();
-        let configClient = db.readData("configClient");
-        configClient.discord_token = null;
-        this.db.updateData("configClient", configClient);
-      }
     });
     new logger(pkg.name, "#7289da");
   }
@@ -710,7 +695,7 @@ class Launcher {
       const { key, altKey } = e;
       if (key === "F4" && altKey) {
         e.preventDefault();
-          quitAPP();
+        quitAPP();
       }
     });
   }
@@ -807,140 +792,153 @@ class Launcher {
   }
 
   async verifyDiscordAccount() {
-    let configClient = await this.db.readData("configClient");
-    let token;
-    let isMember;
-    let isTokenValid;
+    const configClient = await this.db.readData("configClient");
+    let token = configClient.discord_token;
+    let verificationComplete = false;
 
-    try {
-      console.log("Verificando token de discord...");
-      isTokenValid = await this.checkTokenValidity();
-    } catch (error) {
-      let discorderrdialog = new popup();
-
-      let dialogResult = await new Promise((resolve) => {
-        discorderrdialog.openDialog({
-          title: "Error de autenticación",
-          content:
-            "No se ha podido verificar la sesión de Discord. <br><br>Quieres volver a intentarlo?",
-          options: true,
-          callback: resolve,
-        });
-      });
-
-      if (dialogResult === "cancel") {
-        configClient.discord_token = null;
-        await this.db.updateData("configClient", configClient);
-        await this.verifyDiscordAccount();
-        return;
-      } else {
-        await this.verifyDiscordAccount();
-        return;
-      }
-    }
-
-    if (!isTokenValid) {
-      let discorderrdialog = new popup();
-      console.error("Token de discord no válido");
-      let dialogResult = await new Promise((resolve) => {
-        discorderrdialog.openDialog({
-          title: "Verificación de Discord",
-          content:
-            "Para poder acceder al launcher debes iniciar sesión con tu cuenta de Discord y estar en el servidor de Miguelki Network. <br><br>Quieres iniciar sesión ahora?",
-          options: true,
-          callback: resolve,
-        });
-      });
-
-      if (dialogResult === "cancel") {
-        quitAPP();
-      } else {
-        let retry = true;
-
-        while (retry) {
-          let connectingPopup = new popup();
-          try {
-            connectingPopup.openPopup({
-              title: 'Verificación de Discord',
-              content: 'Esperando a la autorización...',
-              color: 'var(--color)'
-          });
-            token = await ipcRenderer.invoke("open-discord-auth");
-            connectingPopup.closePopup();
-            retry = false;
-          } catch (error) {
-            connectingPopup.closePopup();
-            console.error("Error al obtener el token de Discord");
-            let discorderrdialog = new popup();
-
-            let dialogResult = await new Promise((resolve) => {
-              discorderrdialog.openDialog({
-                title: "Error al verificar la cuenta de Discord",
-                content:
-                  "No se ha podido verificar la cuenta de Discord. <br><br>Quieres intentarlo de nuevo?",
-                options: true,
-                callback: resolve,
-              });
-            });
-
-            if (dialogResult === "cancel") {
-              quitAPP();
-              retry = false;
-            }
-          }
+    while (!verificationComplete) {
+      let isTokenValid = false;
+      
+      if (token) {
+        try {
+          console.log("Verificando token de Discord...");
+          isTokenValid = await this.checkTokenValidity(token);
+        } catch (error) {
+          console.error("Error al verificar token de Discord:", error);
+          isTokenValid = false;
         }
+      }
 
-        if (token) {
+      if (!isTokenValid) {
+        token = null;
+        let discordDialog = new popup();
+        
+        const promptTitle = token ? "Error de autenticación" : "Verificación de Discord";
+        const promptContent = token 
+          ? "No se ha podido verificar la sesión de Discord. <br><br>¿Quieres volver a intentarlo?"
+          : "Para poder acceder al launcher debes iniciar sesión con tu cuenta de Discord y estar en el servidor de Miguelki Network. <br><br>¿Quieres iniciar sesión ahora?";
+        
+        const dialogResult = await new Promise((resolve) => {
+          discordDialog.openDialog({
+            title: promptTitle,
+            content: promptContent,
+            options: true,
+            callback: resolve,
+          });
+        });
+
+        if (dialogResult === "cancel") {
+          quitAPP();
+          return;
+        }
+        
+        try {
+          let connectingPopup = new popup();
+          connectingPopup.openPopup({
+            title: 'Verificación de Discord',
+            content: 'Esperando a la autorización...',
+            color: 'var(--color)'
+          });
+          
+          token = await ipcRenderer.invoke("open-discord-auth");
+          connectingPopup.closePopup();
+          
+          if (!token) {
+            throw new Error("No se recibió un token válido");
+          }
+        } catch (error) {
+          console.error("Error al obtener el token de Discord:", error);
+          
+          let errorDialog = new popup();
+          const retryResult = await new Promise((resolve) => {
+            errorDialog.openDialog({
+              title: "Error al verificar la cuenta de Discord",
+              content: "No se ha podido verificar la cuenta de Discord. <br><br>¿Quieres intentarlo de nuevo?",
+              options: true,
+              callback: resolve,
+            });
+          });
+          
+          if (retryResult === "cancel") {
+            quitAPP();
+            return;
+          }
+          
+          continue;
+        }
+      }
+      
+      let verifyPopup = new popup();
+      verifyPopup.openPopup({
+        title: "Verificando cuenta de Discord...",
+        content: "Por favor, espera un momento...",
+        color: "var(--color)",
+        background: false,
+      });
+      
+      let isMember;
+      try {
+        let res = await config.GetConfig();
+        isMember = (await this.isUserInGuild(token, res.discordServerID)).isInGuild;
+      } catch (error) {
+        verifyPopup.closePopup();
+        console.error("Error al verificar membresía en el servidor:", error);
+        
+        let errorDialog = new popup();
+        const retryResult = await new Promise((resolve) => {
+          errorDialog.openDialog({
+            title: "Error de conexión",
+            content: "No se ha podido verificar la membresía en el servidor de Discord. <br><br>¿Quieres intentarlo de nuevo?",
+            options: true,
+            callback: resolve,
+          });
+        });
+        
+        if (retryResult === "cancel") {
+          quitAPP();
+          return;
+        }
+        
+        token = null;
+        continue;
+      }
+      
+      verifyPopup.closePopup();
+
+      if (!isMember) {
+        let joinServerDialog = new popup();
+        const joinResult = await new Promise((resolve) => {
+          joinServerDialog.openDialog({
+            title: "Error al verificar la cuenta de Discord",
+            content: "No se ha detectado que seas miembro del servidor de Discord. Para poder utilizar el launcher debes ser miembro del servidor. <br><br>¿Quieres unirte ahora? Se abrirá una ventana en tu navegador.",
+            options: true,
+            callback: resolve,
+          });
+        });
+        
+        if (joinResult === "cancel") {
+          quitAPP();
+          return;
+        } else {
+          ipcRenderer.send("open-discord-url");
+          token = null;
+          continue;
+        }
+      } else {
+        verificationComplete = true;
+        
+        if (configClient.discord_token !== token) {
           configClient.discord_token = token;
           await this.db.updateData("configClient", configClient);
         }
-      }
-    } else {
-      token = configClient.discord_token;
-    }
-    let verifypopup = new popup();
-    verifypopup.openPopup({
-      title: "Verificando cuenta de Discord...",
-      content: "Por favor, espera un momento...",
-      color: "var(--color)",
-      background: false,
-    });
-    isMember = (await this.isUserInGuild(token, pkg.discord_server_id))
-      .isInGuild;
-      verifypopup.closePopup();
-    if (!isMember) {
-      let discorderrdialog = new popup();
-
-      let dialogResult = await new Promise((resolve) => {
-        discorderrdialog.openDialog({
-          title: "Error al verificar la cuenta de Discord",
-          content:
-            "No se ha detectado que seas miembro del servidor de Discord. Para poder utilizar el launcher debes ser miembro del servidor. <br><br>Quieres unirte ahora? Se abrirá una ventana en tu navegador.",
-          options: true,
-          callback: resolve,
-        });
-      });
-
-      if (dialogResult === "cancel") {
-        configClient.discord_token = null;
-        await this.db.updateData("configClient", configClient);
-        await this.verifyDiscordAccount();
-        return;
-      } else {
-        ipcRenderer.send("open-discord-url");
-        configClient.discord_token = null;
-        await this.db.updateData("configClient", configClient);
-        await this.verifyDiscordAccount();
+        
+        await this.startLauncher();
         return;
       }
-    } else {
-      await this.startLauncher();
     }
   }
 
-  async checkTokenValidity() {
-    let configClient = await this.db.readData("configClient");
-    let token = configClient.discord_token;
+  async checkTokenValidity(token) {
     if (!token || token == "" || token == null) return false;
     try {
       const response = await fetch("https://discord.com/api/users/@me", {
@@ -1020,7 +1018,7 @@ class Launcher {
         console.log("No se encontró configuración, creando una nueva...");
         await this.initConfigClient();
         configClient = await this.db.readData("configClient");
-        // Si sigue siendo nulo, hay un problema grave
+        // Si sigue siendo nulo, hay un problema graveA
         if (!configClient) {
             console.error("Error crítico: No se pudo crear la configuración");
             popupRefresh.openPopup({

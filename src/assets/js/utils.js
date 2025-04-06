@@ -793,7 +793,6 @@ async function logOutDiscord() {
     configClient.discord_token = null;
     await db.updateData('configClient', configClient);
     ipcRenderer.send('app-restart');
-
 }
 
 async function getTermsAndConditions() {
@@ -899,7 +898,7 @@ async function showTermsAndConditions() {
             });
 
             declineButton.addEventListener('click', () => {
-                ipcRenderer.send('main-window-close');
+              quitAPP();
                 reject(false);
             });
         });
