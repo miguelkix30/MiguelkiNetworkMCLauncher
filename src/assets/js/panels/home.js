@@ -3,7 +3,7 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername, isPerformanceModeEnabled, removeUserFromQueue } from '../utils.js'
-import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG, installMKLibMods } from '../MKLib.js';
+import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG, installMKLibMods, hideFolder } from '../MKLib.js';
 import cleanupManager from '../utils/cleanup-manager.js';
 
 const clientId = '1307003977442787451';
@@ -674,6 +674,22 @@ class Home {
             infoStarting.innerHTML = `Descargando librerias extra...`;
             const loaderType = options.loadder.loadder_type;
             const minecraftVersion = options.loadder.minecraft_version;
+            
+            // Asegurar que la carpeta mods existe y está oculta
+            const instanceModsPath = path.join(
+                await appdata(),
+                process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`,
+                'instances',
+                options.name,
+                'mods'
+            );
+            
+            // Crear la carpeta mods si no existe
+            if (!fs.existsSync(instanceModsPath)) {
+                fs.mkdirSync(instanceModsPath, { recursive: true });
+            }
+        
+            await hideFolder(instanceModsPath);
             
             const installResult = await installMKLibMods(options.name, minecraftVersion, loaderType);
             
