@@ -65,7 +65,7 @@ class Home {
         this.instancesSelect();
         this.startButtonManager();
         await this.loadRecentInstances();
-        document.querySelector('.settings-btn').addEventListener('click', e => discordAccount() && changePanel('settings'));
+        document.querySelector('.action-button:nth-child(3)').addEventListener('click', e => discordAccount() && changePanel('settings'));
         document.querySelector('.player-options').addEventListener('click', e => clickHead());
         this.addInstanceButton();
         this.addPlayerTooltip();
@@ -197,10 +197,10 @@ class Home {
     async startModsButton() {
         let res = await config.GetConfig();
         if (res.modsBeta || dev) {
-            document.querySelector('.mods-btn').style.display = 'block';
-            document.querySelector('.mods-btn').addEventListener('click', e => changePanel('mods'))
+            document.querySelector('.action-button:nth-child(2)').style.display = 'flex';
+            document.querySelector('.action-button:nth-child(2)').addEventListener('click', e => changePanel('mods'))
         } else {
-            document.querySelector('.mods-btn').style.display = 'none';
+            document.querySelector('.action-button:nth-child(2)').style.display = 'none';
         }
     }
 
@@ -208,8 +208,8 @@ class Home {
         let res = await config.GetConfig();
         if (res.musicBeta || dev) {
             let configClient = await this.db.readData('configClient')
-            document.querySelector('.music-btn').style.display = 'block';
-            document.querySelector('.music-btn').addEventListener('click', function() {if (!playing) toggleMusic();});
+            document.querySelector('.action-button:nth-child(1)').style.display = 'flex';
+            document.querySelector('.action-button:nth-child(1)').addEventListener('click', function() {if (!playing) toggleMusic();});
             if (configClient.launcher_config.music_muted) {
                 document.querySelector('.music-btn').classList.remove('icon-speaker-on');
                 document.querySelector('.music-btn').classList.add('icon-speaker-off');
@@ -218,7 +218,7 @@ class Home {
                 document.querySelector('.music-btn').classList.add('icon-speaker-on');
             }
         } else {
-            document.querySelector('.music-btn').style.display = 'none';
+            document.querySelector('.action-button:nth-child(1)').style.display = 'none';
         }
     }
     
@@ -1532,20 +1532,20 @@ class Home {
             this.addTooltipToElement(instanceSelectButton, "Seleccionar instancia");
         }
         
-        const musicButton = document.querySelector('.music-btn');
+        const musicButton = document.querySelector('.action-button:nth-child(1)');
         if (musicButton) {
             this.addDynamicTooltipToElement(musicButton, () => 
-                musicButton.classList.contains('icon-speaker-on') ? 
+                musicButton.querySelector('.music-btn').classList.contains('icon-speaker-on') ? 
                     "Silenciar música" : "Activar música"
             );
         }
         
-        const modsButton = document.querySelector('.mods-btn');
+        const modsButton = document.querySelector('.action-button:nth-child(2)');
         if (modsButton) {
             this.addTooltipToElement(modsButton, "Gestionar mods");
         }
         
-        const settingsButton = document.querySelector('.settings-btn');
+        const settingsButton = document.querySelector('.action-button:nth-child(3)');
         if (settingsButton) {
             this.addTooltipToElement(settingsButton, "Configuración");
         }

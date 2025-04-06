@@ -487,6 +487,83 @@
     transform: scale(1.05);
 }
 
+.grid-icon {
+    width: 50%;
+    height: 50%;
+    filter: invert(1);
+    transform: translateX(0.5px);
+}
+
+.plus-icon {
+    width: 50%;
+    height: 50%;
+    filter: invert(1);
+    transform: translateX(0.5px);
+}
+
+.action-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    color: #fff;
+    font-size: 1rem;
+    height: 3.1rem;
+    width: 3.1rem;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.05);
+    transition: background 0.2s, border 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(15.5px);
+    -webkit-backdrop-filter: blur(15.5px);
+    margin-bottom: 0.1rem;
+}
+
+.action-button:hover {
+    background: var(--box-button-hover-2);
+    transform: scale(1.05);
+}
+
+.music-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 70%;
+    height: 70%;
+    pointer-events: none;
+}
+
+.mods-btn, .settings-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80%;
+    height: 80%;
+    font-size: 2rem;
+    pointer-events: none;
+}
+
+.icon-speaker-on {
+    background-image: url('../../images/music/speaker-on.png');
+    background-size: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    transition: all 0.2s;
+}
+
+.icon-speaker-off {
+    background-image: url('../../images/music/speaker-off.png');
+    background-size: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    transition: all 0.2s;
+}
+
+.icon-speaker-on:hover,
+.icon-speaker-off:hover {
+    filter: brightness(50%);
+}
+
 .info-starting-game {
     display: none;
     text-align: center;
@@ -525,61 +602,6 @@
     align-items: center;
     gap: 1rem;
     margin-bottom: 1.5rem;
-}
-
-.settings-btn {
-    text-align: center;
-    width: 3rem;
-    height: 3rem;
-    font-size: 3rem;
-    border-radius: 100px;
-    color: #fff;
-    cursor: pointer;
-    z-index: 4;
-    transition: color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
-    margin: 0 1.5rem;
-}
-.settings-btn:hover {
-    color: var(--icon-unselected);
-    animation: rotating 2s linear infinite;
-}
-
-@keyframes rotating {
-    from{
-        -webkit-transform: rotate(0deg);
-    }
-    to{
-        -webkit-transform: rotate(360deg);
-    }
-}
-
-.mods-btn {
-    text-align: center;
-    width: 3rem;
-    height: 3rem;
-    font-size: 3rem;
-    border-radius: 100px;
-    color: #fff;
-    cursor: pointer;
-    z-index: 4;
-    transition: color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
-}
-.mods-btn:hover {
-    color: var(--icon-unselected);
-}
-
-.music-btn {
-    text-align: center;
-    width: 3rem;
-    height: 3rem;
-    font-size: 3rem;
-    color: #fff;
-    cursor: pointer;
-    z-index: 4;
-    transition: color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
-}
-.music-btn:hover {
-    color: var(--icon-unselected);
 }
 
 .instance-popup {
@@ -888,40 +910,6 @@
         rgb(255, 0, 127));
     background-size: 50% 50%;
     animation: rotation 4s linear infinite;
-}
-
-.icon-speaker-on {
-    background-image: url('../../images/music/speaker-on.png');
-    background-size: 3rem;
-    background-repeat: no-repeat;
-    background-position: left;
-    transition: all 0.2s;
-}
-
-.icon-speaker-off {
-    background-image: url('../../images/music/speaker-off.png');
-    background-size: 3rem;
-    background-repeat: no-repeat;
-    background-position: left;
-    transition: all 0.2s;
-}
-
-.icon-speaker-on:hover,
-.icon-speaker-off:hover {
-    filter: brightness(50%);
-    transition: all 0.2s;
-}
-
-.grid-icon {
-    width: 50%;
-    height: 50%;
-    filter: invert(1);
-}
-
-.plus-icon {
-    width: 50%;
-    height: 50%;
-    filter: invert(1);
 }
 
 @keyframes rotation {
