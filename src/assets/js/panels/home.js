@@ -3,7 +3,7 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername, isPerformanceModeEnabled, removeUserFromQueue } from '../utils.js'
-import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG, installMKLibMods, hideFolder } from '../MKLib.js';
+import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG, installMKLibMods, hideFolder, killMinecraftProcess } from '../MKLib.js';
 import cleanupManager from '../utils/cleanup-manager.js';
 
 const clientId = '1307003977442787451';
@@ -51,6 +51,7 @@ const { shell, ipcRenderer } = require('electron')
 class Home {
     static id = "home";
     intervalId = null;
+
     async init(config) {
         this.config = config;
         this.db = new database();
@@ -70,6 +71,7 @@ class Home {
         this.addInstanceButton();
         this.addPlayerTooltip();
         this.addInterfaceTooltips();
+        this.initializeCloseGameButton();
     }
 
     async showstore() {
@@ -548,6 +550,7 @@ class Home {
         let instanceSelectBTN = document.querySelector('.instance-select');
         let infoStarting = document.querySelector(".info-starting-game-text");
         let progressBar = document.querySelector('.progress-bar');
+        let closeGameButton = document.querySelector('.force-close-button');
 
         if (check) {
             if (fetchError == false) {
@@ -701,6 +704,7 @@ class Home {
             
             await new Promise(resolve => setTimeout(resolve, 500));
             infoStarting.innerHTML = `Conectando...`;
+            progressBar.value = 0;
         } catch (error) {
             console.error("Error al instalar las librerias extra:", error);
         }
@@ -766,6 +770,9 @@ class Home {
             playInstanceBTN.style.display = "flex";
             instanceSelectBTN.disabled = false;
             instanceSelectBTN.classList.remove('disabled');
+            if (closeGameButton) {
+                closeGameButton.style.display = 'none';
+            }
             
             let errorPopup = new popup();
             errorPopup.openPopup({
@@ -875,6 +882,8 @@ class Home {
                 fadeOutAudio();
             }
             progressBar.style.display = "none"
+            closeGameButton.style.display = 'block';
+
             if (configClient.launcher_config.closeLauncher == 'close-launcher') {
                 ipcRenderer.send("main-window-hide")
             };
@@ -887,7 +896,7 @@ class Home {
             }
             
             ipcRenderer.send('main-window-progress-load')
-            infoStarting.innerHTML = `Iniciando...`
+            infoStarting.innerHTML = `Jugando...`
         })
 
         launch.on('estimated', (time) => {
@@ -923,6 +932,10 @@ class Home {
             instanceSelectBTN.classList.remove('disabled');
             infoStarting.innerHTML = `Cerrando...`
             console.log('Close');
+            
+            if (closeGameButton) {
+                closeGameButton.style.display = 'none';
+            }
             
             this.enablePlayButton();
             
@@ -1579,6 +1592,89 @@ class Home {
         
         if (element.parentNode) {
             observer.observe(element.parentNode, { childList: true, subtree: true });
+        }
+    }
+
+    initializeCloseGameButton() {
+        if (!document.querySelector('.force-close-button')) {
+            const progressBar = document.querySelector('.progress-bar');
+            const parentElement = progressBar.parentElement;
+            
+            const closeGameButton = document.createElement('div');
+            closeGameButton.className = 'force-close-button';
+            closeGameButton.innerHTML = 'Cerrar Juego';
+            closeGameButton.style.display = 'none';
+
+            closeGameButton.addEventListener('click', () => this.closeRunningGame());
+            
+            parentElement.insertBefore(closeGameButton, progressBar.nextSibling);
+        }
+    }
+
+    closeRunningGame() {
+        if (!playing) {
+            console.warn("No hay juego en ejecución para cerrar");
+            return;
+        }
+        
+        try {
+            const closeGamePopup = new popup();
+            closeGamePopup.openDialog({
+                title: 'Cerrar juego',
+                content: '¿Estás seguro de que quieres cerrar el juego actual? Se perderá todo progreso no guardado.',
+                options: true,
+                callback: async (result) => {
+                    if (result === 'cancel') {
+                        return;
+                    }
+                    
+                    try {
+                        console.log("Intentando cerrar el proceso de Minecraft...");
+                        closeGamePopup.openPopup({
+                            title: 'Cerrando juego...',
+                            content: 'Por favor, espera mientras se cierra el juego.',
+                            color: 'var(--color)',
+                            options: false
+                        });
+                        const killed = await killMinecraftProcess();
+                        closeGamePopup.closePopup();
+                        
+                        if (killed) {
+                            console.log("Proceso de Minecraft terminado correctamente");
+                            
+                            const successPopup = new popup();
+                            successPopup.openPopup({
+                                title: 'Juego cerrado',
+                                content: 'El juego se ha cerrado correctamente.',
+                                color: 'var(--color)',
+                                options: true
+                            });
+                        } else {
+                            console.error("No se pudo terminar el proceso de Minecraft");
+                            
+                            const errorPopup = new popup();
+                            errorPopup.openPopup({
+                                title: 'Error',
+                                content: 'No se pudo cerrar el juego. Por favor, ciérralo manualmente.',
+                                color: 'red',
+                                options: true
+                            });
+                        }
+                    } catch (err) {
+                        console.error('Error al intentar cerrar el juego:', err);
+                        
+                        const errorPopup = new popup();
+                        errorPopup.openPopup({
+                            title: 'Error',
+                            content: 'No se pudo cerrar el juego. Intenta cerrarlo manualmente.',
+                            color: 'red',
+                            options: true
+                        });
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error al intentar cerrar el juego:', error);
         }
     }
 }
