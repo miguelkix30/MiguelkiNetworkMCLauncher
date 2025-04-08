@@ -776,25 +776,11 @@ async function discordAccount() {
     if (discordUsername !== '') {
         discordUsernameText.textContent = discordUsername;
         discordPFPElement.src = discordPFP;
-        discordLogoutBtn.addEventListener('click', async () => {
-            discordLogoutBtn.style.display = 'none';
-            logOutDiscord();
-        });
     } else {
         discordAccountManagerTitle.style.display = 'none';
         discordAccountManagerPanel.style.display = 'none';
     }
 }
-
-async function logOutDiscord() {
-    const db = new database();
-    let configClient = await db.readData('configClient')
-    await setDiscordUsername('');
-    configClient.discord_token = null;
-    await db.updateData('configClient', configClient);
-    ipcRenderer.send('app-restart');
-}
-
 async function getTermsAndConditions() {
     try {
         console.log('Iniciando descarga de términos y condiciones...');
@@ -1245,7 +1231,6 @@ export {
     getDiscordUsername as getDiscordUsername,
     setDiscordUsername as setDiscordUsername,
     discordAccount as discordAccount,
-    logOutDiscord as logOutDiscord,
     getDiscordPFP as getDiscordPFP,
     setDiscordPFP as setDiscordPFP,
     getTermsAndConditions as getTermsAndConditions,

@@ -38,7 +38,11 @@ import {
   quitAPP,
   verificationError,
   sendClientReport,
-  checkBaseVersion
+  checkBaseVersion,
+  saveDiscordToken,
+  loadDiscordToken,
+  deleteDiscordToken,
+  migrateDiscordToken
 } from "./MKLib.js";
 const { AZauth, Microsoft, Mojang } = require("minecraft-java-core");
 
@@ -71,17 +75,6 @@ class Launcher {
       console.log("Inicializando cleanup manager después de configuración inicial");
       await cleanupManager.initialize();
     } else {
-      /* // Verificar la estructura de configuración
-      console.log("Verificando estructura de configuración...");
-      if (!this.verifyConfigStructure(configClient)) {
-        console.warn("Se ha detectado una estructura de configuración incorrecta. Reiniciando configuración...");
-        await this.db.deleteData("configClient");
-        console.log("Configuración eliminada. Reiniciando launcher...");
-        document.body.classList.add("hide");
-        ipcRenderer.send("main-window-reload");
-        return; // Detener la ejecución actual
-      } */
-
       if (configClient.launcher_config.performance_mode) {
         console.log("Modo de rendimiento activado");
         document.body.classList.add('performance-mode');
@@ -574,7 +567,6 @@ class Launcher {
             account_selected: null,
             instance_selct: null,
             mods_enabled: [],
-            discord_token: null,
             music_muted: false,
             terms_accepted: false,
             termsAcceptedDate: null,
@@ -781,7 +773,6 @@ class Launcher {
         account_selected: null,
         instance_selct: null,
         mods_enabled: [],
-        discord_token: null,
         music_muted: false,
         terms_accepted: false,
         java_config: {
@@ -828,7 +819,19 @@ class Launcher {
 
   async verifyDiscordAccount() {
     const configClient = await this.db.readData("configClient");
-    let token = configClient.discord_token;
+    
+    let token = await loadDiscordToken();
+    
+    if (!token && configClient.discord_token) {
+      console.log("Migrando token de Discord del configClient al almacenamiento seguro...");
+      await migrateDiscordToken(configClient);
+      
+      configClient.discord_token = null;
+      await this.db.updateData("configClient", configClient);
+      
+      token = await loadDiscordToken();
+    }
+    
     let verificationComplete = false;
     
     console.log("Iniciando verificación de Discord...");
@@ -906,14 +909,17 @@ class Launcher {
         }
       }
       
-      if (token && configClient.discord_token !== token) {
+      if (token) {
         try {
-          console.log("Guardando token de Discord preventivamente...");
-          configClient.discord_token = token;
-          await this.db.updateData("configClient", configClient);
-          console.log("Token guardado correctamente (pre-verificación)");
+          console.log("Guardando token de Discord en almacenamiento seguro...");
+          const saved = await saveDiscordToken(token);
+          if (saved) {
+            console.log("Token guardado correctamente en almacenamiento seguro");
+          } else {
+            console.warn("No se pudo guardar el token en almacenamiento seguro");
+          }
         } catch (dbError) {
-          console.error("Error al guardar token preliminar:", dbError);
+          console.error("Error al guardar token seguro:", dbError);
         }
       }
       
@@ -950,6 +956,7 @@ class Launcher {
         }
         
         token = null;
+        await deleteDiscordToken();
         continue;
       }
       
@@ -972,6 +979,7 @@ class Launcher {
         } else {
           ipcRenderer.send("open-discord-url");
           token = null;
+          await deleteDiscordToken();
           continue;
         }
       } else {
@@ -982,36 +990,26 @@ class Launcher {
           if (!finalCheck) {
             console.warn("El token se invalidó durante el proceso de verificación, reiniciando...");
             token = null;
+            await deleteDiscordToken();
             continue;
           }
         } catch (error) {
           console.error("Error en la verificación final del token:", error);
         }
         
-        if (configClient.discord_token !== token) {
+        try {
+          console.log("Guardando token final de Discord en almacenamiento seguro...");
+          await saveDiscordToken(token);
+          console.log("Token final guardado correctamente en almacenamiento seguro");
+        } catch (saveError) {
+          console.error("Error crítico al guardar token seguro:", saveError);
+          
+          await new Promise(resolve => setTimeout(resolve, 500));
           try {
-            console.log("Guardando token de Discord final...");
-            configClient.discord_token = token;
-            await this.db.updateData("configClient", configClient);
-            console.log("Token guardado correctamente (post-verificación)");
-            
-            const verifyConfig = await this.db.readData("configClient");
-            if (!verifyConfig || verifyConfig.discord_token !== token) {
-              console.error("Error de persistencia: El token no se guardó correctamente");
-              
-              await this.db.updateData("configClient", configClient);
-              console.log("Intento adicional de guardado completado");
-            }
-          } catch (saveError) {
-            console.error("Error crítico al guardar token:", saveError);
-            
-            await new Promise(resolve => setTimeout(resolve, 500));
-            try {
-              await this.db.updateData("configClient", configClient);
-              console.log("Token guardado en segundo intento");
-            } catch (finalError) {
-              console.error("Error fatal al persistir token de Discord:", finalError);
-            }
+            await saveDiscordToken(token);
+            console.log("Token guardado en segundo intento");
+          } catch (finalError) {
+            console.error("Error fatal al persistir token de Discord:", finalError);
           }
         }
         
@@ -1592,8 +1590,7 @@ class Launcher {
   verifyConfigStructure(config) {
     if (!config) return false;
 
-    const topLevelFields = ['account_selected', 'instance_selct', 'mods_enabled', 
-                           'discord_token', 'music_muted', 'terms_accepted', 'termsAcceptedDate'];
+    const topLevelFields = ['account_selected', 'instance_selct', 'mods_enabled', 'music_muted', 'terms_accepted', 'termsAcceptedDate'];
     for (const field of topLevelFields) {
       if (!(field in config)) {
         console.error(`Campo faltante en configClient: ${field}`);

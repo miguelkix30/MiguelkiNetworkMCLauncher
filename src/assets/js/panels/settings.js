@@ -3,7 +3,8 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 
-import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead, getTermsAndConditions, setPerformanceMode, isPerformanceModeEnabled } from '../utils.js'
+import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead, getTermsAndConditions, setPerformanceMode, isPerformanceModeEnabled, getDiscordUsername, getDiscordPFP, setDiscordUsername } from '../utils.js'
+import { deleteDiscordToken } from '../MKLib.js'
 const os = require('os');
 const { shell, ipcRenderer, dialog } = require('electron');
 const { marked } = require('marked');
@@ -23,6 +24,7 @@ class Settings {
         this.launcher()
         this.socials()
         this.terms()
+        this.discordAccount()
         
         this.applyPerfModeOverridesIfNeeded();
     }
@@ -791,6 +793,61 @@ class Settings {
             console.error('Error al inicializar los términos y condiciones:', error);
             const termsContainer = document.querySelector('.info-container');
             termsContainer.innerHTML = '<p>Ha ocurrido un error al cargar los términos y condiciones.</p>';
+        }
+    }
+
+    async discordAccount() {
+        let discordLogoutBtn = document.querySelector('.discord-logout-btn');
+        let discordUsername = await getDiscordUsername();
+        let discordUsernameText = document.querySelector('.profile-username');
+        let discordPFP = await getDiscordPFP();
+        let discordPFPElement = document.querySelector('.discord-profile-image');
+        let discordAccountManager = document.querySelector('#discord-account-manager');
+        
+        if (discordAccountManager) discordAccountManager.style.display = 'block';
+
+        if (discordLogoutBtn) {
+            discordLogoutBtn.addEventListener('click', async () => {
+                const logoutPopup = new popup();
+                const result = await new Promise(resolve => {
+                    logoutPopup.openDialog({
+                        title: 'Cerrar sesión de Discord',
+                        content: '¿Estás seguro de que quieres cerrar sesión de Discord? El launcher se reiniciará.',
+                        options: true,
+                        callback: resolve
+                    });
+                });
+
+                if (result === 'cancel') return;
+
+                const processingPopup = new popup();
+                processingPopup.openPopup({
+                    title: 'Cerrando sesión',
+                    content: 'Por favor, espera mientras se cierra la sesión...',
+                    color: 'var(--color)'
+                });
+
+                try {
+                    await deleteDiscordToken();
+                    
+                    await setDiscordUsername('');
+                    
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    ipcRenderer.send('app-restart');
+                } catch (error) {
+                    console.error('Error al cerrar sesión de Discord:', error);
+                    
+                    processingPopup.closePopup();
+                    const errorPopup = new popup();
+                    errorPopup.openPopup({
+                        title: 'Error',
+                        content: `Ha ocurrido un error al cerrar sesión: ${error.message}`,
+                        color: 'red',
+                        options: true
+                    });
+                }
+            });
         }
     }
 }

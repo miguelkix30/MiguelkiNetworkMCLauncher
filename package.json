@@ -14,7 +14,6 @@
     "url": "http://node1.miguelkinetwork.info:25565/",
     "store_url": "https://minecraft.miguelkinetwork.info/shop/",
     "azuriom_url": "https://minecraft.miguelkinetwork.info/",
-    "discord_server_id": "1300477405957329018",
     "discord_url": "https://dsc.gg/miguelkinetwork",
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",
