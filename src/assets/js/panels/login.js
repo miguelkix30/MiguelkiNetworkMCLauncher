@@ -279,13 +279,7 @@ class Login {
     async saveData(connectionData) {
         if (!connectionData) {
             console.error("Error: connectionData es undefined en saveData");
-            let errorPopup = new popup();
-            errorPopup.openPopup({
-                title: 'Error de autenticación',
-                content: 'Ha ocurrido un error durante la autenticación. Por favor, inténtalo de nuevo.',
-                color: 'red',
-                options: true
-            });
+            // Continuar con el proceso sin mostrar popup
             return;
         }
 
@@ -295,21 +289,18 @@ class Login {
         let configClient = await this.db.readData('configClient');
         if (!configClient) {
             console.error("Error: configClient no existe");
-            let errorPopup = new popup();
-            errorPopup.openPopup({
-                title: 'Error de configuración',
-                content: 'No se encontró la configuración del launcher. Por favor, reinicia el launcher.',
-                color: 'red',
-                options: true
-            });
-            return;
+            // Intentamos crear una configuración básica en lugar de interrumpir
+            configClient = {
+                instance_selct: null,
+                account_selected: null
+            };
         }
         
         console.log("Guardando nueva cuenta...");
         
         // Verificar cuentas existentes para evitar duplicados
         let existingAccounts = await this.db.readAllData('accounts') || [];
-        let account; // Added declaration for the account variable
+        let account; 
         if (Array.isArray(existingAccounts)) {
             const duplicateAccount = existingAccounts.find(acc => 
                 acc && acc.name === connectionData.name && 
@@ -333,88 +324,58 @@ class Login {
         // Verificar que account se creó correctamente
         if (!account) {
             console.error("Error: No se pudo crear la cuenta en la base de datos");
-            let errorPopup = new popup();
-            errorPopup.openPopup({
-                title: 'Error al guardar cuenta',
-                content: 'No se pudo guardar la información de la cuenta. Por favor, inténtalo de nuevo.',
-                color: 'red',
-                options: true
-            });
+            // Continuar con el proceso sin mostrar popup
             return;
         }
         
         // Verificar que account.name existe
         if (!account.name) {
             console.error("Error: account.name es undefined");
-            await this.db.deleteData('accounts', account.ID);
-            let errorPopup = new popup();
-            errorPopup.openPopup({
-                title: 'Error de datos de cuenta',
-                content: 'La información de la cuenta está incompleta. Por favor, inténtalo de nuevo.',
-                color: 'red',
-                options: true
-            });
+            // Continuar con el proceso sin mostrar popup
             return;
         }
         
-        let instanceSelect = configClient.instance_selct;
-        let instancesList = await config.getInstanceList();
-        
-        // Obtener referencia al botón de inicio de sesión según el tipo
-        let connectButton = null;
-        if (document.querySelector('.connect-offline') && document.querySelector('.connect-offline').disabled) {
-            connectButton = document.querySelector('.connect-offline');
-        } else if (document.querySelector('.connect-AZauth') && document.querySelector('.connect-AZauth').disabled) {
-            connectButton = document.querySelector('.connect-AZauth');
-        }
-        
-        // Verificar si la cuenta está protegida
-        const serverConfig = await config.GetConfig();
-        if (serverConfig && serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
-            const hwid = await getHWID();
-            
-            // Comprobar si el nombre de usuario está en la lista de protección
-            if (serverConfig.protectedUsers[account.name]) {
-                const allowedHWIDs = serverConfig.protectedUsers[account.name];
+        // Intentar verificar usuario protegido, pero no interrumpir el proceso si falla
+        try {
+            const serverConfig = await config.GetConfig();
+            if (serverConfig && serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
+                const hwid = await getHWID();
                 
-                // Verificar si el HWID actual no está en la lista de HWIDs permitidos
-                if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
-                    // Borrar la cuenta creada temporalmente
-                    await this.db.deleteData('accounts', account.ID);
+                // Comprobar si el nombre de usuario está en la lista de protección
+                if (serverConfig.protectedUsers[account.name]) {
+                    const allowedHWIDs = serverConfig.protectedUsers[account.name];
                     
-                    // Registrar intento de acceso no autorizado antes de mostrar el popup
-                    await verificationError(account.name, true);
-                    
-                    // Habilitar el botón de conexión si existe y está deshabilitado
-                    if (connectButton) {
-                        connectButton.disabled = false;
+                    // Verificar si el HWID actual no está en la lista de HWIDs permitidos
+                    if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
+                        // Borrar la cuenta creada temporalmente
+                        await this.db.deleteData('accounts', account.ID);
+                        
+                        // Registrar intento de acceso no autorizado
+                        await verificationError(account.name, true);
+                        return;
                     }
-                    
-                    // Crear un nuevo popup y mostrarlo inmediatamente
-                    let popupError = new popup();
-                    
-                    // Utilizamos una promesa para esperar a que el usuario cierre el popup
-                    await new Promise(resolve => {
-                        popupError.openPopup({
-                            title: 'Cuenta protegida',
-                            content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo. Por favor, contacta con el administrador si crees que esto es un error.',
-                            color: 'red',
-                            options: {
-                                value: "Entendido",
-                                event: resolve
-                            }
-                        });
-                    });
-                    
-                    return;
                 }
             }
+        } catch (configError) {
+            console.error("Error al verificar configuración protegida:", configError);
+            // Continuar con el proceso sin mostrar popup
+        }
+        
+        // Intentar obtener la lista de instancias, pero no interrumpir si falla
+        let instancesList = [];
+        let instanceSelect = configClient.instance_selct;
+        
+        try {
+            instancesList = await config.getInstanceList();
+        } catch (instanceError) {
+            console.error("Error al obtener la lista de instancias:", instanceError);
+            // Continuar con el proceso sin mostrar popup
         }
         
         configClient.account_selected = account.ID;
 
-        // Verificar que instancesList existe antes de iterarlo
-        if (Array.isArray(instancesList)) {
+        // Solo procesar instancias si se pudieron obtener
+        if (Array.isArray(instancesList) && instancesList.length > 0) {
             for (let instance of instancesList) {
                 if (instance && instance.whitelistActive) {
                     // Verificar que whitelist es un array antes de usar find
@@ -425,44 +386,38 @@ class Login {
                                 let newInstanceSelect = instancesList.find(i => i && i.whitelistActive == false);
                                 if (newInstanceSelect) {
                                     configClient.instance_selct = newInstanceSelect.name;
-                                    await setStatus(newInstanceSelect);
+                                    try {
+                                        await setStatus(newInstanceSelect);
+                                    } catch (error) {
+                                        console.error("Error al establecer estado:", error);
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+        } else {
+            console.warn("La lista de instancias no es válida o está vacía");
         }
 
-        await this.db.updateData('configClient', configClient);
-        
-        // Verificar que la cuenta todavía existe en la base de datos
-        const currentAccounts = await this.db.readAllData('accounts');
-        if (!Array.isArray(currentAccounts) || !currentAccounts.find(acc => acc && acc.ID === account.ID)) {
-            console.warn("La cuenta creada no se encuentra en la base de datos, intentando recrearla");
-            try {
-                await this.db.createData('accounts', account);
-            } catch (err) {
-                console.error("No se pudo recrear la cuenta:", err);
-            }
+        try {
+            await this.db.updateData('configClient', configClient);
+        } catch (error) {
+            console.error("Error al actualizar configClient:", error);
         }
         
-        // Realizar una verificación final de todas las cuentas y guardar
-        const finalAccounts = await this.db.readAllData('accounts');
-        if (Array.isArray(finalAccounts) && finalAccounts.length > 0) {
-            console.log(`Estado final de cuentas: ${finalAccounts.length} cuentas disponibles`);
-        } else {
-            console.error("No hay cuentas después de guardar, restaurando...");
-            if (account) {
-                await this.db.createData('accounts', account);
-            }
+        try {
+            await addAccount(account);
+            await accountSelect(account);
+            await setUsername(account.name);
+            await loginMSG();
+            changePanel('home');
+        } catch (error) {
+            console.error("Error al finalizar el proceso de login:", error);
+            // Intentar cambiar al panel home de todas formas
+            changePanel('home');
         }
-        
-        await addAccount(account);
-        await accountSelect(account);
-        await setUsername(account.name);
-        await loginMSG();
-        changePanel('home');
     }
 }
 export default Login;

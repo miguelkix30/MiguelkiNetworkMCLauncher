@@ -29,7 +29,7 @@ class Settings {
         this.applyPerfModeOverridesIfNeeded();
     }
 
-    applyPerfModeOverridesIfNeeded() {
+    async applyPerfModeOverridesIfNeeded() {
         if (isPerformanceModeEnabled()) {
             console.log("Applying performance mode overrides for settings panel");
             
@@ -102,7 +102,6 @@ class Settings {
                         activeContainerSettings.style.opacity = '0';
                         activeContainerSettings.style.transform = 'translateX(100%)';
                         activeContainerSettings.style.visibility = 'hidden';
-                        
                         void activeContainerSettings.offsetWidth;
                     } else {
                         activeContainerSettings.classList.toggle('active-container-settings');
@@ -126,7 +125,29 @@ class Settings {
                     document.querySelector(`#${id}-tab`).classList.add('active-container-settings');
                 }
             }
-        })
+        });
+
+        // Efectos de presionado para los botones de navegación
+        const navButtons = document.querySelectorAll('.nav-settings-btn');
+        navButtons.forEach(button => {
+            button.addEventListener('mousedown', () => {
+                if (!button.classList.contains('active-settings-BTN')) {
+                    button.style.transform = 'translateY(1px) scale(0.98)';
+                }
+            });
+            
+            button.addEventListener('mouseup', () => {
+                if (!button.classList.contains('active-settings-BTN')) {
+                    button.style.transform = '';
+                }
+            });
+            
+            button.addEventListener('mouseleave', () => {
+                if (!button.classList.contains('active-settings-BTN')) {
+                    button.style.transform = '';
+                }
+            });
+        });
     }
 
     accounts() {
@@ -234,7 +255,8 @@ class Settings {
                     // Verificar cuántas cuentas quedan
                     allAccounts = await this.db.readAllData('accounts');
                     
-                    if (!allAccounts || allAccounts.length === 0 || allAccounts.length === 1) {
+                    // Solo redirigir a login si no quedan cuentas disponibles
+                    if (!allAccounts || allAccounts.length === 0) {
                         popupAccount.closePopup();
                         return changePanel('login');
                     }
@@ -256,8 +278,14 @@ class Settings {
                                 clickableHead(false);
                             }
                             
-                            let newInstanceSelect = await this.setInstance(nextAccount);
-                            configClient.instance_selct = newInstanceSelect.instance_selct;
+                            try {
+                                let newInstanceSelect = await this.setInstance(nextAccount);
+                                configClient.instance_selct = newInstanceSelect.instance_selct;
+                            } catch (error) {
+                                console.warn(`Error al obtener instancia después de cambiar cuenta: ${error.message}`);
+                                // Continuar con la configuración actual si hay un error
+                            }
+                            
                             await this.db.updateData('configClient', configClient);
                         }
                     }
@@ -285,31 +313,38 @@ class Settings {
 
         let configClient = await this.db.readData('configClient') || { instance_selct: null };
         let instanceSelect = configClient.instance_selct;
-        let instancesList = await config.getInstanceList();
         
-        if (!instancesList || instancesList.length === 0) {
-            console.log("No instances available");
-            return configClient;
-        }
+        try {
+            let instancesList = await config.getInstanceList();
+            
+            if (!instancesList || instancesList.length === 0) {
+                console.log("No instances available");
+                return configClient;
+            }
 
-        for (let instance of instancesList) {
-            if (instance.whitelistActive) {
-                let whitelist = instance.whitelist.find(whitelist => whitelist == auth.name);
-                if (whitelist !== auth.name) {
-                    if (instance.name == instanceSelect) {
-                        let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
-                        if (!newInstanceSelect && instancesList.length > 0) {
-                            newInstanceSelect = instancesList[0];
-                        }
-                        
-                        if (newInstanceSelect) {
-                            configClient.instance_selct = newInstanceSelect.name;
-                            await setStatus(newInstanceSelect);
+            for (let instance of instancesList) {
+                if (instance.whitelistActive) {
+                    let whitelist = instance.whitelist.find(whitelist => whitelist == auth.name);
+                    if (whitelist !== auth.name) {
+                        if (instance.name == instanceSelect) {
+                            let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
+                            if (!newInstanceSelect && instancesList.length > 0) {
+                                newInstanceSelect = instancesList[0];
+                            }
+                            
+                            if (newInstanceSelect) {
+                                configClient.instance_selct = newInstanceSelect.name;
+                                await setStatus(newInstanceSelect);
+                            }
                         }
                     }
                 }
             }
+        } catch (error) {
+            console.warn(`Error al obtener lista de instancias en setInstance: ${error.message}`);
+            // Continuar con la configuración actual si hay un error al obtener instancias
         }
+        
         return configClient;
     }
 
@@ -485,40 +520,58 @@ class Settings {
     }
 
     async javaPath() {
-        let javaPathText = document.querySelector(".java-path-txt")
-        javaPathText.textContent = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}/runtime`;
+        let javaPathText = document.querySelector(".java-path-txt");
+        if (javaPathText) {
+            javaPathText.textContent = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}/runtime`;
+        }
 
         let configClient = await this.db.readData('configClient')
         let javaPath = configClient?.java_config?.java_path || 'Utilice la versión de java suministrada con el launcher';
         let javaPathInputTxt = document.querySelector(".java-path-input-text");
         let javaPathInputFile = document.querySelector(".java-path-input-file");
-        javaPathInputTxt.value = javaPath;
+        
+        if (javaPathInputTxt) {
+            javaPathInputTxt.value = javaPath;
+        }
 
-        document.querySelector(".java-path-set").addEventListener("click", async () => {
-            javaPathInputFile.value = '';
-            javaPathInputFile.click();
-            await new Promise((resolve) => {
-                let interval;
-                interval = setInterval(() => {
-                    if (javaPathInputFile.value != '') resolve(clearInterval(interval));
-                }, 100);
+        let javaPathSetBtn = document.querySelector(".java-path-set");
+        let javaPathResetBtn = document.querySelector(".java-path-reset");
+
+        if (javaPathSetBtn) {
+            javaPathSetBtn.addEventListener("click", async () => {
+                if (!javaPathInputFile) return;
+                
+                javaPathInputFile.value = '';
+                javaPathInputFile.click();
+                await new Promise((resolve) => {
+                    let interval;
+                    interval = setInterval(() => {
+                        if (javaPathInputFile.value != '') resolve(clearInterval(interval));
+                    }, 100);
+                });
+
+                if (javaPathInputFile.value.replace(".exe", '').endsWith("java") || javaPathInputFile.value.replace(".exe", '').endsWith("javaw")) {
+                    let configClient = await this.db.readData('configClient')
+                    let file = javaPathInputFile.files[0].path;
+                    if (javaPathInputTxt) {
+                        javaPathInputTxt.value = file;
+                    }
+                    configClient.java_config.java_path = file
+                    await this.db.updateData('configClient', configClient);
+                } else alert("El nombre del archivo debe ser java o javaw");
             });
+        }
 
-            if (javaPathInputFile.value.replace(".exe", '').endsWith("java") || javaPathInputFile.value.replace(".exe", '').endsWith("javaw")) {
+        if (javaPathResetBtn) {
+            javaPathResetBtn.addEventListener("click", async () => {
                 let configClient = await this.db.readData('configClient')
-                let file = javaPathInputFile.files[0].path;
-                javaPathInputTxt.value = file;
-                configClient.java_config.java_path = file
+                if (javaPathInputTxt) {
+                    javaPathInputTxt.value = 'Utilice la versión de java suministrada con el launcher';
+                }
+                configClient.java_config.java_path = null
                 await this.db.updateData('configClient', configClient);
-            } else alert("El nombre del archivo debe ser java o javaw");
-        });
-
-        document.querySelector(".java-path-reset").addEventListener("click", async () => {
-            let configClient = await this.db.readData('configClient')
-            javaPathInputTxt.value = 'Utilice la versión de java suministrada con el launcher';
-            configClient.java_config.java_path = null
-            await this.db.updateData('configClient', configClient);
-        });
+            });
+        }
     }
 
     async resolution() {
@@ -559,20 +612,27 @@ class Settings {
         let maxDownloadFiles = configClient?.launcher_config?.download_multi || 3;
         let maxDownloadFilesInput = document.querySelector(".max-files");
         let maxDownloadFilesReset = document.querySelector(".max-files-reset");
-        maxDownloadFilesInput.value = maxDownloadFiles;
+        
+        if (maxDownloadFilesInput) {
+            maxDownloadFilesInput.value = maxDownloadFiles;
 
-        maxDownloadFilesInput.addEventListener("change", async () => {
-            let configClient = await this.db.readData('configClient')
-            configClient.launcher_config.download_multi = maxDownloadFilesInput.value;
-            await this.db.updateData('configClient', configClient);
-        })
+            maxDownloadFilesInput.addEventListener("change", async () => {
+                let configClient = await this.db.readData('configClient')
+                configClient.launcher_config.download_multi = maxDownloadFilesInput.value;
+                await this.db.updateData('configClient', configClient);
+            });
+        }
 
-        maxDownloadFilesReset.addEventListener("click", async () => {
-            let configClient = await this.db.readData('configClient')
-            maxDownloadFilesInput.value = 3
-            configClient.launcher_config.download_multi = 3;
-            await this.db.updateData('configClient', configClient);
-        })
+        if (maxDownloadFilesReset) {
+            maxDownloadFilesReset.addEventListener("click", async () => {
+                let configClient = await this.db.readData('configClient')
+                if (maxDownloadFilesInput) {
+                    maxDownloadFilesInput.value = 3;
+                }
+                configClient.launcher_config.download_multi = 3;
+                await this.db.updateData('configClient', configClient);
+            });
+        }
 
         const performanceModeCheckbox = document.querySelector(".performance-mode-checkbox");
         if (performanceModeCheckbox) {
@@ -636,43 +696,6 @@ class Settings {
                 this.handleDeleteAll();
             });
         }
-
-        // Keep the old code commented out for reference
-        /*
-        let closeBox = document.querySelector(".close-box");
-        
-        if (closeLauncher == "close-launcher") {
-            document.querySelector('.close-launcher').classList.add('active-close');
-        } else if (closeLauncher == "close-all") {
-            document.querySelector('.close-all').classList.add('active-close');
-        } else if (closeLauncher == "close-none") {
-            document.querySelector('.close-none').classList.add('active-close');
-        }
-
-        closeBox.addEventListener("click", async e => {
-            if (e.target.classList.contains('close-btn')) {
-                let activeClose = document.querySelector('.active-close');
-                if (e.target.classList.contains('active-close')) return
-                activeClose?.classList.toggle('active-close');
-
-                let configClient = await this.db.readData('configClient')
-
-                if (e.target.classList.contains('close-launcher')) {
-                    e.target.classList.toggle('active-close');
-                    configClient.launcher_config.closeLauncher = "close-launcher";
-                    await this.db.updateData('configClient', configClient);
-                } else if (e.target.classList.contains('close-all')) {
-                    e.target.classList.toggle('active-close');
-                    configClient.launcher_config.closeLauncher = "close-all";
-                    await this.db.updateData('configClient', configClient);
-                } else if (e.target.classList.contains('close-none')) {
-                    e.target.classList.toggle('active-close');
-                    configClient.launcher_config.closeLauncher = "close-none";
-                    await this.db.updateData('configClient', configClient);
-                }
-            }
-        })
-        */
     }
 
     async handleResetConfig() {

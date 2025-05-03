@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername, isPerformanceModeEnabled, removeUserFromQueue } from '../utils.js'
+import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername, isPerformanceModeEnabled, removeUserFromQueue, captureAndSetVideoFrame } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG, installMKLibMods, hideFolder, killMinecraftProcess } from '../MKLib.js';
 import cleanupManager from '../utils/cleanup-manager.js';
 
@@ -395,6 +395,34 @@ class Home {
             instanceSelectBTN.removeEventListener('click', this.instanceSelectClickHandler);
             this.instanceSelectClickHandler = async () => {
                 if (instanceSelectBTN.disabled) return;
+                
+                // Verificar si hay bloqueo de dispositivo u otros errores antes de mostrar la ventana
+                let hwid = await getHWID();
+                let check = await checkHWID(hwid);
+                let fetchError = await getFetchError();
+                
+                if (check) {
+                    if (fetchError == false) {
+                        let popupError = new popup();
+                        popupError.openPopup({
+                            title: 'Error',
+                            content: 'No puedes seleccionar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Miguelki Network.',
+                            color: 'red',
+                            options: true
+                        });
+                        return;
+                    } else {
+                        let popupError = new popup();
+                        popupError.openPopup({
+                            title: 'Error',
+                            content: 'No se ha podido conectar con el Anticheat de Miguelki Network y por lo tanto no se podrá seleccionar ninguna instancia.',
+                            color: 'red',
+                            options: true
+                        });
+                        return;
+                    }
+                }
+                
                 let username = await getUsername();
                 
                 let refreshedInstancesList = await config.getInstanceList();

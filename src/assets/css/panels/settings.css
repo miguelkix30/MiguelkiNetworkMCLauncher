@@ -1,78 +1,101 @@
 .settings .container {
     display: flex;
+    flex-direction: column;
     height: 100%;
+    overflow-x: hidden;
+}
+
+.settings-header {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 120px; /* Reducida la altura */
+    padding-top: 1.5rem;
+}
+
+.settings-title {
+    font-size: 2rem;
+    color: var(--color);
+    margin: 0;
+    text-align: center;
 }
 
 .nav-settings {
-    width: 20%;
-    height: 99.5%;
     display: flex;
-    align-items: center;
-    flex-direction: column;
     justify-content: center;
-    font-size: 2.5rem;
-    background-color: var(--sidebar);
-    border-right: 1px solid var(--sidebar-border);
-    transition: all 0.2s;
-    background: rgba( 0, 0, 0, 0.05 );
-    border-radius: 10px;
-    border: 1px solid rgba( 255, 255, 255, 0.18 );
-    backdrop-filter: blur( 8px );
-    -webkit-backdrop-filter: blur( 5px );
-}
-
-.nav-settings p {
-    font-size: 60%;
-    margin-top: 80px;
+    align-items: center;
+    margin-top: 15px;
 }
 
 .nav-box {
-    width: 100%;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.nav-box #save {
-    margin: 3rem;
+    width: 90%;
 }
 
 .nav-settings-btn {
-    font-size: 50%;
-    padding: 5px 10px;
-    width: 70%;
-    text-align: center;
-    margin: 0.5rem 0;
-    background-color: var(--box-button);
-    box-shadow: 0px 3px 6px #00000029;
-    border-radius: 25px;
-    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 0.3rem; /* Reducido el margen */
     cursor: pointer;
-    z-index: 2;
-    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+    color: white; /* Changed from var(--icon-unselected) to white */
+    flex: 1;
+    padding: 0.6rem 1rem 0.8rem; /* Aumentado el padding inferior */
+    font-size: 1.1rem; /* Aumentado tamaño de fuente */
+    transition: all 0.2s;
+    border-radius: 5px;
 }
 
 .nav-settings-btn:hover {
     background-color: var(--box-button-hover);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0px 6px 15px rgba(0, 120, 189, 0.5);
+}
+
+.nav-settings-btn:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0px 2px 5px rgba(0, 120, 189, 0.3);
 }
 
 .active-settings-BTN {
-    background: var(--box-button-hover-2);
+    color: var(--color);
+    background: linear-gradient(var(--box-button), var(--box-button-hover));
 }
 
+/* Hacer que el botón VOLVER siempre tenga el fondo azul */
+#save {
+    background: linear-gradient(var(--box-button), var(--box-button-hover));
+    color: white !important;
+    opacity: 1 !important;
+}
+
+#save:disabled {
+    opacity: 0.8 !important;
+    cursor: not-allowed;
+}
+
+.settings-content {
+    position: relative;
+    width: 100%;
+    height: calc(100% - 150px);
+    overflow: hidden;
+    padding: 1rem 0;
+}
 
 .container-settings {
     position: absolute;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    right: 0;
-    width: 80%;
-    height: calc(100% - 26px);
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+    height: 100%;
     opacity: 0;
     pointer-events: none;
     transform: translateX(100%);
-    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; 
+    transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+    overflow-x: hidden;
 }
 
 .active-container-settings {
@@ -81,55 +104,83 @@
     transform: translateX(0);
 }
 
+.settings-column {
+    width: 45%;
+    height: 100%;
+    padding: 0 1rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.settings-full-column {
+    width: 90%;
+    height: 100%;
+    padding: 0 1rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.settings-column::-webkit-scrollbar,
+.settings-full-column::-webkit-scrollbar {
+    width: 8px;
+}
+
+.settings-column::-webkit-scrollbar-track,
+.settings-full-column::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.settings-column::-webkit-scrollbar-thumb,
+.settings-full-column::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+}
+
 .settings-elements-box {
-    width: 80%;
-    padding: 1.5rem 2rem;
-    margin: 0.5rem;
+    width: 100%;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
     background-color: var(--sidebar);
     border-right: 1px solid var(--sidebar-border);
     transition: all 0.2s;
-    background: rgba( 0, 0, 0, 0.05 );
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 10px;
-    
-    border: 1px solid rgba( 255, 255, 255, 0.18 );
-    backdrop-filter: blur( 80px );
-    -webkit-backdrop-filter: blur( 80px );
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(15.5px);
+    -webkit-backdrop-filter: blur(15.5px);
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.settings-elements {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    margin: 1rem 0;
+    overflow-x: hidden; /* Prevenir scroll horizontal */
+}
+
+/* Asegurar que los elementos deshabilitados mantengan su color de texto */
+input:disabled, 
+button:disabled,
+select:disabled,
+textarea:disabled,
+.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    color: inherit !important; /* Mantener el color del texto */
+}
+
+button:disabled {
+    color: #ddd !important; /* Color gris oscuro para texto en botones deshabilitados */
+}
+
+input:disabled::placeholder {
+    color: rgba(221, 221, 221, 0.7) !important; /* Color gris oscuro para placeholders */
 }
 
 .setting-text {
     font-size: 1rem;
-}
-
-.active-container-settings {
-    opacity: 1;
-    z-index: 1;
-    pointer-events: all;
-}
-
-.titre-tab {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 2rem;
-    margin: 1.5rem 0;
-    padding: 0.5rem 2rem;
-    text-align: center;
-    background-color: var(--sidebar);
-    border-right: 1px solid var(--sidebar-border);
-    transition: all 0.2s;
-    background: rgba( 0, 0, 0, 0.05 );
-    border-radius: 100px;
-    
-    border: 1px solid rgba( 255, 255, 255, 0.18 );
-    backdrop-filter: blur( 80px );
-    -webkit-backdrop-filter: blur( 80px );
-}
-
-.settings-elements {
-    margin-top: 1.5rem;
-    display: flex;
-    align-items: center;
-    width: 100%;
 }
 
 .content-center {
@@ -138,6 +189,11 @@
 
 .content-evenly {
     justify-content: space-evenly;
+}
+
+.content-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /*******************************************************************************
@@ -163,12 +219,12 @@
     background-color: var(--sidebar);
     border-right: 1px solid var(--sidebar-border);
     transition: all 0.2s;
-    background: rgba( 0, 0, 0, 0.05 );
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 10px;
     
-    border: 1px solid rgba( 255, 255, 255, 0.18 );
-    backdrop-filter: blur( 80px );
-    -webkit-backdrop-filter: blur( 80px );
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(80px);
+    -webkit-backdrop-filter: blur(80px);
 }
 
 .account-select {
@@ -242,11 +298,11 @@
     background-color: var(--sidebar);
     border-right: 1px solid var(--sidebar-border);
     transition: all 0.2s;
-    background: rgba( 0, 0, 0, 0.05 );
+    background: rgba(0, 0, 0, 0.05);
     
-    border: 1px solid rgba( 255, 255, 255, 0.18 );
-    backdrop-filter: blur( 80px );
-    -webkit-backdrop-filter: blur( 80px );
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(80px);
+    -webkit-backdrop-filter: blur(80px);
 }
 
 .delete-profile-icon {
@@ -256,12 +312,11 @@
 .profile-card {
     display: flex;
     align-items: center;
-    padding: 10px;
+    padding: 8px 12px; /* Reducido padding */
     transition: all 0.2s;
     width: auto;
     max-width: 400px;
-    margin-left: 20px;
-    margin-right: 20px;
+    margin: 5px 20px; /* Reducido margen vertical */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.05);
@@ -271,11 +326,11 @@
 }
 
 .discord-profile-image {
-    width: 55px;
-    height: 55px;
+    width: 45px; /* Reducido tamaño */
+    height: 45px; /* Reducido tamaño */
     border-radius: 50%;
     object-fit: cover;
-    margin-right: 20px;
+    margin-right: 15px; /* Reducido margen */
 }
 
 .profile-info {
@@ -284,7 +339,7 @@
 }
 
 .profile-username {
-    font-size: 1.5rem;
+    font-size: 1.3rem; /* Reducido tamaño de fuente */
     color: #fff;
     margin: 0;
 }
@@ -295,26 +350,29 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 100%;
+    height: auto; /* Cambiado de 100% a auto para reducir altura */
+    padding: 10px 0; /* Añadido padding vertical más pequeño */
 }
 
 .discord-username-text {
     text-align: center;
-    font-size: 1.5rem;
+    font-size: 1.3rem; /* Reducido tamaño de fuente */
+    margin-bottom: 5px; /* Añadido pequeño margen inferior */
 }
 
 .discord-logout-warning {
     color: #ff2c2c;
     text-align: center;
-    font-size: 1rem;
+    font-size: 0.9rem; /* Reducido tamaño de fuente */
+    margin: 5px 0; /* Reducido margen */
 }
 
 .discord-logout-btn {
     align-items: center;
-    padding-top: 0.25rem;
-    font-size: 1.25rem;
-    width: 12rem;
-    height: 2.5rem;
+    padding-top: 0.2rem; /* Reducido padding */
+    font-size: 1.1rem; /* Reducido tamaño de fuente */
+    width: 10rem; /* Reducido ancho */
+    height: 2.2rem; /* Reducido altura */
     text-align: center;
     background-color: var(--box-button);
     box-shadow: 0px 3px 6px #00000029;
@@ -322,9 +380,12 @@
     color: #fff;
     cursor: pointer;
     z-index: 2;
-    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+    margin-top: 8px; /* Añadido un margen superior pequeño */
+    display: flex;
+    justify-content: center;
 }
 
+/* Mantener el hover sin cambios */
 .discord-logout-btn:hover {
     background-color: var(--box-button-hover);
 }
@@ -433,7 +494,9 @@
     color: var(--color);
     padding: 0.5rem 1rem;
     border-radius: 15px;
-    width: 50%;
+    max-width: 90%;
+    margin-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .java-path-input-file {
@@ -700,67 +763,61 @@ body.performance-mode * {
  *                                                                             *
  ******************************************************************************/
 
-
 .credits-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 5em;
-    padding: 1em;
+    gap: 2.5em; /* Reducido el espacio entre tarjetas */
+    padding: 0.5em; /* Reducido el padding */
 }
 
 .credit {
-    flex-basis: 18em;
-    max-width: 18em;
+    flex-basis: 16em; /* Reducido el ancho base */
+    max-width: 16em; /* Reducido el ancho máximo */
     flex-grow: 0;
     flex-shrink: 1;
     text-align: center;
-    padding: 14px;
+    padding: 10px; /* Reducido el padding */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(5px);
+    margin-bottom: 1em; /* Añadido un margen inferior más pequeño */
 }
   
-  .credit img {
-    width: 100px;
-    height: 100px;
+.credit img {
+    width: 80px; /* Reducido el tamaño de la imagen */
+    height: 80px; /* Reducido el tamaño de la imagen */
     border-radius: 50%;
     object-fit: cover;
-    margin-bottom: 10px;
-  }
+    margin-bottom: 8px; /* Reducido el margen inferior */
+}
   
-  .credit h3 {
-    margin: 10px 0;
-    font-size: 24px;
-  }
+.credit h3 {
+    margin: 6px 0; /* Reducido el margen */
+    font-size: 20px; /* Reducido el tamaño de fuente */
+}
   
-  .social-icons {
+.social-icons {
     display: flex;
     justify-content: center;
-    gap: 10px;
-  }
+    gap: 8px; /* Reducido el espacio entre iconos */
+    margin-top: 5px; /* Añadido un pequeño margen superior */
+}
   
-  .social-icons a {
-    font-size: 30px;
+.social-icons a {
+    font-size: 24px; /* Reducido el tamaño de fuente */
     color: #fff;
-  }
-  
-  .social-icons i {
-    transition: color 0.3s ease;
-  }
-  
-  .social-icons a:hover i {
-    color: #979797;
-  }
+}
 
-  .role {
-    font-size: 0.9em;
-  }
+.role {
+    font-size: 0.85em; /* Reducido el tamaño de fuente */
+    margin: 3px 0; /* Añadido un margen reducido */
+}
 
-  /* Terminos y condiciones */
+/* Terminos y condiciones */
 
 .info-container {
   display: flex;
@@ -842,4 +899,20 @@ body.performance-mode * {
 
 body.performance-mode .data-management-btn {
   transition: none !important;
+}
+
+.titre-tab {
+    font-size: 1.5rem;
+    margin: 1rem 0;
+    margin-bottom: 0.5rem;
+    padding: 0.7rem 1.2rem;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    color: #fff;
+    font-weight: 500;
+    width: calc(100% - 2.4rem); /* Ajustado para el padding horizontal */
+    box-sizing: border-box;
 }
