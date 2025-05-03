@@ -972,11 +972,10 @@ class Home {
         launch.on('error', err => {
             removeUserFromQueue(hwid);
             
-            let popupError = new popup()
             if (typeof err.error === 'undefined') {
                 if (configClient.launcher_config.closeLauncher == 'close-launcher') {
-                    ipcRenderer.send("main-window-show")
-                };
+                    ipcRenderer.send("main-window-show");
+                }
                 if (rpcActive) {
                     RPC.setActivity({
                         state: `En el launcher`,
@@ -993,28 +992,46 @@ class Home {
                         ]
                     }).catch();
                 }
+                
+                // Handle undefined error case with patch toolkit option
+                const errorDialog = new popup();
+                errorDialog.openDialog({
+                    title: 'Error al iniciar el juego',
+                    content: 'Se ha producido un error al iniciar el juego. ¿Quieres ejecutar el toolkit de parches para intentar solucionarlo?',
+                    options: true,
+                    callback: (result) => {
+                        if (result === 'accept') {
+                            if (window.launcher && typeof window.launcher.runPatchToolkit === 'function') {
+                                window.launcher.runPatchToolkit();
+                            } else {
+                                patchLoader();
+                            }
+                        }
+                    }
+                });
             } else {
+                let popupError = new popup();
                 popupError.openPopup({
                     title: 'Error',
                     content: err.error,
                     color: 'red',
                     options: true
-                })
+                });
 
                 if (configClient.launcher_config.closeLauncher == 'close-launcher') {
-                    ipcRenderer.send("main-window-show")
-                };
-                ipcRenderer.send('main-window-progress-reset')
+                    ipcRenderer.send("main-window-show");
+                }
+                ipcRenderer.send('main-window-progress-reset');
                 if (!musicMuted && !musicPlaying) {
                     musicPlaying = true;
                     setBackgroundMusic(options.backgroundMusic);
                 }
-                infoStartingBOX.style.display = "none"
-                playInstanceBTN.style.display = "flex"
+                infoStartingBOX.style.display = "none";
+                playInstanceBTN.style.display = "flex";
                 instanceSelectBTN.disabled = false;
                 instanceSelectBTN.classList.remove('disabled');
-                infoStarting.innerHTML = `Verificando...`
-                this.notification()
+                infoStarting.innerHTML = `Verificando...`;
+                this.notification();
                 
                 this.enablePlayButton();
                 

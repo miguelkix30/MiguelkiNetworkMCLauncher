@@ -149,12 +149,15 @@ class Settings {
                         return changePanel('login')
                     }
 
-                    let account = await this.db.readData('accounts', id);
+                    // Primero comprobamos si la cuenta existe 
+                    let allAccounts = await this.db.readAllData('accounts');
+                    let account = allAccounts.find(acc => String(acc.ID) === String(id));
+
                     if (!account) {
                         popupAccount.closePopup();
                         popupAccount.openPopup({
                             title: 'Error',
-                            content: 'No se pudo encontrar la cuenta seleccionada.',
+                            content: `No se pudo encontrar la cuenta seleccionada (ID: ${id}). La cuenta podría haber sido eliminada o dañada.`,
                             color: 'red',
                             options: true
                         });
@@ -171,36 +174,98 @@ class Settings {
                     }
                     
                     configClient.account_selected = account.ID;
+                    await this.db.updateData('configClient', configClient);
                     popupAccount.closePopup();
-                    return await this.db.updateData('configClient', configClient);
+                    return;
                 }
 
-                if (e.target.classList.contains("delete-profile")) {
+                if (e.target.classList.contains("delete-profile") || e.target.classList.contains("icon-account-delete")) {
+                    // Asegurarse de obtener el id correcto, ya sea del elemento o de su padre
+                    let deleteId = id;
+                    if (e.target.classList.contains("icon-account-delete")) {
+                        deleteId = e.target.parentElement.id;
+                    }
+                    
+                    if (!deleteId) {
+                        popupAccount.closePopup();
+                        popupAccount.openPopup({
+                            title: 'Error',
+                            content: 'No se pudo identificar la cuenta a eliminar.',
+                            color: 'red',
+                            options: true
+                        });
+                        return;
+                    }
+
                     popupAccount.openPopup({
-                        title: 'Iniciar sesión',
+                        title: 'Eliminando cuenta',
                         content: 'Espere, por favor...',
                         color: 'var(--color)'
                     })
-                    await this.db.deleteData('accounts', id);
-                    let deleteProfile = document.getElementById(`${id}`);
-                    let accountListElement = document.querySelector('.accounts-list');
-                    accountListElement.removeChild(deleteProfile);
 
-                    if (accountListElement.children.length == 1) return changePanel('login');
+                    // Verificar que la cuenta existe antes de intentar eliminarla
+                    let allAccounts = await this.db.readAllData('accounts');
+                    let accountToDelete = allAccounts.find(acc => String(acc.ID) === String(deleteId));
+
+                    if (!accountToDelete) {
+                        popupAccount.closePopup();
+                        popupAccount.openPopup({
+                            title: 'Error',
+                            content: `No se pudo encontrar la cuenta a eliminar (ID: ${deleteId}).`,
+                            color: 'red',
+                            options: true
+                        });
+                        return;
+                    }
+
+                    await this.db.deleteData('accounts', deleteId);
+                    let deleteProfile = document.getElementById(`${deleteId}`);
+                    let accountListElement = document.querySelector('.accounts-list');
+                    
+                    if (deleteProfile && accountListElement.contains(deleteProfile)) {
+                        accountListElement.removeChild(deleteProfile);
+                    } else {
+                        console.warn(`No se encontró el elemento DOM para la cuenta ID: ${deleteId}`);
+                        // Refrescar la lista de cuentas de forma manual
+                        location.reload();
+                        return;
+                    }
+
+                    // Verificar cuántas cuentas quedan
+                    allAccounts = await this.db.readAllData('accounts');
+                    
+                    if (!allAccounts || allAccounts.length === 0 || allAccounts.length === 1) {
+                        popupAccount.closePopup();
+                        return changePanel('login');
+                    }
 
                     let configClient = await this.db.readData('configClient');
 
-                    if (configClient.account_selected == id) {
-                        let allAccounts = await this.db.readAllData('accounts');
-                        configClient.account_selected = allAccounts[0].ID
-                        accountSelect(allAccounts[0]);
-                        let newInstanceSelect = await this.setInstance(allAccounts[0]);
-                        configClient.instance_selct = newInstanceSelect.instance_selct
-                        return await this.db.updateData('configClient', configClient);
+                    // Si la cuenta eliminada era la seleccionada, cambiar a otra
+                    if (configClient.account_selected == deleteId) {
+                        // Asegurarse de que hay al menos una cuenta disponible
+                        if (allAccounts.length > 0) {
+                            const nextAccount = allAccounts[0];
+                            configClient.account_selected = nextAccount.ID;
+                            await accountSelect(nextAccount);
+                            
+                            // Verificar si se debe habilitar la personalización de skin
+                            if (nextAccount.meta && nextAccount.meta.type === 'AZauth') {
+                                clickableHead(true);
+                            } else {
+                                clickableHead(false);
+                            }
+                            
+                            let newInstanceSelect = await this.setInstance(nextAccount);
+                            configClient.instance_selct = newInstanceSelect.instance_selct;
+                            await this.db.updateData('configClient', configClient);
+                        }
                     }
+                    
+                    popupAccount.closePopup();
                 }
             } catch (err) {
-                console.error('Error al cambiar de cuenta:', err);
+                console.error('Error al cambiar/eliminar cuenta:', err);
                 popupAccount.closePopup();
                 popupAccount.openPopup({
                     title: 'Error',
@@ -208,8 +273,6 @@ class Settings {
                     color: 'red',
                     options: true
                 });
-            } finally {
-                popupAccount.closePopup();
             }
         })
     }
@@ -635,25 +698,12 @@ class Settings {
                 color: 'var(--color)'
             });
             
-            // Primero, vaciar la tabla de cuentas
-            const accounts = await this.db.readAllData("accounts");
-            if (accounts && accounts.length > 0) {
-                console.log(`Eliminando ${accounts.length} cuentas...`);
-                for (const account of accounts) {
-                    await this.db.deleteData('accounts', account.ID);
-                }
-            }
+            console.log('Limpiando base de datos y archivos encriptados...');
             
-            // Luego eliminar configClient
-            await this.db.deleteData('configClient');
+            // Usar clearDatabase que elimina tanto los archivos encriptados como la base de datos antigua
+            await this.db.clearDatabase();
             
-            // Doble verificación - comprobar si realmente se eliminaron las cuentas
-            const remainingAccounts = await this.db.readAllData("accounts");
-            if (remainingAccounts && remainingAccounts.length > 0) {
-                console.warn(`Aún quedan ${remainingAccounts.length} cuentas, forzando limpieza completa...`);
-                await this.db.clearDatabase(); // Método que elimina todo el contenido de la base de datos
-            }
-        
+            // Esperar un momento antes de reiniciar
             await new Promise(resolve => setTimeout(resolve, 1000));
             
             processingPopup.closePopup();
@@ -715,13 +765,15 @@ class Settings {
                 process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`
             );
             
+            // Limpiar base de datos y archivos encriptados
+            console.log('Limpiando base de datos y archivos encriptados...');
+            await this.db.clearDatabase();
+            
+            // Eliminar directorio de datos
             if (fs.existsSync(dataPath)) {
                 await this.recursiveDelete(dataPath);
                 console.log('Data directory deleted successfully');
             }
-
-            await this.db.deleteData('configClient');
-            await this.db.deleteData('accounts');
             
             // Wait a moment before restarting
             await new Promise(resolve => setTimeout(resolve, 1000));

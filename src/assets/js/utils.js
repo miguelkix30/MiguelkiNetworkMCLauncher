@@ -1206,6 +1206,18 @@ async function removeUserFromQueue(hwid) {
   }
 }
 
+// Inicializamos el CleanupManager con la instancia de base de datos para evitar referencias circulares
+(async function initializeCleanupManager() {
+  try {
+    // Creamos una instancia de database en lugar de pasar la clase
+    const dbInstance = new database();
+    await cleanupManager.initializeWithDatabase(dbInstance);
+    console.log("CleanupManager inicializado correctamente");
+  } catch (error) {
+    console.error("Error al inicializar CleanupManager:", error);
+  }
+})();
+
 export {
     appdata as appdata,
     changePanel as changePanel,

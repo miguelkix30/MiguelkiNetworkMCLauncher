@@ -504,7 +504,7 @@
     width: 3.1rem;
     cursor: pointer;
     background: rgba(0, 0, 0, 0.05);
-    transition: background 0.2s, border 0.2s;
+    transition: all 0.2s, border 0.2s;
     border: 1px solid rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(15.5px);
     -webkit-backdrop-filter: blur(15.5px);
@@ -514,6 +514,11 @@
 .instance-select:hover, .add-instance:hover {
     background: var(--box-button-hover-2);
     transform: scale(1.05);
+}
+
+.instance-select:active, .add-instance:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0px 2px 5px rgba(0, 120, 189, 0.3);
 }
 
 .grid-icon {
@@ -541,7 +546,7 @@
     width: 3.1rem;
     cursor: pointer;
     background: rgba(0, 0, 0, 0.05);
-    transition: background 0.2s, border 0.2s;
+    transition: all 0.2s, border 0.2s;
     border: 1px solid rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(15.5px);
     -webkit-backdrop-filter: blur(15.5px);
@@ -551,6 +556,11 @@
 .action-button:hover {
     background: var(--box-button-hover-2);
     transform: scale(1.05);
+}
+
+.action-button:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0px 2px 5px rgba(0, 120, 189, 0.3);
 }
 
 .action-button:hover .settings-btn {

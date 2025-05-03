@@ -289,8 +289,46 @@ class Login {
             return;
         }
 
+        // Crear una copia profunda de connectionData para evitar modificar el objeto original
+        connectionData = JSON.parse(JSON.stringify(connectionData));
+        
         let configClient = await this.db.readData('configClient');
-        let account = await this.db.createData('accounts', connectionData);
+        if (!configClient) {
+            console.error("Error: configClient no existe");
+            let errorPopup = new popup();
+            errorPopup.openPopup({
+                title: 'Error de configuración',
+                content: 'No se encontró la configuración del launcher. Por favor, reinicia el launcher.',
+                color: 'red',
+                options: true
+            });
+            return;
+        }
+        
+        console.log("Guardando nueva cuenta...");
+        
+        // Verificar cuentas existentes para evitar duplicados
+        let existingAccounts = await this.db.readAllData('accounts') || [];
+        let account; // Added declaration for the account variable
+        if (Array.isArray(existingAccounts)) {
+            const duplicateAccount = existingAccounts.find(acc => 
+                acc && acc.name === connectionData.name && 
+                acc.meta && connectionData.meta && 
+                acc.meta.type === connectionData.meta.type
+            );
+            
+            if (duplicateAccount) {
+                console.log(`Ya existe una cuenta con el nombre ${connectionData.name}, actualizando...`);
+                connectionData.ID = duplicateAccount.ID;
+                await this.db.updateData('accounts', connectionData, duplicateAccount.ID);
+                account = connectionData;
+            } else {
+                account = await this.db.createData('accounts', connectionData);
+            }
+        } else {
+            console.warn("existingAccounts no es un array, inicializando nueva colección");
+            account = await this.db.createData('accounts', connectionData);
+        }
         
         // Verificar que account se creó correctamente
         if (!account) {
@@ -397,6 +435,29 @@ class Login {
         }
 
         await this.db.updateData('configClient', configClient);
+        
+        // Verificar que la cuenta todavía existe en la base de datos
+        const currentAccounts = await this.db.readAllData('accounts');
+        if (!Array.isArray(currentAccounts) || !currentAccounts.find(acc => acc && acc.ID === account.ID)) {
+            console.warn("La cuenta creada no se encuentra en la base de datos, intentando recrearla");
+            try {
+                await this.db.createData('accounts', account);
+            } catch (err) {
+                console.error("No se pudo recrear la cuenta:", err);
+            }
+        }
+        
+        // Realizar una verificación final de todas las cuentas y guardar
+        const finalAccounts = await this.db.readAllData('accounts');
+        if (Array.isArray(finalAccounts) && finalAccounts.length > 0) {
+            console.log(`Estado final de cuentas: ${finalAccounts.length} cuentas disponibles`);
+        } else {
+            console.error("No hay cuentas después de guardar, restaurando...");
+            if (account) {
+                await this.db.createData('accounts', account);
+            }
+        }
+        
         await addAccount(account);
         await accountSelect(account);
         await setUsername(account.name);
