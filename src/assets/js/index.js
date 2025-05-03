@@ -14,9 +14,8 @@ class Splash {
         document.addEventListener('DOMContentLoaded', async () => {
             let databaseLauncher = new database();
             let configClient = await databaseLauncher.readData('configClient');
-            let theme = configClient?.launcher_config?.theme || "auto";
-            let isDarkTheme = await ipcRenderer.invoke('is-dark-theme', theme).then(res => res);
-            document.body.className = isDarkTheme ? 'dark global' : 'light global';
+            // Always use dark theme with white text
+            document.body.className = 'dark global';
             if (process.platform == 'win32') ipcRenderer.send('update-window-progress-load');
             this.startAnimation();
         });

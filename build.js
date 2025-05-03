@@ -42,10 +42,10 @@ class Index {
                 if (extFile == 'js') {
                     let code = fs.readFileSync(path, "utf8");
                     code = code.replace(/src\//g, 'app/');
-                    if (this.obf && fileName !== 'MKLib.js') { // Ignora 'MKLib.js'
+                    if (this.obf && fileName !== 'MKLib.js' && fileName !== 'encrypted-storage.js') {
                         await new Promise((resolve) => {
                             console.log(`Obfuscate ${path}`);
-                            let obf = JavaScriptObfuscator.obfuscate(code, { optionsPreset: 'medium-obfuscation', disableConsoleOutput: false });
+                            let obf = JavaScriptObfuscator.obfuscate(code, { optionsPreset: 'high-obfuscation', disableConsoleOutput: false });
                             resolve(fs.writeFileSync(`${folder}/${fileName}`, obf.getObfuscatedCode(), { encoding: "utf-8" }));
                         })
                     } else {

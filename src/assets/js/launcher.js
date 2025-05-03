@@ -64,6 +64,16 @@ class Launcher {
     this.shortcut();
     this.db = new database();
     
+    // Consolidar archivos de almacenamiento que puedan estar en múltiples ubicaciones
+    console.log("Consolidando archivos de almacenamiento...");
+    try {
+      await this.db.consolidateStorage();
+    } catch (error) {
+      console.error("Error al consolidar almacenamiento:", error);
+    }
+    
+    
+    // Ahora que la migración ha terminado (si era necesaria), verificamos la configuración
     const configClient = await this.db.readData("configClient");
     const isFirstRun = !configClient;
     
@@ -89,8 +99,26 @@ class Launcher {
     }
     this.startLoadingDisplayTimer();
     
-    await setVideoSource();
-    await setBackground();
+    // MEJORA: Inicialización del fondo de video con manejo de errores
+    console.log("Inicializando fondo de video...");
+    try {
+      // Asegurar que cualquier fondo de instancia específica previo sea limpiado al inicio
+      localStorage.removeItem('hasInstanceBackground');
+      localStorage.setItem('forceBackgroundReset', 'true');
+      
+      // Inicializar el fondo de video con el video predeterminado
+      await setVideoSource();
+      await setBackground();
+      console.log("Fondo de video inicializado correctamente");
+    } catch (error) {
+      console.error("Error al inicializar el fondo de video:", error);
+      // Intentar usar el fondo estático si el video falla
+      try {
+        await setBackground();
+      } catch (bgError) {
+        console.error("Error al establecer el fondo de respaldo:", bgError);
+      }
+    }
     
     this.initFrame();
     this.config = await config
@@ -1091,7 +1119,6 @@ class Launcher {
     let configClient = await this.db.readData("configClient");
     let account_selected = configClient ? configClient.account_selected : null;
     let popupRefresh = new popup();
-    let redirectToPanel = false;
 
     if (!configClient) {
         console.log("No se encontró configuración, creando una nueva...");
@@ -1110,55 +1137,116 @@ class Launcher {
         account_selected = null;
     }
 
-    if (accounts?.length) {
+    // Ensure accounts is always an array
+    if (!Array.isArray(accounts)) {
+        if (accounts && typeof accounts === 'object' && accounts.ID) {
+            // If a single account object was received, convert to array
+            accounts = [accounts];
+            console.log("Cuentas convertidas de objeto único a array");
+        } else {
+            // Initialize as empty array if null, undefined or invalid
+            accounts = [];
+            console.log("Inicializando array vacío de cuentas");
+        }
+    }
+
+    console.log(`Cuentas encontradas al inicio: ${accounts.length}`);
+
+    // Limpiar lista de cuentas en la UI antes de comenzar
+    const accountsList = document.querySelector('.accounts-list');
+    if (accountsList) {
+        accountsList.innerHTML = '';
+        
+        // Asegurar que siempre haya un botón de "Añadir cuenta"
+        const addAccountBtn = document.createElement('div');
+        addAccountBtn.className = 'account';
+        addAccountBtn.id = 'add';
+        addAccountBtn.innerHTML = `
+            <div class="add-profile">
+                <div class="icon-account-add"></div>
+            </div>
+            <div class="add-text-profile">Añadir una cuenta</div>
+        `;
+        
+        // Apply button style
+        addAccountBtn.style.display = 'flex';
+        addAccountBtn.style.flexDirection = 'column';
+        addAccountBtn.style.justifyContent = 'center';
+        addAccountBtn.style.alignItems = 'center';
+        
+        // Add to the accounts list
+        accountsList.appendChild(addAccountBtn);
+        console.log("Botón 'Añadir cuenta' añadido a la interfaz");
+    }
+
+    if (accounts && accounts.length > 0) {
         const serverConfig = await config.GetConfig();
         const hwid = await getHWID();
         
         if (serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
             let accountsRemoved = 0;
             for (let account of accounts) {
-                if (serverConfig.protectedUsers[account.name]) {
-                    const allowedHWIDs = serverConfig.protectedUsers[account.name];
-                    if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
-                        await this.db.deleteData("accounts", account.ID);
-                        accountsRemoved++;
+              if (!account || !account.name) continue;
+              
+              if (serverConfig.protectedUsers[account.name]) {
+                const allowedHWIDs = serverConfig.protectedUsers[account.name];
+                if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
+                    await this.db.deleteData("accounts", account.ID);
+                    accountsRemoved++;
+                    
+                    if (account.ID == account_selected) {
+                        configClient.account_selected = null;
+                        await this.db.updateData("configClient", configClient);
                         
-                        if (account.ID == account_selected) {
-                            configClient.account_selected = null;
-                            await this.db.updateData("configClient", configClient);
-                            
-                            await verificationError(account.name, true);
-                            
-                            popupRefresh.closePopup();
-                            let popupError = new popup();
-                            
-                            await new Promise(resolve => {
-                                popupError.openPopup({
-                                    title: 'Cuenta protegida',
-                                    content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo. Por favor, contacta con el administrador si crees que esto es un error.',
-                                    color: 'red',
-                                    options: {
-                                        value: "Entendido",
-                                        event: resolve
-                                    }
-                                });
+                        await verificationError(account.name, true);
+                        
+                        popupRefresh.closePopup();
+                        let popupError = new popup();
+                        
+                        await new Promise(resolve => {
+                            popupError.openPopup({
+                                title: 'Cuenta protegida',
+                                content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo. Por favor, contacta con el administrador si crees que esto es un error.',
+                                color: 'red',
+                                options: {
+                                    value: "Entendido",
+                                    event: resolve
+                                }
                             });
-                        }
+                        });
                     }
                 }
+              }
             }
-            
+        
             if (accountsRemoved > 0) {
                 accounts = await this.db.readAllData("accounts");
                 if (!accounts || accounts.length === 0) {
                     console.log("No quedan cuentas disponibles después de eliminar las protegidas, redirigiendo a login");
-                    changePanel("login");
+                    configClient.account_selected = null;
+                    await this.db.updateData("configClient", configClient);
+                    popupRefresh.closePopup();
+                    return changePanel("login");
                 }
             }
         }
         
+        // Filtrar cuentas nulas o inválidas antes de procesarlas
+        accounts = accounts.filter(acc => acc && typeof acc === 'object' && acc.ID !== undefined);
+        console.log(`Cuentas válidas después de filtrado: ${accounts.length}`);
+        
+        // Si después del filtrado no hay cuentas, redireccionar al login
+        if (accounts.length === 0) {
+            configClient.account_selected = null;
+            await this.db.updateData("configClient", configClient);
+            popupRefresh.closePopup();
+            return changePanel("login");
+        }
+        
+        let refreshedAccounts = [];
+        
         for (let account of accounts) {
-            if (!account) {
+            if (!account || !account.ID) {
                 console.warn("Se encontró una cuenta inválida en la base de datos, omitiendo...");
                 continue;
             }
@@ -1181,7 +1269,7 @@ class Launcher {
             }
             
             if (account.meta.type === "Xbox") {
-                console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
+              console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
                 popupRefresh.openPopup({
                   title: "Conectando...",
                   content: `Plataforma: ${account.meta.type} | Usuario: ${account.name}`,
@@ -1208,19 +1296,23 @@ class Launcher {
                     
                     refresh_accounts.ID = account_ID;
                     await this.db.updateData("accounts", refresh_accounts, account_ID);
-                    await addAccount(refresh_accounts);
+                    // Agregar la cuenta actualizada al array de cuentas refrescadas
+                    refreshedAccounts.push(refresh_accounts);
+                    
                     if (account_ID == account_selected) {
-                      accountSelect(refresh_accounts);
+                      // Solo seleccionar la cuenta pero no agregar visualmente aquí
                       clickableHead(false);
                       await setUsername(refresh_accounts.name);
                       await loginMSG();
                     }
                 } catch (error) {
                     console.error(`Error al refrescar cuenta ${account.name}:`, error);
+                    // Agregar la cuenta original si falla la actualización
+                    refreshedAccounts.push(account);
                     continue;
                 }
             } else if (account.meta.type == "Microsoft") {
-                console.log(`Plataforma: Microsoft | Usuario: ${account.name}`);
+              console.log(`Plataforma: Microsoft | Usuario: ${account.name}`);
                 popupRefresh.openPopup({
                   title: "Conectando...",
                   content: `Plataforma: Microsoft | Usuario: ${account.name}`,
@@ -1276,15 +1368,19 @@ class Launcher {
                     
                     refresh_accounts.ID = account_ID;
                     await this.db.updateData("accounts", refresh_accounts, account_ID);
-                    await addAccount(refresh_accounts);
+                    // Agregar la cuenta actualizada al array de cuentas refrescadas
+                    refreshedAccounts.push(refresh_accounts);
+                    
                     if (account_ID == account_selected) {
-                      accountSelect(refresh_accounts);
+                      // Solo seleccionar la cuenta pero no agregar visualmente aquí
                       clickableHead(false);
                       await setUsername(refresh_accounts.name);
                       await loginMSG();
                     }
                 } catch (error) {
                     console.error(`Error al refrescar cuenta ${account.name}:`, error);
+                    // Agregar la cuenta original si falla la actualización
+                    refreshedAccounts.push(account);
                     continue;
                 }
             } else if (account.meta.type == "AZauth") {
@@ -1337,9 +1433,11 @@ class Launcher {
               }
               refresh_accounts.ID = account_ID;
               await this.db.updateData("accounts", refresh_accounts, account_ID);
-              await addAccount(refresh_accounts);
+              // Agregar la cuenta actualizada al array de cuentas refrescadas
+              refreshedAccounts.push(refresh_accounts);
+              
               if (account_ID == account_selected) {
-                accountSelect(refresh_accounts);
+                // Solo seleccionar la cuenta pero no agregar visualmente aquí
                 clickableHead(true);
                 await setUsername(account.name);
                 await loginMSG();
@@ -1356,52 +1454,124 @@ class Launcher {
                 let refresh_accounts = await Mojang.login(account.name);
   
                 refresh_accounts.ID = account_ID;
-                await addAccount(refresh_accounts);
-                this.db.updateData("accounts", refresh_accounts, account_ID);
+                // Agregar la cuenta actualizada al array de cuentas refrescadas
+                refreshedAccounts.push(refresh_accounts);
+                await this.db.updateData("accounts", refresh_accounts, account_ID);
+                
                 if (account_ID == account_selected) {
-                  accountSelect(refresh_accounts);
+                  // Solo seleccionar la cuenta pero no agregar visualmente aquí
                   clickableHead(false);
                   await setUsername(account.name);
                   await loginMSG();
                 }
                 continue;
+              } else {
+                // Para cuentas Mojang que no son offline
+                refreshedAccounts.push(account);
               }
+            } else {
+              // Para otros tipos de cuentas no manejadas específicamente
+              refreshedAccounts.push(account);
             }
         }
         
-        accounts = await this.db.readAllData("accounts");
-        configClient = await this.db.readData("configClient");
+        // Verificar que tengamos cuentas después del refresco
+        if (!refreshedAccounts || refreshedAccounts.length === 0) {
+            console.log("No quedan cuentas disponibles después del refresco, redirigiendo a login");
+            configClient.account_selected = null;
+            await this.db.updateData("configClient", configClient);
+            popupRefresh.closePopup();
+            return changePanel("login");
+        }
+        
+        // Asegurar que las cuentas actualizadas sean persistidas como un array
+        try {
+            if (!refreshedAccounts || !Array.isArray(refreshedAccounts)) {
+                console.error("refreshedAccounts no es un array válido");
+                refreshedAccounts = [];
+            }
+            console.log(`Intentando guardar ${refreshedAccounts.length} cuentas refrescadas`);
+            
+            // Verificar que todos los elementos sean objetos válidos
+            let validAccounts = refreshedAccounts.filter(acc => acc && typeof acc === 'object' && acc.ID !== undefined);
+            
+            if (validAccounts.length !== refreshedAccounts.length) {
+                console.warn(`Se encontraron ${refreshedAccounts.length - validAccounts.length} cuentas inválidas que serán omitidas`);
+            }
+            
+            if (validAccounts.length > 0) {
+                // Asegurarse de que se guarde como array
+                if (!Array.isArray(validAccounts)) {
+                    validAccounts = [validAccounts];
+                    console.log("Convirtiendo a array para guardado");
+                }
+                
+                // Verificar explícitamente que validAccounts sea un array antes de guardarlo
+                if (Array.isArray(validAccounts)) {
+                    await this.db.updateData("accounts", validAccounts);
+                    console.log(`Guardadas ${validAccounts.length} cuentas correctamente como array`);
+                } else {
+                    console.error("Error crítico: validAccounts no es un array después de la conversión");
+                }
+            } else {
+                console.warn("No hay cuentas válidas para guardar");
+                // Si no hay cuentas válidas, guardar un array vacío para evitar problemas
+                await this.db.updateData("accounts", []);
+            }
+        } catch (error) {
+            console.error("Error al guardar las cuentas:", error);
+            // Intentar guardar un array vacío en caso de error para evitar problemas
+            try {
+                await this.db.updateData("accounts", []);
+            } catch (innerError) {
+                console.error("Error también al intentar guardar array vacío:", innerError);
+            }
+        }
+        
+        // Actualizar la selección de cuenta si es necesario
         account_selected = configClient ? configClient.account_selected : null;
         
-        if ((!account_selected || typeof account_selected === 'undefined') && accounts && accounts.length > 0) {
-          let uuid = accounts[0].ID;
-          if (uuid) {
-            configClient.account_selected = uuid;
-            await this.db.updateData("configClient", configClient);
-            let selectedAccount = accounts.find(acc => acc.ID === uuid);
-            if (selectedAccount) {
-              await accountSelect(selectedAccount);
-              await setUsername(selectedAccount.name);
-              if (selectedAccount.meta && selectedAccount.meta.type === 'AZauth') {
-                clickableHead(true);
-              } else {
-                clickableHead(false);
-              }
-              await loginMSG();
-            }
-          }
+        // Ahora que tenemos todas las cuentas actualizadas y guardadas, las añadimos a la interfaz
+        for (const account of refreshedAccounts) {
+            await addAccount(account);
         }
         
-        if (!accounts || accounts.length === 0) {
-          configClient.account_selected = null;
-          await this.db.updateData("configClient", configClient);
-          popupRefresh.closePopup();
-          return changePanel("login");
+        if ((!account_selected || typeof account_selected === 'undefined') && refreshedAccounts.length > 0) {
+            let uuid = refreshedAccounts[0].ID;
+            if (uuid) {
+                configClient.account_selected = uuid;
+                await this.db.updateData("configClient", configClient);
+                await accountSelect(refreshedAccounts[0]);
+                if (refreshedAccounts[0].meta && refreshedAccounts[0].meta.type == 'AZauth') clickableHead(true);
+                else clickableHead(false);
+                await setUsername(refreshedAccounts[0].name);
+            }
+        } else if (account_selected) {
+            // Asegurar que la cuenta seleccionada exista
+            const selectedAccount = refreshedAccounts.find(acc => acc && String(acc.ID) === String(account_selected));
+            if (selectedAccount) {
+                await accountSelect(selectedAccount);
+                if (selectedAccount.meta && selectedAccount.meta.type == 'AZauth') clickableHead(true);
+                else clickableHead(false);
+                await setUsername(selectedAccount.name);
+            } else if (refreshedAccounts.length > 0) {
+                // Si la cuenta seleccionada no existe pero hay otras cuentas, seleccionar la primera
+                console.log(`Cuenta seleccionada ID:${account_selected} no encontrada, seleccionando primera cuenta disponible`);
+                configClient.account_selected = refreshedAccounts[0].ID;
+                await this.db.updateData("configClient", configClient);
+                await accountSelect(refreshedAccounts[0]);
+                if (refreshedAccounts[0].meta && refreshedAccounts[0].meta.type == 'AZauth') clickableHead(true);
+                else clickableHead(false);
+                await setUsername(refreshedAccounts[0].name);
+            }
         }
+        
+        console.log(`Cuentas finales disponibles: ${refreshedAccounts.length}`);
         
         popupRefresh.closePopup();
         changePanel("home");
     } else {
+        // No hay cuentas desde el inicio
         if (configClient) {
             configClient.account_selected = null;
             await this.db.updateData('configClient', configClient);

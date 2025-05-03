@@ -1,78 +1,101 @@
 .settings .container {
     display: flex;
+    flex-direction: column;
     height: 100%;
+    overflow-x: hidden;
+}
+
+.settings-header {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 120px; /* Reducida la altura */
+    padding-top: 1.5rem;
+}
+
+.settings-title {
+    font-size: 2rem;
+    color: var(--color);
+    margin: 0;
+    text-align: center;
 }
 
 .nav-settings {
-    width: 20%;
-    height: 99.5%;
     display: flex;
-    align-items: center;
-    flex-direction: column;
     justify-content: center;
-    font-size: 2.5rem;
-    background-color: var(--sidebar);
-    border-right: 1px solid var(--sidebar-border);
-    transition: all 0.2s;
-    background: rgba( 0, 0, 0, 0.05 );
-    border-radius: 10px;
-    border: 1px solid rgba( 255, 255, 255, 0.18 );
-    backdrop-filter: blur( 8px );
-    -webkit-backdrop-filter: blur( 5px );
-}
-
-.nav-settings p {
-    font-size: 60%;
-    margin-top: 80px;
+    align-items: center;
+    margin-top: 15px;
 }
 
 .nav-box {
-    width: 100%;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.nav-box #save {
-    margin: 3rem;
+    width: 90%;
 }
 
 .nav-settings-btn {
-    font-size: 50%;
-    padding: 5px 10px;
-    width: 70%;
-    text-align: center;
-    margin: 0.5rem 0;
-    background-color: var(--box-button);
-    box-shadow: 0px 3px 6px #00000029;
-    border-radius: 25px;
-    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 0.3rem; /* Reducido el margen */
     cursor: pointer;
-    z-index: 2;
-    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+    color: white; /* Changed from var(--icon-unselected) to white */
+    flex: 1;
+    padding: 0.6rem 1rem 0.8rem; /* Aumentado el padding inferior */
+    font-size: 1.1rem; /* Aumentado tamaño de fuente */
+    transition: all 0.2s;
+    border-radius: 5px;
 }
 
 .nav-settings-btn:hover {
     background-color: var(--box-button-hover);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0px 6px 15px rgba(0, 120, 189, 0.5);
+}
+
+.nav-settings-btn:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0px 2px 5px rgba(0, 120, 189, 0.3);
 }
 
 .active-settings-BTN {
-    background: var(--box-button-hover-2);
+    color: var(--color);
+    background: linear-gradient(var(--box-button), var(--box-button-hover));
 }
 
+/* Hacer que el botón VOLVER siempre tenga el fondo azul */
+#save {
+    background: linear-gradient(var(--box-button), var(--box-button-hover));
+    color: white !important;
+    opacity: 1 !important;
+}
+
+#save:disabled {
+    opacity: 0.8 !important;
+    cursor: not-allowed;
+}
+
+.settings-content {
+    position: relative;
+    width: 100%;
+    height: calc(100% - 150px);
+    overflow: hidden;
+    padding: 1rem 0;
+}
 
 .container-settings {
     position: absolute;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    right: 0;
-    width: 80%;
-    height: calc(100% - 26px);
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+    height: 100%;
     opacity: 0;
     pointer-events: none;
     transform: translateX(100%);
-    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; 
+    transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+    overflow-x: hidden;
 }
 
 .active-container-settings {
@@ -81,55 +104,83 @@
     transform: translateX(0);
 }
 
+.settings-column {
+    width: 45%;
+    height: 100%;
+    padding: 0 1rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.settings-full-column {
+    width: 90%;
+    height: 100%;
+    padding: 0 1rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.settings-column::-webkit-scrollbar,
+.settings-full-column::-webkit-scrollbar {
+    width: 8px;
+}
+
+.settings-column::-webkit-scrollbar-track,
+.settings-full-column::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.settings-column::-webkit-scrollbar-thumb,
+.settings-full-column::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+}
+
 .settings-elements-box {
-    width: 80%;
-    padding: 1.5rem 2rem;
-    margin: 0.5rem;
+    width: 100%;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
     background-color: var(--sidebar);
     border-right: 1px solid var(--sidebar-border);
     transition: all 0.2s;
-    background: rgba( 0, 0, 0, 0.05 );
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 10px;
-    
-    border: 1px solid rgba( 255, 255, 255, 0.18 );
-    backdrop-filter: blur( 80px );
-    -webkit-backdrop-filter: blur( 80px );
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(15.5px);
+    -webkit-backdrop-filter: blur(15.5px);
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.settings-elements {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    margin: 1rem 0;
+    overflow-x: hidden; /* Prevenir scroll horizontal */
+}
+
+/* Asegurar que los elementos deshabilitados mantengan su color de texto */
+input:disabled, 
+button:disabled,
+select:disabled,
+textarea:disabled,
+.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    color: inherit !important; /* Mantener el color del texto */
+}
+
+button:disabled {
+    color: #ddd !important; /* Color gris oscuro para texto en botones deshabilitados */
+}
+
+input:disabled::placeholder {
+    color: rgba(221, 221, 221, 0.7) !important; /* Color gris oscuro para placeholders */
 }
 
 .setting-text {
     font-size: 1rem;
-}
-
-.active-container-settings {
-    opacity: 1;
-    z-index: 1;
-    pointer-events: all;
-}
-
-.titre-tab {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 2rem;
-    margin: 1.5rem 0;
-    padding: 0.5rem 2rem;
-    text-align: center;
-    background-color: var(--sidebar);
-    border-right: 1px solid var(--sidebar-border);
-    transition: all 0.2s;
-    background: rgba( 0, 0, 0, 0.05 );
-    border-radius: 100px;
-    
-    border: 1px solid rgba( 255, 255, 255, 0.18 );
-    backdrop-filter: blur( 80px );
-    -webkit-backdrop-filter: blur( 80px );
-}
-
-.settings-elements {
-    margin-top: 1.5rem;
-    display: flex;
-    align-items: center;
-    width: 100%;
 }
 
 .content-center {
@@ -138,6 +189,11 @@
 
 .content-evenly {
     justify-content: space-evenly;
+}
+
+.content-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /*******************************************************************************
@@ -162,22 +218,47 @@
     margin: 1rem;
     background-color: var(--sidebar);
     border-right: 1px solid var(--sidebar-border);
-    transition: all 0.2s;
-    background: rgba( 0, 0, 0, 0.05 );
+    transition: all 0.3s ease; /* Cambio: transición más suave */
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 10px;
-    
-    border: 1px solid rgba( 255, 255, 255, 0.18 );
-    backdrop-filter: blur( 80px );
-    -webkit-backdrop-filter: blur( 80px );
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(80px);
+    -webkit-backdrop-filter: blur(80px);
+    position: relative; /* Añadido: para posicionar el pseudo-elemento */
+    overflow: hidden; /* Añadido: para contener efectos dentro del cuadro */
+    cursor: pointer; /* Added to improve UX */
 }
 
-.account-select {
-    border: solid 4px #fff;
+/* Añadido: Efecto de hover para las cuentas */
+.account:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 15px rgba(255, 255, 255, 0.4); /* Cambiado a blanco */
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(0, 0, 0, 0.2);
 }
 
-.accounts-list #add {
+/* Añadido: Efecto especial para el cuadro de añadir cuenta */
+.account#add {
+    display: flex;
+    flex-direction: column;
     justify-content: center;
+    align-items: center;
     cursor: pointer;
+    background: rgba(0, 0, 0, 0.15);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.account#add:hover {
+    transform: translateY(-3px) scale(1.02);
+    border: 2px dashed rgba(255, 255, 255, 0.6);
+    background: rgba(0, 0, 0, 0.25);
+    box-shadow: 0 8px 15px rgba(255, 255, 255, 0.2);
+}
+
+.account#add:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .add-profile {
@@ -190,9 +271,64 @@
     pointer-events: none;
 }
 
+.icon-account-add {
+    font-size: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.icon-account-add:before {
+    content: "+";
+    font-size: 3.5rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.9);
+}
+
 .add-text-profile {
     font-size: 1.5rem;
     pointer-events: none;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Añadido: Efecto de brillo en hover */
+.account::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.5s;
+}
+
+.account:hover::before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.account-select {
+    border: solid 4px #fff;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.4);
+}
+
+/* Añadido: Efecto para la cuenta seleccionada al hacer hover */
+.account-select:hover {
+    border: solid 4px var(--color);
+}
+
+/* Efecto especial para el botón de eliminar */
+.delete-profile:hover {
+    background: rgba(255, 0, 0, 0.2);
+    color: #ff0000;
+    transition: all 0.3s ease;
 }
 
 .profile-image {
@@ -242,11 +378,11 @@
     background-color: var(--sidebar);
     border-right: 1px solid var(--sidebar-border);
     transition: all 0.2s;
-    background: rgba( 0, 0, 0, 0.05 );
+    background: rgba(0, 0, 0, 0.05);
     
-    border: 1px solid rgba( 255, 255, 255, 0.18 );
-    backdrop-filter: blur( 80px );
-    -webkit-backdrop-filter: blur( 80px );
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(80px);
+    -webkit-backdrop-filter: blur(80px);
 }
 
 .delete-profile-icon {
@@ -256,12 +392,11 @@
 .profile-card {
     display: flex;
     align-items: center;
-    padding: 10px;
+    padding: 8px 12px; /* Reducido padding */
     transition: all 0.2s;
     width: auto;
     max-width: 400px;
-    margin-left: 20px;
-    margin-right: 20px;
+    margin: 5px 20px; /* Reducido margen vertical */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.05);
@@ -271,11 +406,11 @@
 }
 
 .discord-profile-image {
-    width: 55px;
-    height: 55px;
+    width: 45px; /* Reducido tamaño */
+    height: 45px; /* Reducido tamaño */
     border-radius: 50%;
     object-fit: cover;
-    margin-right: 20px;
+    margin-right: 15px; /* Reducido margen */
 }
 
 .profile-info {
@@ -284,7 +419,7 @@
 }
 
 .profile-username {
-    font-size: 1.5rem;
+    font-size: 1.3rem; /* Reducido tamaño de fuente */
     color: #fff;
     margin: 0;
 }
@@ -295,26 +430,29 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 100%;
+    height: auto; /* Cambiado de 100% a auto para reducir altura */
+    padding: 10px 0; /* Añadido padding vertical más pequeño */
 }
 
 .discord-username-text {
     text-align: center;
-    font-size: 1.5rem;
+    font-size: 1.3rem; /* Reducido tamaño de fuente */
+    margin-bottom: 5px; /* Añadido pequeño margen inferior */
 }
 
 .discord-logout-warning {
     color: #ff2c2c;
     text-align: center;
-    font-size: 1rem;
+    font-size: 0.9rem; /* Reducido tamaño de fuente */
+    margin: 5px 0; /* Reducido margen */
 }
 
 .discord-logout-btn {
     align-items: center;
-    padding-top: 0.25rem;
-    font-size: 1.25rem;
-    width: 12rem;
-    height: 2.5rem;
+    padding-top: 0.2rem; /* Reducido padding */
+    font-size: 1.1rem; /* Reducido tamaño de fuente */
+    width: 10rem; /* Reducido ancho */
+    height: 2.2rem; /* Reducido altura */
     text-align: center;
     background-color: var(--box-button);
     box-shadow: 0px 3px 6px #00000029;
@@ -322,9 +460,12 @@
     color: #fff;
     cursor: pointer;
     z-index: 2;
-    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+    margin-top: 8px; /* Añadido un margen superior pequeño */
+    display: flex;
+    justify-content: center;
 }
 
+/* Mantener el hover sin cambios */
 .discord-logout-btn:hover {
     background-color: var(--box-button-hover);
 }
@@ -433,7 +574,9 @@
     color: var(--color);
     padding: 0.5rem 1rem;
     border-radius: 15px;
-    width: 50%;
+    max-width: 90%;
+    margin-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .java-path-input-file {
@@ -445,17 +588,49 @@
     align-items: center;
 }
 
-.java-path-btn {
-    padding: 0.3rem 1rem;
-    background: var(--element-color);
+/* Mejoras para botones */
+.java-path-btn, .size-btn, .max-files-btn {
+    padding: 0.5rem 1.2rem;
+    background: linear-gradient(135deg, var(--box-button) 0%, var(--box-button-hover) 100%);
     border-radius: 15px;
-    margin: 0 1rem;
+    margin: 0 0.8rem;
     cursor: pointer;
-    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+    color: white;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.java-path-btn:hover {
-    background-color: var(--box-button-hover);
+.java-path-btn::before, .size-btn::before, .max-files-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.5s;
+    pointer-events: none;
+}
+
+.java-path-btn:hover, .size-btn:hover, .max-files-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.java-path-btn:hover::before, .size-btn:hover::before, .max-files-btn:hover::before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.java-path-btn:active, .size-btn:active, .max-files-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
 }
 
 /*******************************************************************************
@@ -468,36 +643,52 @@
     align-items: center;
 }
 
-.input-resolution {
-    background: var(--shadow);
-    border: none;
-    color: var(--color);
-    padding: 0.5rem 1rem;
+/* Mejoras para campos numéricos */
+.input-resolution, .input-max-files {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: white;
+    padding: 0.6rem 1rem;
     border-radius: 15px;
     text-align: center;
+    font-weight: 500;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.input-resolution {
     width: 6rem;
 }
 
+.input-max-files {
+    width: 4rem;
+}
+
+.input-resolution:hover, .input-max-files:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.input-resolution:focus, .input-max-files:focus {
+    outline: none;
+    border-color: var(--box-button);
+    box-shadow: 0 0 8px rgba(0, 120, 189, 0.5);
+}
+
 .size-cross {
-    margin: 0 0.5rem;
+    margin: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    text-align: center;
 }
 
 .size-cross:before {
     font: normal normal bold 20px Icons;
     content: "\e90e";
-}
-
-.size-btn {
-    padding: 0.3rem 1rem;
-    background: var(--element-color);
-    border-radius: 15px;
-    margin: 0 1rem;
-    cursor: pointer;
-    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
-}
-
-.size-btn:hover {
-    background-color: var(--box-button-hover);
+    display: block;
 }
 
 /*******************************************************************************
@@ -506,128 +697,79 @@
  *                                                                             *
  ******************************************************************************/
 
-.input-max-files {
-    background: var(--shadow);
-    border: none;
-    color: var(--color);
-    padding: 0.5rem 1rem;
-    border-radius: 15px;
-    text-align: center;
-    width: 4rem;
-    margin-right: 1rem;
-}
-
-.max-files-btn {
-    padding: 0.3rem 1rem;
-    background: var(--element-color);
-    border-radius: 15px;
-    margin: 0 1rem;
-    cursor: pointer;
-    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
-}
-
-.max-files-btn:hover {
-    background-color: var(--box-button-hover);
-}
-
-.theme-btn {
-    margin: 0 1rem;
-    padding: calc(0.1rem + 4px) calc(1.5rem + 4px);
-    border-radius: 15px;
-    cursor: pointer;
-}
-
-.theme-btn-clair {
-    background: var(--light-color);
-    color: var(--dark-color);
-    border: 2px solid var(--dark-color);
-}
-
-.theme-btn-sombre {
-    background: var(--dark-color);
-    color: var(--light-color);
-    border: 2px solid var(--color);
-}
-
-.theme-btn-auto {
-    background: var(--background);
-    color: var(--color);
-    border: 2px solid var(--color);
-}
-
-.active-theme {
-    border: 4px solid var(--element-color);
-}
-
-.close-btn {
-    display: grid;
-    place-items: center;
-    font-size: 0.95rem;
-    width: 200px;
-    min-height: 80px;
-    text-align: center;
-    border: 4px solid var(--color);
-    border-radius: 15px;
-    padding: 1rem;
-    cursor: pointer;
-}
-
-.active-close {
-    border: 4px solid var(--element-color);
-}
-
-.performance-mode-container {
+/* Mejoras para los botones de gestión de datos */
+.data-management-btn {
     display: flex;
     align-items: center;
-    margin: 15px 0;
-}
-
-.performance-mode-checkbox {
-    width: 30px;
-    height: 30px;
-    margin-right: 15px;
+    justify-content: center;
+    padding: 14px 20px;
+    font-size: 1rem;
+    border-radius: 10px;
     cursor: pointer;
-}
-
-.performance-mode-container label {
-    font-size: 1.4rem;
+    transition: all 0.3s ease;
+    margin: 12px;
+    width: 250px;
+    text-align: center;
     font-weight: bold;
-    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
 }
 
-.performance-mode-info {
-    font-size: 1.1rem;
-    margin-top: 15px;
-    color: rgba(255, 255, 255, 0.8);
-    max-width: 90%;
+.data-management-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.5s;
+    pointer-events: none;
 }
 
-body.performance-mode .container-settings {
-    transition: none !important;
-    transition-property: none !important;
-    animation: none !important;
+.reset-config-btn {
+    background: linear-gradient(135deg, var(--box-button) 0%, var(--box-button-hover) 100%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-body.performance-mode .active-container-settings {
-    transform: translateX(0) !important;
-    opacity: 1 !important;
-    transition: none !important;
-    transition-property: none !important;
-    animation: none !important;
+.reset-config-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 120, 189, 0.5);
 }
 
-body.performance-mode .container-settings:not(.active-container-settings) {
-    transform: translateX(100%) !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    transition: none !important;
-    transition-property: none !important;
-    animation: none !important;
+.reset-config-btn:hover::before {
+    transform: scale(1);
+    opacity: 1;
 }
 
-body.performance-mode * {
-    transition-duration: 0ms !important;
-    animation-duration: 0ms !important;
+.reset-config-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.delete-all-btn {
+    background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.delete-all-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(255, 0, 0, 0.4);
+}
+
+.delete-all-btn:hover::before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.delete-all-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .launcher-behavior-box {
@@ -638,24 +780,55 @@ body.performance-mode * {
   margin: 15px 0;
 }
 
+/* Mejoras para la opción de comportamiento del launcher */
 .launcher-behavior-option {
-  display: flex;
-  align-items: center;
-  padding: 12px 15px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.launcher-behavior-option::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.5s;
+    pointer-events: none;
 }
 
 .launcher-behavior-option:hover {
-  background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.launcher-behavior-option:hover::before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.launcher-behavior-option:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .launcher-behavior-option.selected {
-  background-color: rgba(var(--color-rgb), 0.2);
-  border: 1px solid var(--color);
+    background-color: rgba(var(--color-rgb), 0.2);
+    border: 1px solid var(--color);
+    box-shadow: 0 0 10px rgba(var(--color-rgb), 0.3);
 }
 
 .launcher-behavior-radio {
@@ -700,67 +873,61 @@ body.performance-mode * {
  *                                                                             *
  ******************************************************************************/
 
-
 .credits-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 5em;
-    padding: 1em;
+    gap: 2.5em; /* Reducido el espacio entre tarjetas */
+    padding: 0.5em; /* Reducido el padding */
 }
 
 .credit {
-    flex-basis: 18em;
-    max-width: 18em;
+    flex-basis: 16em; /* Reducido el ancho base */
+    max-width: 16em; /* Reducido el ancho máximo */
     flex-grow: 0;
     flex-shrink: 1;
     text-align: center;
-    padding: 14px;
+    padding: 10px; /* Reducido el padding */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(5px);
+    margin-bottom: 1em; /* Añadido un margen inferior más pequeño */
 }
   
-  .credit img {
-    width: 100px;
-    height: 100px;
+.credit img {
+    width: 80px; /* Reducido el tamaño de la imagen */
+    height: 80px; /* Reducido el tamaño de la imagen */
     border-radius: 50%;
     object-fit: cover;
-    margin-bottom: 10px;
-  }
+    margin-bottom: 8px; /* Reducido el margen inferior */
+}
   
-  .credit h3 {
-    margin: 10px 0;
-    font-size: 24px;
-  }
+.credit h3 {
+    margin: 6px 0; /* Reducido el margen */
+    font-size: 20px; /* Reducido el tamaño de fuente */
+}
   
-  .social-icons {
+.social-icons {
     display: flex;
     justify-content: center;
-    gap: 10px;
-  }
+    gap: 8px; /* Reducido el espacio entre iconos */
+    margin-top: 5px; /* Añadido un pequeño margen superior */
+}
   
-  .social-icons a {
-    font-size: 30px;
+.social-icons a {
+    font-size: 24px; /* Reducido el tamaño de fuente */
     color: #fff;
-  }
-  
-  .social-icons i {
-    transition: color 0.3s ease;
-  }
-  
-  .social-icons a:hover i {
-    color: #979797;
-  }
+}
 
-  .role {
-    font-size: 0.9em;
-  }
+.role {
+    font-size: 0.85em; /* Reducido el tamaño de fuente */
+    margin: 3px 0; /* Añadido un margen reducido */
+}
 
-  /* Terminos y condiciones */
+/* Terminos y condiciones */
 
 .info-container {
   display: flex;
@@ -799,42 +966,6 @@ body.performance-mode * {
     color: #555;
 }
 
-/* Data Management Buttons */
-.data-management-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 20px;
-  font-size: 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin: 10px;
-  width: 250px;
-  text-align: center;
-  font-weight: bold;
-}
-
-.reset-config-btn {
-  background-color: var(--box-button);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.reset-config-btn:hover {
-  background-color: var(--box-button-hover);
-}
-
-.delete-all-btn {
-  background-color: #d32f2f;
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.delete-all-btn:hover {
-  background-color: #b71c1c;
-}
-
 .data-management-btn i {
   margin-right: 8px;
   font-size: 1.1rem;
@@ -842,4 +973,20 @@ body.performance-mode * {
 
 body.performance-mode .data-management-btn {
   transition: none !important;
+}
+
+.titre-tab {
+    font-size: 1.5rem;
+    margin: 1rem 0;
+    margin-bottom: 0.5rem;
+    padding: 0.7rem 1.2rem;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    color: #fff;
+    font-weight: 500;
+    width: calc(100% - 2.4rem); /* Ajustado para el padding horizontal */
+    box-sizing: border-box;
 }

@@ -1,11 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const { ipcRenderer } = require('electron');
-import { database, config } from '../utils.js';
+import config from './config.js';
 
 class CleanupManager {
     constructor() {
-        this.db = new database();
+        // Inicialmente no inicializamos la base de datos para evitar referencias circulares
+        this.db = null;
         this.cleanupQueue = [];
         this.isProcessing = false;
         this.activeInstances = new Set();
@@ -29,7 +30,25 @@ class CleanupManager {
         }
     }
 
+    /**
+     * Inicializa el administrador de limpieza con la instancia de base de datos
+     * @param {Object} database - Instancia de la base de datos
+     */
+    async initializeWithDatabase(database) {
+        if (this.db) {
+            return; // Ya inicializado
+        }
+        
+        this.db = database;
+        await this.initialize();
+    }
+
     async initialize() {
+        if (!this.db) {
+            console.warn("CleanupManager: No se ha inicializado con la base de datos");
+            return;
+        }
+        
         try {
             const configClient = await this.db.readData('configClient');
             

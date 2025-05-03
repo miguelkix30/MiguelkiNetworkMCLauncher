@@ -504,7 +504,7 @@
     width: 3.1rem;
     cursor: pointer;
     background: rgba(0, 0, 0, 0.05);
-    transition: background 0.2s, border 0.2s;
+    transition: all 0.2s, border 0.2s;
     border: 1px solid rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(15.5px);
     -webkit-backdrop-filter: blur(15.5px);
@@ -514,6 +514,11 @@
 .instance-select:hover, .add-instance:hover {
     background: var(--box-button-hover-2);
     transform: scale(1.05);
+}
+
+.instance-select:active, .add-instance:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0px 2px 5px rgba(0, 120, 189, 0.3);
 }
 
 .grid-icon {
@@ -541,7 +546,7 @@
     width: 3.1rem;
     cursor: pointer;
     background: rgba(0, 0, 0, 0.05);
-    transition: background 0.2s, border 0.2s;
+    transition: all 0.2s, border 0.2s;
     border: 1px solid rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(15.5px);
     -webkit-backdrop-filter: blur(15.5px);
@@ -551,6 +556,11 @@
 .action-button:hover {
     background: var(--box-button-hover-2);
     transform: scale(1.05);
+}
+
+.action-button:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0px 2px 5px rgba(0, 120, 189, 0.3);
 }
 
 .action-button:hover .settings-btn {
@@ -831,14 +841,16 @@
 .message-container {
     justify-content: flex-start;
     width: auto;
-    min-width: 30rem;
+    min-width: 20rem;
     max-width: 40rem;
-    height: 3rem;
-    max-height: 3rem;
+    height: auto;
+    min-height: 3rem;
+    max-height: none;
     border-radius: 10px;
     margin-top: 3rem;
+    margin-left: 7rem; /* Dejar espacio para la barra lateral */
     margin-right: 2rem;
-    padding: 1rem ;
+    padding: 1rem;
     text-align: left;
     align-items: center;
     background-color: var(--sidebar);
@@ -853,6 +865,19 @@
     opacity: 0;
     visibility: hidden;
     transition: opacity 1.0s;
+    z-index: 5;
+}
+
+.message-icon {
+    width: 3rem;
+    height: 3rem;
+    margin-right: 1rem;
+    border-radius: 5px;
+    object-fit: contain;
+}
+
+.message-text {
+    flex: 1;
 }
 
 .message-container.hide {
@@ -868,26 +893,11 @@
 .message-content {
     font-size: 0.8rem;
     color:#fff;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
-.message-icon {
-    justify-content: center;
-    height: 2.3rem;
-    width: 3.2rem;
-    margin-right: 1rem;
-    order: 1;
-}
-.message-icon, .message-text {
-    display: flex;
-    flex-direction: column;
-}
-.message-text {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    order: 2;
-}
 .head-frame,
 .player-head {
     box-sizing: border-box;
@@ -1012,18 +1022,22 @@
 .add-instance-popup {
     position: absolute;
     display: flex;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    height: 100%;
-    z-index: 20;
-    background: rgba( 0, 0, 0, 0.05 );
+    text-align: center;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.5s;
+    background: rgba(0, 0, 0, 0.05);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
 }
 
 .add-instance-popup.show {
@@ -1032,39 +1046,101 @@
 }
 
 .add-instance-popup .popup-content {
-    background-color: var(--sidebar);
+    position: relative;
     border-radius: 10px;
-    padding: 2rem;
-    text-align: center;
+    padding: 1.5rem;
     background: rgba(0, 0, 0, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.18);
-    backdrop-filter: blur(15.5px);
-    -webkit-backdrop-filter: blur(15.5px);
+    max-width: 90%;
+    width: 450px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.add-instance-popup .popup-content input {
-    width: 80%;
-    padding: 0.5rem;
+.add-instance-popup h2 {
+    font-size: 1.8rem;
+    margin-top: 0.5rem;
     margin-bottom: 1rem;
-    border-radius: 5px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background-color: var(--box);
     color: #fff;
 }
 
-.add-instance-popup .popup-content button {
-    padding: 0.5rem 1rem;
-    margin: 0.5rem;
-    border-radius: 5px;
-    border: none;
+.add-instance-popup .warning-message {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-style: italic;
+}
+
+.add-instance-input {
+    width: 90%;
+    height: 45px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.2);
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.add-instance-input:focus {
+    border-color: var(--box-button);
+    box-shadow: 0 0 8px rgba(0, 120, 189, 0.5);
+}
+
+.add-instance-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.add-instance-popup .buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    width: 90%;
+}
+
+.add-instance-confirm, .add-instance-cancel {
+    padding: 0.7rem 1.5rem;
+    border-radius: 10px;
+    font-size: 1rem;
     cursor: pointer;
-    background-color: var(--box-button);
-    color: #fff;
-    transition: background-color 0.2s;
+    transition: all 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    font-weight: bold;
+    width: 45%;
+    max-width: 150px;
 }
 
-.add-instance-popup .popup-content button:hover {
-    background-color: var(--box-button-hover);
+.add-instance-confirm {
+    background: linear-gradient(135deg, var(--box-button) 0%, var(--box-button-hover) 100%);
+    color: white;
+}
+
+.add-instance-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0px 4px 10px rgba(0, 120, 189, 0.4);
+}
+
+.add-instance-confirm:active {
+    transform: translateY(1px);
+}
+
+.add-instance-cancel {
+    background: rgba(60, 60, 60, 0.5);
+    color: #fff;
+}
+
+.add-instance-cancel:hover {
+    background: rgba(80, 80, 80, 0.7);
+    transform: translateY(-2px);
+}
+
+.add-instance-cancel:active {
+    transform: translateY(1px);
 }
 
 .warning-message {

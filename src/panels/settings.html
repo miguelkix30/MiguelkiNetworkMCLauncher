@@ -1,229 +1,239 @@
 <div class="container">
-    <div class="nav-settings">
-        <p>Ajustes</p>
-        <div class="nav-box">
-            <div id="account" class="nav-settings-btn active-settings-BTN">
-                CUENTAS
-            </div>
-            <div id="java" class="nav-settings-btn">JAVA</div>
-            <div id="resolution" class="nav-settings-btn">JUEGO</div>
-            <div id="launcher" class="nav-settings-btn">LAUNCHER</div>
-            <div id="credits" class="nav-settings-btn">INFORMACIÓN</div>
-            <div id="save" class="nav-settings-btn">VOLVER</div>
-        </div>
-    </div>
-
-    <div id="account-tab" class="container-settings active-container-settings">
-        <div class="titre-tab" id="discord-account-manager-title">Cuenta de Discord</div>
-        <div class="settings-elements-box" id="discord-account-manager" style="margin: 0">
-            <div class="discord-settings">
-                <p class="discord-username-text" style="margin: 0;">Cuenta de discord vinculada:</p><br>
-                <div class="profile-card">
-                    <img src="assets/images/default/profile.png" alt="Perfil de Discord" class="discord-profile-image">
-                    <div class="profile-info">
-                        <p class="profile-username">Desconocido</p>
-                    </div>
+    <div class="settings-header">
+        <h1 class="settings-title">Ajustes</h1>
+        <div class="nav-settings">
+            <div class="nav-box">
+                <div id="account" class="nav-settings-btn active-settings-BTN">
+                    CUENTAS
                 </div>
-                <br />
-                <p class="discord-logout-warning" style="margin: 0">
-                    Si cierras sesión ahora el launcher se reiniciará.
-                </p>
-                <br />
-                <div class="discord-logout-btn" style="margin: 0">Cerrar sesión</div>
-            </div>
-        </div>
-        <div class="titre-tab">Cuentas de Minecraft</div>
-        <div class="accounts-list content-scroll">
-            <div class="account" id="add">
-                <div class="add-profile">
-                    <div class="icon-account-add"></div>
-                </div>
-                <div class="add-text-profile">Añadir una cuenta</div>
+                <div id="java" class="nav-settings-btn">JAVA</div>
+                <div id="resolution" class="nav-settings-btn">JUEGO</div>
+                <div id="launcher" class="nav-settings-btn">LAUNCHER</div>
+                <div id="credits" class="nav-settings-btn">INFORMACIÓN</div>
+                <div id="save" class="nav-settings-btn">VOLVER</div>
             </div>
         </div>
     </div>
 
-    <div id="java-tab" class="container-settings content-scroll">
-        <div class="titre-tab">Configurar la RAM</div>
-        <div class="settings-elements-box">
-            <div class="setting-text">
-                Definición de la RAM asignada a su juego, una cantidad mayor aumentará
-                el rendimiento de su juego.<br />
-                Tenga en cuenta que debe evitar utilizar una cantidad demasiado grande,
-                ya que puede provocar la pérdida de tus otras aplicaciones.<br /><br />
-                <b>-RAM máxima:</b> Indica la cantidad total de RAM asignada a tu juego.
-                Se recomienda que no exceda el 50% de la cantidad total de RAM de su
-                PC.<br /><br />
-                <b>-RAM mínima:</b> Indica la cantidad mínima de RAM asignada cuando se
-                inicia el juego. Se recomienda no utilizar más de 4GB para este valor.
-            </div>
-            <div class="settings-elements content-evenly">
-                <div class="memory-slider" min="0.5" max="8" step="0.5">
-                    <div class="slider-touch-left">
-                        <span value="0 GB"></span>
-                    </div>
-                    <div class="slider-touch-right">
-                        <span value="0 GB"></span>
-                    </div>
-                    <div class="slider-line">
-                        <span></span>
+    <div class="settings-content">
+        <div id="account-tab" class="container-settings active-container-settings">
+            <div class="settings-column content-scroll" id="discord-account-column">
+                <div class="titre-tab" id="discord-account-manager-title">Cuenta de Discord</div>
+                <div class="settings-elements-box" id="discord-account-manager" style="margin: 0">
+                    <div class="discord-settings">
+                        <p class="discord-username-text" style="margin: 0;">Cuenta de discord vinculada:</p><br>
+                        <div class="profile-card">
+                            <img src="assets/images/default/profile.png" alt="Perfil de Discord" class="discord-profile-image">
+                            <div class="profile-info">
+                                <p class="profile-username">Desconocido</p>
+                            </div>
+                        </div>
+                        <br />
+                        <p class="discord-logout-warning" style="margin: 0">
+                            Si cierras sesión ahora el launcher se reiniciará.
+                        </p>
+                        <br />
+                        <div class="discord-logout-btn" style="margin: 0">Cerrar sesión</div>
                     </div>
                 </div>
-                <div class="ram-info-block">
-                    <b>Tienes un total de <span id="total-ram">0 GB</span> RAM.</b><br />
-                    <b>Tienes un total de <span id="free-ram">0 GB</span> RAM
-                        disponible.</b>
+            </div>
+            
+            <div class="settings-column">
+                <div class="titre-tab">Cuentas de Minecraft</div>
+                <div class="settings-elements-box content-scroll">
+                    <div class="accounts-list">
+                        <div class="account" id="add">
+                            <div class="add-profile">
+                                <div class="icon-account-add"></div>
+                            </div>
+                            <div class="add-text-profile">Añadir una cuenta</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="titre-tab">Ubicación de Java</div>
-        <div class="settings-elements-box">
-            <div class="setting-text">
-                El launcher contiene todas las versiones de Java necesarias.<br />
-                Estas versiones están disponibles en:<br /><span class="java-path-txt"></span><br>
-                Sin embargo, puede especificar su propio ejecutable si su juego requiere
-                una versión más reciente de java.
+        <div id="java-tab" class="container-settings">
+            <div class="settings-column content-scroll">
+                <div class="titre-tab">Configurar la RAM</div>
+                <div class="settings-elements-box">
+                    <div class="setting-text">
+                        Definición de la RAM asignada a su juego, una cantidad mayor aumentará
+                        el rendimiento de su juego.<br />
+                        Tenga en cuenta que debe evitar utilizar una cantidad demasiado grande,
+                        ya que podría causar problemas en su PC.
+                    </div>
+                    <div class="ram-info-block">
+                        <div>RAM total: <span id="total-ram">16 GB</span></div>
+                        <div>RAM disponible: <span id="free-ram">8 GB</span></div>
+                    </div>
+                    <div class="memory-slider" min="1" max="8" step="0.5">
+                        <span class="slider-touch-left">
+                            <span value=""></span>
+                        </span>
+                        <span class="slider-touch-right">
+                            <span value=""></span>
+                        </span>
+                        <div class="slider-line">
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="settings-elements content-evenly">
-                <input type="text" class="java-path-input-text" disabled />
-                <input type="file" class="java-path-input-file" accept="application/octet-stream" />
-                <div class="java-path-box">
-                    <div class="java-path-set java-path-btn">Cambiar</div>
-                    <div class="java-path-reset java-path-btn">Por defecto</div>
+            
+            <div class="settings-column content-scroll">
+                <div class="titre-tab">Ubicación de Java</div>
+                <div class="settings-elements-box">
+                    <div class="setting-text">
+                        Para ejecutar Minecraft, el launcher utiliza la versión de Java
+                        directamente proporcionada por el launcher.<br />
+                        Sin embargo, puedes seleccionar tu propia versión de Java, lo que puede
+                        ayudar a corregir algunos errores.
+                    </div>
+                    <div class="java-path-input-text">
+                        Utilice la versión de java suministrada con el launcher
+                    </div>
+                    <input type="file" class="java-path-input-file" accept="application/octet-stream" />
+                    <div class="java-path-box">
+                        <div class="java-path-set java-path-btn">Cambiar</div>
+                        <div class="java-path-reset java-path-btn">Por defecto</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="resolution-tab" class="container-settings">
+            <div class="settings-full-column content-scroll">
+                <div class="titre-tab">Ajustes de resolución de Minecraft</div>
+                <div class="settings-elements-box">
+                    <div class="setting-text">
+                        Define una resolución personalizada para el juego que se adapte a tu
+                        pantalla. Por defecto, el juego se inicia en 854 X 480,<br />puede
+                        modificar este valor para obtener un confort de juego óptimo. comodidad.
+                        La resolución ideal es de 1280 x 720.
+                    </div>
+                    <div class="settings-elements content-center">
+                        <div class="input-size-element">
+                            <input type="number" class="width-size input-resolution" />
+                            <div class="size-cross"></div>
+                            <input type="number" class="height-size input-resolution" style="margin-right: 1rem;"/>
+                        </div>
+                        <div class="size-reset size-btn">Por defecto</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="launcher-tab" class="container-settings">
+            <div class="settings-column content-scroll">
+                <div class="titre-tab">Rendimiento</div>
+                <div class="settings-elements-box">
+                    <div class="performance-mode-container">
+                        <input type="checkbox" id="performance-mode" class="performance-mode-checkbox">
+                        <label for="performance-mode">Activar modo de rendimiento</label>
+                    </div>
+                    <div class="performance-mode-info">
+                        El modo de rendimiento desactiva fondos de video y transiciones visuales para reducir el consumo de recursos.
+                    </div>
+                </div>
+                
+                <div class="titre-tab">Descargas</div>
+                <div class="settings-elements-box">
+                    <div class="setting-text">
+                        Número máximo de archivos que pueden descargarse simultáneamente. Un número mayor
+                        puede acelerar las descargas pero también puede causar problemas en conexiones
+                        lentas.
+                    </div>
+                    <div class="settings-elements content-center">
+                        <input type="number" class="input-max-files" value="3" min="1" max="10" />
+                        <div class="max-files-btn size-btn">Por defecto</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-column content-scroll">
+                <div class="titre-tab">
+                    Comportamiento del launcher al arrancar el juego
+                </div>
+                <div class="settings-elements-box">
+                    <div class="setting-text">
+                        Puedes elegir si el launcher se cierra automáticamente o permanece
+                        abierto al iniciar el juego.
+                    </div>
+
+                    <div class="settings-elements content-evenly launcher-behavior-box">
+                        <div class="launcher-behavior-option" data-value="close-launcher">
+                            <div class="launcher-behavior-radio"></div>
+                            <div class="launcher-behavior-label">Cerrar el launcher después de iniciar el juego</div>
+                        </div>
+                        <div class="launcher-behavior-option" data-value="close-none">
+                            <div class="launcher-behavior-radio"></div>
+                            <div class="launcher-behavior-label">Mantener abierto el launcher</div>
+                        </div>
+                        <div class="launcher-behavior-option" data-value="close-all">
+                            <div class="launcher-behavior-radio"></div>
+                            <div class="launcher-behavior-label">Cerrar el launcher y el juego al cerrar el launcher</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="titre-tab">Gestión de datos</div>
+                <div class="settings-elements-box">
+                    <div class="setting-text">
+                        Estas opciones te permiten reiniciar la configuración o eliminar todos los datos del
+                        launcher. Úsalas con precaución.
+                    </div>
+                    <div class="settings-elements content-evenly">
+                        <div class="reset-config-btn data-management-btn">
+                            <i class="fas fa-sync-alt"></i> Reiniciar configuración
+                        </div>
+                        <div class="delete-all-btn data-management-btn">
+                            <i class="fas fa-trash"></i> Eliminar todo
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="credits-tab" class="container-settings">
+            <div class="settings-column content-scroll">
+                <div class="titre-tab">Créditos</div>
+                <div class="settings-elements-box">
+                    <div class="credits-container">
+                        <div class="credit">
+                            <img src="assets/images/credits/miguelki.png" alt="Miguelki" />
+                            <h3>Miguelki</h3>
+                            <p class="role">Desarrollador principal</p>
+                            <div class="social-icons">
+                                <a href="https://x.com/MiguelkiX30" class="external"><i class="fab fa-x-twitter"></i></a>
+                                <a href="https://github.com/miguelkix30" class="external"><i class="fab fa-github"></i></a>
+                                <a href="https://dsc.gg/miguelkinetwork" class="external"><i class="fab fa-discord"></i></a>
+                            </div>
+                        </div>
+
+                        <div class="credit">
+                            <img src="assets/images/credits/luuxis.png" alt="Luuxis" />
+                            <h3>Luuxis</h3>
+                            <p class="role">Desarrollador de la base</p>
+                            <div class="social-icons">
+                                <a href="https://github.com/luuxis" class="external"><i class="fab fa-github"></i></a>
+                                <a href="https://discord.com/invite/e9q7Yr2cuQ" class="external"><i
+                                        class="fab fa-discord"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-column content-scroll">
+                <div class="titre-tab">Términos y condiciones</div>
+                <div class="info-container" id="terms-container">
+                    Ha ocurrido un error al cargar los términos y condiciones.
                 </div>
             </div>
         </div>
     </div>
-
-    <div id="resolution-tab" class="container-settings">
-        <div class="titre-tab">Ajustes de resolución de Minecraft</div>
-        <div class="settings-elements-box">
-            <div class="setting-text">
-                Define una resolución personalizada para el juego que se adapte a tu
-                pantalla. Por defecto, el juego se inicia en 854 X 480,<br />puede
-                modificar este valor para obtener un confort de juego óptimo. comodidad.
-                La resolución ideal es de 1280 x 720.
-            </div>
-            <div class="settings-elements content-center">
-                <div class="input-size-element">
-                    <input type="number" class="width-size input-resolution" />
-                    <div class="size-cross"></div>
-                    <input type="number" class="height-size input-resolution" />
-                </div>
-                <div class="size-reset size-btn">Por defecto</div>
-            </div>
-        </div>
-    </div>
-
-    <div id="launcher-tab" class="container-settings content-scroll">
-        <div class="titre-tab">Rendimiento</div>
-        <div class="settings-elements-box">
-            <div class="performance-mode-container">
-                <input type="checkbox" id="performance-mode" class="performance-mode-checkbox">
-                <label for="performance-mode">Activar modo de rendimiento</label>
-            </div>
-            <div class="performance-mode-info">
-                El modo de rendimiento desactiva fondos de video y transiciones visuales para reducir el consumo de recursos.
-            </div>
-        </div>
-
-        <div class="titre-tab">Parámetros de descarga</div>
-        <div class="settings-elements-box">
-            <div class="setting-text">
-                Este parámetro determina el número máximo de archivos que pueden
-                descargarse simultáneamente al actualizar o descargar recursos.<br /><br />
-
-                Tenga en cuenta que el cambio de esta configuración puede afectar al
-                rendimiento de la descarga.<br />
-                Se recomienda no sobrepasar los límites recomendados por defecto,<br />
-                a menos que tenga problemas específicos de conectividad.
-            </div>
-            <div class="settings-elements content-center">
-                <input type="number" class="max-files input-max-files" />
-                <p>Archivos</p>
-                <div class="max-files-reset max-files-btn">Por defecto</div>
-            </div>
-        </div>
-
-        <div class="titre-tab">
-            Comportamiento del launcher al arrancar el juego
-        </div>
-        <div class="settings-elements-box">
-            <div class="setting-text">
-                Puedes elegir si el launcher se cierra automáticamente o permanece
-                abierto al iniciar el juego.
-            </div>
-
-            <div class="settings-elements content-evenly launcher-behavior-box">
-                <div class="launcher-behavior-option" data-value="close-launcher">
-                    <div class="launcher-behavior-radio"></div>
-                    <div class="launcher-behavior-label">Cerrar el launcher después de iniciar el juego</div>
-                </div>
-                <div class="launcher-behavior-option" data-value="close-none">
-                    <div class="launcher-behavior-radio"></div>
-                    <div class="launcher-behavior-label">Mantener abierto el launcher</div>
-                </div>
-                <div class="launcher-behavior-option" data-value="close-all">
-                    <div class="launcher-behavior-radio"></div>
-                    <div class="launcher-behavior-label">Cerrar el juego al cerrar el launcher</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="titre-tab">
-            Gestión de datos del launcher
-        </div>
-        <div class="settings-elements-box">
-            <div class="setting-text">
-                Estas opciones te permiten reiniciar la configuración del launcher o eliminar todos los datos descargados.
-                <br><br>
-                <b>Reiniciar configuración:</b> Restablece todos los ajustes a sus valores predeterminados, pero mantiene los archivos del juego descargados.
-                <br>
-                <b>Eliminar todo:</b> Elimina toda la configuración y los archivos descargados del juego (assets, bibliotecas, instancias).
-            </div>
-            <div class="settings-elements content-evenly">
-                <div class="reset-config-btn data-management-btn">
-                    <i class="fas fa-sync-alt"></i> Reiniciar configuración
-                </div>
-                <div class="delete-all-btn data-management-btn">
-                    <i class="fas fa-trash"></i> Eliminar todo
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="credits-tab" class="container-settings content-scroll">
-        <div class="titre-tab">Créditos</div>
-        <div class="settings-elements-box">
-            <div class="credits-container">
-                <div class="credit">
-                    <img src="assets/images/credits/miguelki.png" alt="Miguelki" />
-                    <h3>Miguelki</h3>
-                    <p class="role">Desarrollador principal</p>
-                    <div class="social-icons">
-                        <a href="https://x.com/MiguelkiX30" class="external"><i class="fab fa-x-twitter"></i></a>
-                        <a href="https://github.com/miguelkix30" class="external"><i class="fab fa-github"></i></a>
-                        <a href="https://dsc.gg/miguelkinetwork" class="external"><i class="fab fa-discord"></i></a>
-                    </div>
-                </div>
-
-                <div class="credit">
-                    <img src="assets/images/credits/luuxis.png" alt="Luuxis" />
-                    <h3>Luuxis</h3>
-                    <p class="role">Desarrollador de la base</p>
-                    <div class="social-icons">
-                        <a href="https://github.com/luuxis" class="external"><i class="fab fa-github"></i></a>
-                        <a href="https://discord.com/invite/e9q7Yr2cuQ" class="external"><i
-                                class="fab fa-discord"></i></a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="titre-tab">Términos y condiciones</div>
-        <div class="info-container" id="terms-container">
-            Ha ocurrido un error al cargar los términos y condiciones.
-        </div>
-    </div>
+    
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             document.body.addEventListener('click', function (event) {

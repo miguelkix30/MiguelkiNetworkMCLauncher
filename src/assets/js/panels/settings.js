@@ -27,9 +27,209 @@ class Settings {
         this.discordAccount()
         
         this.applyPerfModeOverridesIfNeeded();
+        this.addAccountButtonEffects(); // Añadir efectos de pulsación a los botones de cuentas
+        this.addConfigButtonEffects(); // Añadir efectos de pulsación a los botones de configuración
+        
+        // Make sure the add account button is visible
+        this.ensureAddAccountButton();
+    }
+    
+    // Ensure the "Add Account" button is displayed
+    ensureAddAccountButton() {
+        try {
+            const accountsList = document.querySelector('.accounts-list');
+            if (!accountsList) {
+                console.error('Accounts list element not found');
+                return;
+            }
+            
+            // Check if the add button already exists
+            let addButton = accountsList.querySelector('#add');
+            if (addButton) {
+                console.log('Add account button already exists');
+                // Make sure it's visible
+                addButton.style.display = 'flex';
+                return;
+            }
+            
+            // Create the add account button if it doesn't exist
+            console.log('Creating add account button');
+            const addAccountBtn = document.createElement('div');
+            addAccountBtn.className = 'account';
+            addAccountBtn.id = 'add';
+            addAccountBtn.innerHTML = `
+                <div class="add-profile">
+                    <div class="icon-account-add"></div>
+                </div>
+                <div class="add-text-profile">Añadir una cuenta</div>
+            `;
+            
+            // Apply button style
+            addAccountBtn.style.display = 'flex';
+            addAccountBtn.style.flexDirection = 'column';
+            addAccountBtn.style.justifyContent = 'center';
+            addAccountBtn.style.alignItems = 'center';
+            
+            // Add to the accounts list
+            accountsList.appendChild(addAccountBtn);
+            
+            // Apply button effects
+            this.applyAccountButtonEffect(addAccountBtn);
+        } catch (error) {
+            console.error('Error ensuring add account button:', error);
+        }
     }
 
-    applyPerfModeOverridesIfNeeded() {
+    // Añadir efectos de pulsación a los botones de configuración
+    addConfigButtonEffects() {
+        // Aplicar efectos a los botones de Java Path
+        const javaPathButtons = document.querySelectorAll('.java-path-btn');
+        javaPathButtons.forEach(button => {
+            this.applyButtonPressEffect(button);
+        });
+
+        // Aplicar efectos al botón de reset de resolución
+        const resolutionResetBtn = document.querySelector('.size-reset');
+        if (resolutionResetBtn) {
+            this.applyButtonPressEffect(resolutionResetBtn);
+        }
+
+        // Aplicar efectos al botón de reset de max-files
+        const maxFilesResetBtn = document.querySelector('.max-files-btn');
+        if (maxFilesResetBtn) {
+            this.applyButtonPressEffect(maxFilesResetBtn);
+        }
+
+        // Aplicar efectos a los botones de gestión de datos
+        const dataManagementBtns = document.querySelectorAll('.data-management-btn');
+        dataManagementBtns.forEach(button => {
+            this.applyButtonPressEffect(button);
+        });
+
+        // Aplicar efectos a los campos numéricos
+        const numericInputs = document.querySelectorAll('.input-resolution, .input-max-files');
+        numericInputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.style.borderColor = 'var(--box-button)';
+                input.style.boxShadow = '0 0 8px rgba(0, 120, 189, 0.5)';
+            });
+            
+            input.addEventListener('blur', () => {
+                input.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+                input.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.2)';
+            });
+        });
+
+        // Aplicar efectos a los opciones de comportamiento del launcher
+        const behaviorOptions = document.querySelectorAll('.launcher-behavior-option');
+        behaviorOptions.forEach(option => {
+            option.addEventListener('mousedown', () => {
+                if (!option.classList.contains('selected')) {
+                    option.style.transform = 'translateY(2px)';
+                    option.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.2)';
+                }
+            });
+            
+            option.addEventListener('mouseup', () => {
+                if (!option.classList.contains('selected')) {
+                    option.style.transform = '';
+                    option.style.boxShadow = '';
+                }
+            });
+            
+            option.addEventListener('mouseleave', () => {
+                if (!option.classList.contains('selected')) {
+                    option.style.transform = '';
+                    option.style.boxShadow = '';
+                }
+            });
+        });
+    }
+
+    // Función para aplicar efecto de pulsación a un botón
+    applyButtonPressEffect(button) {
+        button.addEventListener('mousedown', () => {
+            button.style.transform = 'translateY(3px)';
+            button.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.2)';
+        });
+        
+        button.addEventListener('mouseup', () => {
+            button.style.transform = '';
+            button.style.boxShadow = '';
+        });
+        
+        button.addEventListener('mouseleave', () => {
+            button.style.transform = '';
+            button.style.boxShadow = '';
+        });
+    }
+
+    // Añadir efecto de pulsación a los elementos de cuenta
+    addAccountButtonEffects() {
+        // Observador de mutaciones para aplicar efectos a elementos de cuenta que se añaden dinámicamente
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach(mutation => {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1 && (node.classList.contains('account') || 
+                                                    node.classList.contains('delete-profile'))) {
+                            this.applyAccountButtonEffect(node);
+                        }
+                    });
+                }
+            });
+        });
+
+        // Comenzar a observar la lista de cuentas
+        const accountsList = document.querySelector('.accounts-list');
+        if (accountsList) {
+            observer.observe(accountsList, { childList: true });
+            
+            // Aplicar efectos a los elementos existentes
+            accountsList.querySelectorAll('.account, .delete-profile').forEach(element => {
+                this.applyAccountButtonEffect(element);
+            });
+        }
+    }
+
+    // Aplicar efecto de pulsación a un elemento específico
+    applyAccountButtonEffect(element) {
+        if (element.classList.contains('account')) {
+            // Para los elementos de cuenta completos
+            element.addEventListener('mousedown', () => {
+                if (!element.classList.contains('account-select')) {
+                    element.style.transform = 'translateY(2px) scale(0.98)';
+                }
+            });
+            
+            element.addEventListener('mouseup', () => {
+                if (!element.classList.contains('account-select')) {
+                    element.style.transform = '';
+                }
+            });
+            
+            element.addEventListener('mouseleave', () => {
+                if (!element.classList.contains('account-select')) {
+                    element.style.transform = '';
+                }
+            });
+        } else if (element.classList.contains('delete-profile')) {
+            // Para los botones de eliminar
+            element.addEventListener('mousedown', () => {
+                element.style.transform = 'translateY(2px) scale(0.95)';
+            });
+            
+            element.addEventListener('mouseup', () => {
+                element.style.transform = '';
+            });
+            
+            element.addEventListener('mouseleave', () => {
+                element.style.transform = '';
+            });
+        }
+    }
+
+    async applyPerfModeOverridesIfNeeded() {
         if (isPerformanceModeEnabled()) {
             console.log("Applying performance mode overrides for settings panel");
             
@@ -102,7 +302,6 @@ class Settings {
                         activeContainerSettings.style.opacity = '0';
                         activeContainerSettings.style.transform = 'translateX(100%)';
                         activeContainerSettings.style.visibility = 'hidden';
-                        
                         void activeContainerSettings.offsetWidth;
                     } else {
                         activeContainerSettings.classList.toggle('active-container-settings');
@@ -126,35 +325,60 @@ class Settings {
                     document.querySelector(`#${id}-tab`).classList.add('active-container-settings');
                 }
             }
-        })
+        });
+
+        // Efectos de presionado para los botones de navegación
+        const navButtons = document.querySelectorAll('.nav-settings-btn');
+        navButtons.forEach(button => {
+            button.addEventListener('mousedown', () => {
+                if (!button.classList.contains('active-settings-BTN')) {
+                    button.style.transform = 'translateY(1px) scale(0.98)';
+                }
+            });
+            
+            button.addEventListener('mouseup', () => {
+                if (!button.classList.contains('active-settings-BTN')) {
+                    button.style.transform = '';
+                }
+            });
+            
+            button.addEventListener('mouseleave', () => {
+                if (!button.classList.contains('active-settings-BTN')) {
+                    button.style.transform = '';
+                }
+            });
+        });
     }
 
     accounts() {
         document.querySelector('.accounts-list').addEventListener('click', async e => {
-            let popupAccount = new popup()
+            let popupAccount = new popup();
             try {
-                let id = e.target.id
+                let id = e.target.id;
                 if (e.target.classList.contains('account')) {
                     popupAccount.openPopup({
                         title: 'Iniciar sesión',
                         content: 'Espere, por favor...',
                         color: 'var(--color)'
-                    })
+                    });
 
                     if (id == 'add') {
-                        document.querySelector('.cancel-home').style.display = 'inline'
-                        document.querySelector('.cancel-AZauth').style.display = 'inline'
-                        document.querySelector('.cancel-offline').style.display = 'inline'
+                        document.querySelector('.cancel-home').style.display = 'inline';
+                        document.querySelector('.cancel-AZauth').style.display = 'inline';
+                        document.querySelector('.cancel-offline').style.display = 'inline';
                         popupAccount.closePopup();
-                        return changePanel('login')
+                        return changePanel('login');
                     }
 
-                    let account = await this.db.readData('accounts', id);
+                    // Primero comprobamos si la cuenta existe 
+                    let allAccounts = await this.db.readAllData('accounts');
+                    let account = allAccounts.find(acc => String(acc.ID) === String(id));
+
                     if (!account) {
                         popupAccount.closePopup();
                         popupAccount.openPopup({
                             title: 'Error',
-                            content: 'No se pudo encontrar la cuenta seleccionada.',
+                            content: `No se pudo encontrar la cuenta seleccionada (ID: ${id}). La cuenta podría haber sido eliminada o dañada.`,
                             color: 'red',
                             options: true
                         });
@@ -171,36 +395,157 @@ class Settings {
                     }
                     
                     configClient.account_selected = account.ID;
+                    await this.db.updateData('configClient', configClient);
                     popupAccount.closePopup();
-                    return await this.db.updateData('configClient', configClient);
+                    return;
                 }
 
-                if (e.target.classList.contains("delete-profile")) {
+                if (e.target.classList.contains("delete-profile") || e.target.classList.contains("icon-account-delete")) {
+                    // Asegurarse de obtener el id correcto, ya sea del elemento o de su padre
+                    let deleteId = id;
+                    if (e.target.classList.contains("icon-account-delete")) {
+                        deleteId = e.target.parentElement.id;
+                    }
+                    
+                    if (!deleteId) {
+                        popupAccount.closePopup();
+                        popupAccount.openPopup({
+                            title: 'Error',
+                            content: 'No se pudo identificar la cuenta a eliminar.',
+                            color: 'red',
+                            options: true
+                        });
+                        return;
+                    }
+
+                    // Pedir confirmación antes de eliminar
+                    const confirmResult = await new Promise(resolve => {
+                        popupAccount.openDialog({
+                            title: 'Confirmar eliminación',
+                            content: '¿Estás seguro de que quieres eliminar esta cuenta?',
+                            options: true,
+                            callback: resolve
+                        });
+                    });
+
+                    if (confirmResult === 'cancel') {
+                        return;
+                    }
+
                     popupAccount.openPopup({
-                        title: 'Iniciar sesión',
+                        title: 'Eliminando cuenta',
                         content: 'Espere, por favor...',
                         color: 'var(--color)'
-                    })
-                    await this.db.deleteData('accounts', id);
-                    let deleteProfile = document.getElementById(`${id}`);
-                    let accountListElement = document.querySelector('.accounts-list');
-                    accountListElement.removeChild(deleteProfile);
+                    });
 
-                    if (accountListElement.children.length == 1) return changePanel('login');
+                    // Verificar que la cuenta existe antes de intentar eliminarla
+                    let allAccounts = await this.db.readAllData('accounts');
+                    let accountToDelete = allAccounts.find(acc => String(acc.ID) === String(deleteId));
+
+                    if (!accountToDelete) {
+                        popupAccount.closePopup();
+                        popupAccount.openPopup({
+                            title: 'Error',
+                            content: `No se pudo encontrar la cuenta a eliminar (ID: ${deleteId}).`,
+                            color: 'red',
+                            options: true
+                        });
+                        return;
+                    }
+
+                    // Eliminar la cuenta de la base de datos
+                    await this.db.deleteData('accounts', deleteId);
+
+                    // Eliminar el elemento visual
+                    let deleteProfile = document.getElementById(`${deleteId}`);
+                    let accountListElement = document.querySelector('.accounts-list');
+                    
+                    if (deleteProfile && accountListElement.contains(deleteProfile)) {
+                        accountListElement.removeChild(deleteProfile);
+                    } else {
+                        console.warn(`No se encontró el elemento DOM para la cuenta ID: ${deleteId}`);
+                    }
+
+                    // Verificar que tengamos otras cuentas disponibles después de eliminar esta
+                    allAccounts = allAccounts.filter(acc => String(acc.ID) !== String(deleteId));
+                    
+                    // Verificar si no quedan cuentas disponibles
+                    if (!allAccounts || allAccounts.length === 0) {
+                        configClient.account_selected = null;
+                        await this.db.updateData('configClient', configClient);
+                        
+                        popupAccount.closePopup();
+                        popupAccount.openPopup({
+                            title: 'Cuenta eliminada',
+                            content: 'La cuenta se eliminó correctamente. Serás redirigido al panel de inicio de sesión ya que no quedan cuentas disponibles.',
+                            color: 'var(--color)',
+                            options: true,
+                            callback: () => {
+                                // Asegurar que se redirija al login después de cerrar el popup
+                                changePanel('login');
+                            }
+                        });
+                        
+                        // Asegurarse de que el botón de añadir cuenta esté visible
+                        this.ensureAddAccountButton();
+                        return;
+                    }
 
                     let configClient = await this.db.readData('configClient');
 
-                    if (configClient.account_selected == id) {
-                        let allAccounts = await this.db.readAllData('accounts');
-                        configClient.account_selected = allAccounts[0].ID
-                        accountSelect(allAccounts[0]);
-                        let newInstanceSelect = await this.setInstance(allAccounts[0]);
-                        configClient.instance_selct = newInstanceSelect.instance_selct
-                        return await this.db.updateData('configClient', configClient);
+                    // Si la cuenta eliminada era la seleccionada, cambiar a otra
+                    if (configClient.account_selected == deleteId) {
+                        // Asegurarse de que hay al menos una cuenta disponible
+                        if (allAccounts.length > 0) {
+                            const nextAccount = allAccounts[0];
+                            configClient.account_selected = nextAccount.ID;
+                            await accountSelect(nextAccount);
+                            
+                            // Verificar si se debe habilitar la personalización de skin
+                            if (nextAccount.meta && nextAccount.meta.type === 'AZauth') {
+                                clickableHead(true);
+                            } else {
+                                clickableHead(false);
+                            }
+                            
+                            try {
+                                let newInstanceSelect = await this.setInstance(nextAccount);
+                                configClient.instance_selct = newInstanceSelect.instance_selct;
+                                await this.db.updateData('configClient', configClient);
+                            } catch (error) {
+                                console.warn(`Error al obtener instancia después de cambiar cuenta: ${error.message}`);
+                                // Continuar con la configuración actual si hay un error
+                                await this.db.updateData('configClient', configClient);
+                            }
+                            
+                            popupAccount.closePopup();
+                            
+                            // Mensaje mejorado cuando la cuenta eliminada era la seleccionada
+                            popupAccount.openPopup({
+                                title: 'Cuenta eliminada',
+                                content: `La cuenta se eliminó correctamente. Se ha seleccionado automáticamente la cuenta ${nextAccount.name}.`,
+                                color: 'var(--color)',
+                                options: true
+                            });
+                        }
+                    } else {
+                        // La cuenta eliminada no era la seleccionada
+                        popupAccount.closePopup();
+                        
+                        // Mensaje cuando se elimina una cuenta que no era la seleccionada
+                        popupAccount.openPopup({
+                            title: 'Cuenta eliminada',
+                            content: 'La cuenta se eliminó correctamente.',
+                            color: 'var(--color)',
+                            options: true
+                        });
                     }
+                    
+                    // Asegurarse de que el botón de añadir cuenta esté visible después de eliminar una cuenta
+                    this.ensureAddAccountButton();
                 }
             } catch (err) {
-                console.error('Error al cambiar de cuenta:', err);
+                console.error('Error al cambiar/eliminar cuenta:', err);
                 popupAccount.closePopup();
                 popupAccount.openPopup({
                     title: 'Error',
@@ -208,10 +553,8 @@ class Settings {
                     color: 'red',
                     options: true
                 });
-            } finally {
-                popupAccount.closePopup();
             }
-        })
+        });
     }
 
     async setInstance(auth) {
@@ -222,31 +565,38 @@ class Settings {
 
         let configClient = await this.db.readData('configClient') || { instance_selct: null };
         let instanceSelect = configClient.instance_selct;
-        let instancesList = await config.getInstanceList();
         
-        if (!instancesList || instancesList.length === 0) {
-            console.log("No instances available");
-            return configClient;
-        }
+        try {
+            let instancesList = await config.getInstanceList();
+            
+            if (!instancesList || instancesList.length === 0) {
+                console.log("No instances available");
+                return configClient;
+            }
 
-        for (let instance of instancesList) {
-            if (instance.whitelistActive) {
-                let whitelist = instance.whitelist.find(whitelist => whitelist == auth.name);
-                if (whitelist !== auth.name) {
-                    if (instance.name == instanceSelect) {
-                        let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
-                        if (!newInstanceSelect && instancesList.length > 0) {
-                            newInstanceSelect = instancesList[0];
-                        }
-                        
-                        if (newInstanceSelect) {
-                            configClient.instance_selct = newInstanceSelect.name;
-                            await setStatus(newInstanceSelect);
+            for (let instance of instancesList) {
+                if (instance.whitelistActive) {
+                    let whitelist = instance.whitelist.find(whitelist => whitelist == auth.name);
+                    if (whitelist !== auth.name) {
+                        if (instance.name == instanceSelect) {
+                            let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
+                            if (!newInstanceSelect && instancesList.length > 0) {
+                                newInstanceSelect = instancesList[0];
+                            }
+                            
+                            if (newInstanceSelect) {
+                                configClient.instance_selct = newInstanceSelect.name;
+                                await setStatus(newInstanceSelect);
+                            }
                         }
                     }
                 }
             }
+        } catch (error) {
+            console.warn(`Error al obtener lista de instancias en setInstance: ${error.message}`);
+            // Continuar con la configuración actual si hay un error al obtener instancias
         }
+        
         return configClient;
     }
 
@@ -422,40 +772,58 @@ class Settings {
     }
 
     async javaPath() {
-        let javaPathText = document.querySelector(".java-path-txt")
-        javaPathText.textContent = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}/runtime`;
+        let javaPathText = document.querySelector(".java-path-txt");
+        if (javaPathText) {
+            javaPathText.textContent = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}/runtime`;
+        }
 
         let configClient = await this.db.readData('configClient')
         let javaPath = configClient?.java_config?.java_path || 'Utilice la versión de java suministrada con el launcher';
         let javaPathInputTxt = document.querySelector(".java-path-input-text");
         let javaPathInputFile = document.querySelector(".java-path-input-file");
-        javaPathInputTxt.value = javaPath;
+        
+        if (javaPathInputTxt) {
+            javaPathInputTxt.value = javaPath;
+        }
 
-        document.querySelector(".java-path-set").addEventListener("click", async () => {
-            javaPathInputFile.value = '';
-            javaPathInputFile.click();
-            await new Promise((resolve) => {
-                let interval;
-                interval = setInterval(() => {
-                    if (javaPathInputFile.value != '') resolve(clearInterval(interval));
-                }, 100);
+        let javaPathSetBtn = document.querySelector(".java-path-set");
+        let javaPathResetBtn = document.querySelector(".java-path-reset");
+
+        if (javaPathSetBtn) {
+            javaPathSetBtn.addEventListener("click", async () => {
+                if (!javaPathInputFile) return;
+                
+                javaPathInputFile.value = '';
+                javaPathInputFile.click();
+                await new Promise((resolve) => {
+                    let interval;
+                    interval = setInterval(() => {
+                        if (javaPathInputFile.value != '') resolve(clearInterval(interval));
+                    }, 100);
+                });
+
+                if (javaPathInputFile.value.replace(".exe", '').endsWith("java") || javaPathInputFile.value.replace(".exe", '').endsWith("javaw")) {
+                    let configClient = await this.db.readData('configClient')
+                    let file = javaPathInputFile.files[0].path;
+                    if (javaPathInputTxt) {
+                        javaPathInputTxt.value = file;
+                    }
+                    configClient.java_config.java_path = file
+                    await this.db.updateData('configClient', configClient);
+                } else alert("El nombre del archivo debe ser java o javaw");
             });
+        }
 
-            if (javaPathInputFile.value.replace(".exe", '').endsWith("java") || javaPathInputFile.value.replace(".exe", '').endsWith("javaw")) {
+        if (javaPathResetBtn) {
+            javaPathResetBtn.addEventListener("click", async () => {
                 let configClient = await this.db.readData('configClient')
-                let file = javaPathInputFile.files[0].path;
-                javaPathInputTxt.value = file;
-                configClient.java_config.java_path = file
+                if (javaPathInputTxt) {
+                    javaPathInputTxt.value = 'Utilice la versión de java suministrada con el launcher';
+                }
+                configClient.java_config.java_path = null
                 await this.db.updateData('configClient', configClient);
-            } else alert("El nombre del archivo debe ser java o javaw");
-        });
-
-        document.querySelector(".java-path-reset").addEventListener("click", async () => {
-            let configClient = await this.db.readData('configClient')
-            javaPathInputTxt.value = 'Utilice la versión de java suministrada con el launcher';
-            configClient.java_config.java_path = null
-            await this.db.updateData('configClient', configClient);
-        });
+            });
+        }
     }
 
     async resolution() {
@@ -496,20 +864,27 @@ class Settings {
         let maxDownloadFiles = configClient?.launcher_config?.download_multi || 3;
         let maxDownloadFilesInput = document.querySelector(".max-files");
         let maxDownloadFilesReset = document.querySelector(".max-files-reset");
-        maxDownloadFilesInput.value = maxDownloadFiles;
+        
+        if (maxDownloadFilesInput) {
+            maxDownloadFilesInput.value = maxDownloadFiles;
 
-        maxDownloadFilesInput.addEventListener("change", async () => {
-            let configClient = await this.db.readData('configClient')
-            configClient.launcher_config.download_multi = maxDownloadFilesInput.value;
-            await this.db.updateData('configClient', configClient);
-        })
+            maxDownloadFilesInput.addEventListener("change", async () => {
+                let configClient = await this.db.readData('configClient')
+                configClient.launcher_config.download_multi = maxDownloadFilesInput.value;
+                await this.db.updateData('configClient', configClient);
+            });
+        }
 
-        maxDownloadFilesReset.addEventListener("click", async () => {
-            let configClient = await this.db.readData('configClient')
-            maxDownloadFilesInput.value = 3
-            configClient.launcher_config.download_multi = 3;
-            await this.db.updateData('configClient', configClient);
-        })
+        if (maxDownloadFilesReset) {
+            maxDownloadFilesReset.addEventListener("click", async () => {
+                let configClient = await this.db.readData('configClient')
+                if (maxDownloadFilesInput) {
+                    maxDownloadFilesInput.value = 3;
+                }
+                configClient.launcher_config.download_multi = 3;
+                await this.db.updateData('configClient', configClient);
+            });
+        }
 
         const performanceModeCheckbox = document.querySelector(".performance-mode-checkbox");
         if (performanceModeCheckbox) {
@@ -573,43 +948,6 @@ class Settings {
                 this.handleDeleteAll();
             });
         }
-
-        // Keep the old code commented out for reference
-        /*
-        let closeBox = document.querySelector(".close-box");
-        
-        if (closeLauncher == "close-launcher") {
-            document.querySelector('.close-launcher').classList.add('active-close');
-        } else if (closeLauncher == "close-all") {
-            document.querySelector('.close-all').classList.add('active-close');
-        } else if (closeLauncher == "close-none") {
-            document.querySelector('.close-none').classList.add('active-close');
-        }
-
-        closeBox.addEventListener("click", async e => {
-            if (e.target.classList.contains('close-btn')) {
-                let activeClose = document.querySelector('.active-close');
-                if (e.target.classList.contains('active-close')) return
-                activeClose?.classList.toggle('active-close');
-
-                let configClient = await this.db.readData('configClient')
-
-                if (e.target.classList.contains('close-launcher')) {
-                    e.target.classList.toggle('active-close');
-                    configClient.launcher_config.closeLauncher = "close-launcher";
-                    await this.db.updateData('configClient', configClient);
-                } else if (e.target.classList.contains('close-all')) {
-                    e.target.classList.toggle('active-close');
-                    configClient.launcher_config.closeLauncher = "close-all";
-                    await this.db.updateData('configClient', configClient);
-                } else if (e.target.classList.contains('close-none')) {
-                    e.target.classList.toggle('active-close');
-                    configClient.launcher_config.closeLauncher = "close-none";
-                    await this.db.updateData('configClient', configClient);
-                }
-            }
-        })
-        */
     }
 
     async handleResetConfig() {
@@ -635,25 +973,12 @@ class Settings {
                 color: 'var(--color)'
             });
             
-            // Primero, vaciar la tabla de cuentas
-            const accounts = await this.db.readAllData("accounts");
-            if (accounts && accounts.length > 0) {
-                console.log(`Eliminando ${accounts.length} cuentas...`);
-                for (const account of accounts) {
-                    await this.db.deleteData('accounts', account.ID);
-                }
-            }
+            console.log('Limpiando archivos de configuración...');
             
-            // Luego eliminar configClient
-            await this.db.deleteData('configClient');
+            // Eliminar solo los archivos de configuración
+            await this.db.clearDatabase();
             
-            // Doble verificación - comprobar si realmente se eliminaron las cuentas
-            const remainingAccounts = await this.db.readAllData("accounts");
-            if (remainingAccounts && remainingAccounts.length > 0) {
-                console.warn(`Aún quedan ${remainingAccounts.length} cuentas, forzando limpieza completa...`);
-                await this.db.clearDatabase(); // Método que elimina todo el contenido de la base de datos
-            }
-        
+            // Esperar un momento antes de reiniciar
             await new Promise(resolve => setTimeout(resolve, 1000));
             
             processingPopup.closePopup();
@@ -715,13 +1040,15 @@ class Settings {
                 process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`
             );
             
+            // Limpiar base de datos y archivos encriptados
+            console.log('Limpiando base de datos y archivos encriptados...');
+            await this.db.clearDatabase();
+            
+            // Eliminar directorio de datos
             if (fs.existsSync(dataPath)) {
                 await this.recursiveDelete(dataPath);
                 console.log('Data directory deleted successfully');
             }
-
-            await this.db.deleteData('configClient');
-            await this.db.deleteData('accounts');
             
             // Wait a moment before restarting
             await new Promise(resolve => setTimeout(resolve, 1000));

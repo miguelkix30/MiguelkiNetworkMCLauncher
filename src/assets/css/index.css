@@ -31,6 +31,13 @@ img {
     height: 140px;
     transition: opacity .3s, top 1.5s;
     opacity: 0;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%) scale(1); }
+    50% { transform: translate(-50%) scale(1.05); }
+    100% { transform: translate(-50%) scale(1); }
 }
 
 .splash.opacity {

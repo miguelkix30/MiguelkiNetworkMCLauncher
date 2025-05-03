@@ -1,5 +1,5 @@
 /**
- * @author Luuxis
+ * @author MiguelkiNetwork (based on work by Luuxis)
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 const { AZauth, Mojang } = require('minecraft-java-core');
@@ -13,34 +13,41 @@ class Login {
     async init(config) {
         this.config = config;
         this.db = new database();
-
+        
+        console.log('Initializing login system');
+        
+        // Handle login method based on configuration
         if (typeof this.config.online == 'boolean') {
-            this.config.online ? this.getMicrosoft() : this.getCrack()
+            this.config.online ? this.getMicrosoft() : this.getCrack();
         } else if (typeof this.config.online == 'string') {
             if (this.config.online.match(/^(http|https):\/\/[^ "]+$/)) {
                 this.getAZauth();
             }
         }
         
+        // Set up cancel buttons
         document.querySelector('.cancel-home').addEventListener('click', () => {
-            document.querySelector('.cancel-home').style.display = 'none'
-            changePanel('settings')
-        })
+            document.querySelector('.cancel-home').style.display = 'none';
+            changePanel('settings');
+        });
+        
         document.querySelector('.cancel-AZauth').addEventListener('click', () => {
-            document.querySelector('.cancel-AZauth').style.display = 'none'
-            changePanel('settings')
-        })
+            document.querySelector('.cancel-AZauth').style.display = 'none';
+            changePanel('settings');
+        });
+        
         document.querySelector('.cancel-offline').addEventListener('click', () => {
-            document.querySelector('.cancel-offline').style.display = 'none'
-            changePanel('settings')
-        })
+            document.querySelector('.cancel-offline').style.display = 'none';
+            changePanel('settings');
+        });
+        
         document.querySelector('.register-azauth').addEventListener('click', () => {
             ipcRenderer.send('create-register-window');
         });
     }
 
     async getMicrosoft() {
-        console.log('Inicializando inicio de sesión a través de Microsoft...');
+        console.log('Setting up Microsoft login...');
         let popupLogin = new popup();
         let loginHome = document.querySelector('.login-home');
         let microsoftBtn = document.querySelector('.connect-home');
@@ -49,37 +56,46 @@ class Login {
         microsoftBtn.addEventListener("click", () => {
             popupLogin.openPopup({
                 title: 'Iniciar sesión',
-                content: 'Por favor continua en la ventana de inicio de sesión de Microsoft......',
+                content: 'Por favor continua en la ventana de inicio de sesión de Microsoft...',
                 color: 'var(--color)'
             });
 
-            ipcRenderer.invoke('Microsoft-window', this.config.client_id).then(async account_connect => {
-                if (account_connect == 'cancel' || !account_connect) {
-                    popupLogin.closePopup();
-                    return;
-                } else {
-                    await this.saveData(account_connect)
-                    clickableHead(false);
-                    popupLogin.closePopup();
-                }
-
-            }).catch(err => {
-                popupLogin.openPopup({
-                    title: 'Error',
-                    content: err,
-                    options: true
+            ipcRenderer.invoke('Microsoft-window', this.config.client_id)
+                .then(async account_connect => {
+                    if (account_connect == 'cancel' || !account_connect) {
+                        popupLogin.closePopup();
+                        return;
+                    } else {
+                        try {
+                            await this.saveData(account_connect);
+                            clickableHead(false);
+                        } catch (error) {
+                            console.error('Error saving Microsoft account:', error);
+                            popupLogin.openPopup({
+                                title: 'Error',
+                                content: 'Ocurrió un error al guardar la cuenta. Intente nuevamente.',
+                                options: true
+                            });
+                        }
+                        popupLogin.closePopup();
+                    }
+                })
+                .catch(err => {
+                    console.error('Microsoft login error:', err);
+                    popupLogin.openPopup({
+                        title: 'Error',
+                        content: err?.message || 'Error al iniciar sesión con Microsoft.',
+                        options: true
+                    });
                 });
-            });
-        })
+        });
     }
 
     async getCrack() {
-        console.log('Inicializando inicio de sesión a través de nombre de usuario...');
+        console.log('Setting up offline login...');
         let popupLogin = new popup();
         let loginOffline = document.querySelector('.login-offline');
-
         let microsoftcracked = document.querySelector('.connect-microsoftcracked');
-
         let emailOffline = document.querySelector('.email-offline');
         let connectOffline = document.querySelector('.connect-offline');
         loginOffline.style.display = 'block';
@@ -87,27 +103,38 @@ class Login {
         microsoftcracked.addEventListener('click', () => {
             popupLogin.openPopup({
                 title: 'Iniciar sesión',
-                content: 'Por favor continua en la ventana de inicio de sesión de Microsoft......',
+                content: 'Por favor continua en la ventana de inicio de sesión de Microsoft...',
                 color: 'var(--color)'
             });
 
-            ipcRenderer.invoke('Microsoft-window', this.config.client_id).then(async account_connect => {
-                if (account_connect == 'cancel' || !account_connect) {
-                    popupLogin.closePopup();
-                    return;
-                } else {
-                    await this.saveData(account_connect)
-                    clickableHead(false);
-                    popupLogin.closePopup();
-                }
-
-            }).catch(err => {
-                popupLogin.openPopup({
-                    title: 'Error',
-                    content: err,
-                    options: true
+            ipcRenderer.invoke('Microsoft-window', this.config.client_id)
+                .then(async account_connect => {
+                    if (account_connect == 'cancel' || !account_connect) {
+                        popupLogin.closePopup();
+                        return;
+                    } else {
+                        try {
+                            await this.saveData(account_connect);
+                            clickableHead(false);
+                        } catch (error) {
+                            console.error('Error saving Microsoft account:', error);
+                            popupLogin.openPopup({
+                                title: 'Error',
+                                content: 'Ocurrió un error al guardar la cuenta. Intente nuevamente.',
+                                options: true
+                            });
+                        }
+                        popupLogin.closePopup();
+                    }
+                })
+                .catch(err => {
+                    console.error('Microsoft login error:', err);
+                    popupLogin.openPopup({
+                        title: 'Error',
+                        content: err?.message || 'Error al iniciar sesión con Microsoft.',
+                        options: true
+                    });
                 });
-            });
         });
 
         connectOffline.addEventListener('click', async () => {
@@ -117,55 +144,68 @@ class Login {
                 content: 'Por favor, espere...',
                 color: 'var(--color)'
             });
-            if (emailOffline.value.length < 3) {
+            
+            try {
+                // Validate username
+                if (emailOffline.value.length < 3) {
+                    popupLogin.closePopup();
+                    popupLogin.openPopup({
+                        title: 'Error',
+                        content: 'Tu nombre de usuario debe tener al menos 3 caracteres.',
+                        options: true
+                    });
+                    connectOffline.disabled = false;
+                    return;
+                }
+
+                if (emailOffline.value.match(/ /g)) {
+                    popupLogin.closePopup();
+                    popupLogin.openPopup({
+                        title: 'Error',
+                        content: 'Su nombre de usuario no debe contener espacios.',
+                        options: true
+                    });
+                    connectOffline.disabled = false;
+                    return;
+                }
+
+                // Create offline account
+                let offlineAccount = await Mojang.login(emailOffline.value);
+
+                if (offlineAccount.error) {
+                    popupLogin.closePopup();
+                    popupLogin.openPopup({
+                        title: 'Error',
+                        content: offlineAccount.message,
+                        options: true
+                    });
+                    connectOffline.disabled = false;
+                    return;
+                }
+                
+                await this.saveData(offlineAccount);
+                popupLogin.closePopup();
+            } catch (error) {
+                console.error('Error during offline login:', error);
                 popupLogin.closePopup();
                 popupLogin.openPopup({
                     title: 'Error',
-                    content: 'Tu nombre de usuario debe tener al menos 3 caracteres.',
+                    content: 'Ocurrió un error al iniciar sesión. Intente nuevamente.',
                     options: true
                 });
-                connectOffline.disabled = false;
-                return;
             }
-
-            if (emailOffline.value.match(/ /g)) {
-                popupLogin.closePopup();
-                popupLogin.openPopup({
-                    title: 'Error',
-                    content: 'Su nombre de usuario no debe contener d\'espacios.',
-                    options: true
-                });
-                connectOffline.disabled = false;
-                return;
-            }
-
-            let MojangConnect = await Mojang.login(emailOffline.value);
-
-            if (MojangConnect.error) {
-                popupLogin.closePopup();
-                popupLogin.openPopup({
-                    title: 'Error',
-                    content: MojangConnect.message,
-                    options: true
-                });
-                connectOffline.disabled = false;
-                return;
-            }
-            await this.saveData(MojangConnect)
-            popupLogin.closePopup();
             connectOffline.disabled = false;
         });
     }
 
     async getAZauth() {
-        console.log('Inicializando inicio de sesión a través de MKNetworkID...');
+        console.log('Setting up MKNetworkID login...');
         let AZauthClient = new AZauth(this.config.online);
-        let PopupLogin = new popup();
+        let popupLogin = new popup();
         let loginAZauth = document.querySelector('.login-AZauth');
         let loginAZauthA2F = document.querySelector('.login-AZauth-A2F');
         let loginMicrosoftAzauth = document.querySelector('.connect-microsoftazauth');
         let registerBtn = document.querySelector('.register-azauth');
-
         let AZauthEmail = document.querySelector('.email-AZauth');
         let AZauthPassword = document.querySelector('.password-AZauth');
         let AZauthA2F = document.querySelector('.A2F-AZauth');
@@ -176,232 +216,281 @@ class Login {
         loginAZauth.style.display = 'block';
         registerBtn.style.display = 'inline';
 
+        // Microsoft login through AZauth
         loginMicrosoftAzauth.addEventListener('click', () => {
-            PopupLogin.openPopup({
+            popupLogin.openPopup({
                 title: 'Iniciar sesión',
                 content: 'Por favor continua en la ventana de inicio de sesión de Microsoft...',
                 color: 'var(--color)'
             });
 
-            ipcRenderer.invoke('Microsoft-window', this.config.client_id).then(async account_connect => {
-                if (account_connect == 'cancel' || !account_connect) {
-                    PopupLogin.closePopup();
-                    return;
-                } else {
-                    await this.saveData(account_connect)
-                    clickableHead(false);
-                    PopupLogin.closePopup();
-                }
-
-            }).catch(err => {
-                PopupLogin.openPopup({
-                    title: 'Error',
-                    content: err,
-                    options: true
+            ipcRenderer.invoke('Microsoft-window', this.config.client_id)
+                .then(async account_connect => {
+                    if (account_connect == 'cancel' || !account_connect) {
+                        popupLogin.closePopup();
+                        return;
+                    } else {
+                        try {
+                            await this.saveData(account_connect);
+                            clickableHead(false);
+                        } catch (error) {
+                            console.error('Error saving Microsoft account:', error);
+                            popupLogin.openPopup({
+                                title: 'Error',
+                                content: 'Ocurrió un error al guardar la cuenta. Intente nuevamente.',
+                                options: true
+                            });
+                        }
+                        popupLogin.closePopup();
+                    }
+                })
+                .catch(err => {
+                    console.error('Microsoft login error:', err);
+                    popupLogin.openPopup({
+                        title: 'Error',
+                        content: err?.message || 'Error al iniciar sesión con Microsoft.',
+                        options: true
+                    });
                 });
-            });
         });
 
+        // AZauth login
         AZauthConnectBTN.addEventListener('click', async () => {
-            PopupLogin.openPopup({
+            popupLogin.openPopup({
                 title: 'Conexión en curso...',
                 content: 'Espere, por favor...',
                 color: 'var(--color)'
             });
 
-            if (AZauthEmail.value == '' || AZauthPassword.value == '') {
-                PopupLogin.openPopup({
-                    title: 'Error',
-                    content: 'Rellene todos los campos.',
-                    options: true
-                });
-                return;
-            }
+            try {
+                // Validate fields
+                if (AZauthEmail.value == '' || AZauthPassword.value == '') {
+                    popupLogin.openPopup({
+                        title: 'Error',
+                        content: 'Rellene todos los campos.',
+                        options: true
+                    });
+                    return;
+                }
 
-            let AZauthConnect = await AZauthClient.login(AZauthEmail.value, AZauthPassword.value);
+                // Attempt login
+                let AZauthConnect = await AZauthClient.login(AZauthEmail.value, AZauthPassword.value);
 
-            if (AZauthConnect.error) {
-                PopupLogin.openPopup({
-                    title: 'Error',
-                    content: AZauthConnect.message,
-                    options: true
-                });
-                return;
-            } else if (AZauthConnect.A2F) {
-                loginAZauthA2F.style.display = 'block';
-                loginAZauth.style.display = 'none';
-                PopupLogin.closePopup();
+                if (AZauthConnect.error) {
+                    popupLogin.openPopup({
+                        title: 'Error',
+                        content: AZauthConnect.message,
+                        options: true
+                    });
+                    return;
+                } else if (AZauthConnect.A2F) {
+                    // 2FA required
+                    loginAZauthA2F.style.display = 'block';
+                    loginAZauth.style.display = 'none';
+                    popupLogin.closePopup();
 
-                AZauthCancelA2F.addEventListener('click', () => {
-                    loginAZauthA2F.style.display = 'none';
-                    loginAZauth.style.display = 'block';
-                });
-
-                connectAZauthA2F.addEventListener('click', async () => {
-                    PopupLogin.openPopup({
-                        title: 'Conexión en curso...',
-                        content: 'Espere, por favor...',
-                        color: 'var(--color)'
+                    // Cancel 2FA flow
+                    AZauthCancelA2F.addEventListener('click', () => {
+                        loginAZauthA2F.style.display = 'none';
+                        loginAZauth.style.display = 'block';
                     });
 
-                    if (AZauthA2F.value == '') {
-                        PopupLogin.openPopup({
-                            title: 'Error',
-                            content: 'Introduzca el código A2F.',
-                            options: true
+                    // Handle 2FA submission
+                    connectAZauthA2F.addEventListener('click', async () => {
+                        popupLogin.openPopup({
+                            title: 'Conexión en curso...',
+                            content: 'Espere, por favor...',
+                            color: 'var(--color)'
                         });
-                        return;
-                    }
 
-                    AZauthConnect = await AZauthClient.login(AZauthEmail.value, AZauthPassword.value, AZauthA2F.value);
+                        try {
+                            if (AZauthA2F.value == '') {
+                                popupLogin.openPopup({
+                                    title: 'Error',
+                                    content: 'Introduzca el código A2F.',
+                                    options: true
+                                });
+                                return;
+                            }
 
-                    if (AZauthConnect.error) {
-                        PopupLogin.openPopup({
-                            title: 'Error',
-                            content: AZauthConnect.message,
-                            options: true
-                        });
-                        return;
-                    }
+                            AZauthConnect = await AZauthClient.login(
+                                AZauthEmail.value, 
+                                AZauthPassword.value, 
+                                AZauthA2F.value
+                            );
 
-                    await this.saveData(AZauthConnect)
+                            if (AZauthConnect.error) {
+                                popupLogin.openPopup({
+                                    title: 'Error',
+                                    content: AZauthConnect.message,
+                                    options: true
+                                });
+                                return;
+                            }
+
+                            await this.saveData(AZauthConnect);
+                            clickableHead(true);
+                            popupLogin.closePopup();
+                        } catch (error) {
+                            console.error('Error during 2FA verification:', error);
+                            popupLogin.openPopup({
+                                title: 'Error',
+                                content: 'Ocurrió un error al verificar el código 2FA.',
+                                options: true
+                            });
+                        }
+                    });
+                } else if (!AZauthConnect.A2F) {
+                    // Normal login successful
+                    await this.saveData(AZauthConnect);
                     clickableHead(true);
-                    PopupLogin.closePopup();
+                    popupLogin.closePopup();
+                }
+            } catch (error) {
+                console.error('AZauth login error:', error);
+                popupLogin.openPopup({
+                    title: 'Error',
+                    content: 'Ocurrió un error durante el inicio de sesión. Intente nuevamente.',
+                    options: true
                 });
-            } else if (!AZauthConnect.A2F) {
-                await this.saveData(AZauthConnect)
-                clickableHead(true);
-                PopupLogin.closePopup();
             }
         });
     }
 
     async saveData(connectionData) {
         if (!connectionData) {
-            console.error("Error: connectionData es undefined en saveData");
-            let errorPopup = new popup();
-            errorPopup.openPopup({
-                title: 'Error de autenticación',
-                content: 'Ha ocurrido un error durante la autenticación. Por favor, inténtalo de nuevo.',
-                color: 'red',
-                options: true
-            });
-            return;
+            console.error("Error: connectionData is null or undefined");
+            throw new Error("Invalid connection data");
         }
 
-        let configClient = await this.db.readData('configClient');
-        let account = await this.db.createData('accounts', connectionData);
+        console.log("Processing new account login...");
         
-        // Verificar que account se creó correctamente
-        if (!account) {
-            console.error("Error: No se pudo crear la cuenta en la base de datos");
-            let errorPopup = new popup();
-            errorPopup.openPopup({
-                title: 'Error al guardar cuenta',
-                content: 'No se pudo guardar la información de la cuenta. Por favor, inténtalo de nuevo.',
-                color: 'red',
-                options: true
-            });
-            return;
-        }
-        
-        // Verificar que account.name existe
-        if (!account.name) {
-            console.error("Error: account.name es undefined");
-            await this.db.deleteData('accounts', account.ID);
-            let errorPopup = new popup();
-            errorPopup.openPopup({
-                title: 'Error de datos de cuenta',
-                content: 'La información de la cuenta está incompleta. Por favor, inténtalo de nuevo.',
-                color: 'red',
-                options: true
-            });
-            return;
-        }
-        
-        let instanceSelect = configClient.instance_selct;
-        let instancesList = await config.getInstanceList();
-        
-        // Obtener referencia al botón de inicio de sesión según el tipo
-        let connectButton = null;
-        if (document.querySelector('.connect-offline') && document.querySelector('.connect-offline').disabled) {
-            connectButton = document.querySelector('.connect-offline');
-        } else if (document.querySelector('.connect-AZauth') && document.querySelector('.connect-AZauth').disabled) {
-            connectButton = document.querySelector('.connect-AZauth');
-        }
-        
-        // Verificar si la cuenta está protegida
-        const serverConfig = await config.GetConfig();
-        if (serverConfig && serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
-            const hwid = await getHWID();
+        try {
+            // Create a deep copy of connectionData to avoid modifying the original object
+            const accountData = JSON.parse(JSON.stringify(connectionData));
             
-            // Comprobar si el nombre de usuario está en la lista de protección
-            if (serverConfig.protectedUsers[account.name]) {
-                const allowedHWIDs = serverConfig.protectedUsers[account.name];
-                
-                // Verificar si el HWID actual no está en la lista de HWIDs permitidos
-                if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
-                    // Borrar la cuenta creada temporalmente
-                    await this.db.deleteData('accounts', account.ID);
-                    
-                    // Registrar intento de acceso no autorizado antes de mostrar el popup
-                    await verificationError(account.name, true);
-                    
-                    // Habilitar el botón de conexión si existe y está deshabilitado
-                    if (connectButton) {
-                        connectButton.disabled = false;
+            // Get current configuration
+            let configClient = await this.db.readData('configClient');
+            if (!configClient) {
+                console.warn("ConfigClient not found, creating new configuration");
+                configClient = {
+                    instance_selct: null,
+                    account_selected: null,
+                    launcher_config: {
+                        closeLauncher: "close-launcher",
+                        download_multi: 3,
+                        theme: "auto",
+                        music_muted: false,
+                        performance_mode: false
                     }
+                };
+            }
+
+            // Check for protected users
+            try {
+                const serverConfig = await config.GetConfig();
+                if (serverConfig?.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
+                    const hwid = await getHWID();
                     
-                    // Crear un nuevo popup y mostrarlo inmediatamente
-                    let popupError = new popup();
-                    
-                    // Utilizamos una promesa para esperar a que el usuario cierre el popup
-                    await new Promise(resolve => {
-                        popupError.openPopup({
-                            title: 'Cuenta protegida',
-                            content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo. Por favor, contacta con el administrador si crees que esto es un error.',
-                            color: 'red',
-                            options: {
-                                value: "Entendido",
-                                event: resolve
-                            }
-                        });
-                    });
-                    
-                    return;
+                    if (serverConfig.protectedUsers[accountData.name]) {
+                        const allowedHWIDs = serverConfig.protectedUsers[accountData.name];
+                        
+                        if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
+                            let protectedPopup = new popup();
+                            protectedPopup.openPopup({
+                                title: 'Cuenta protegida',
+                                content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo.',
+                                color: 'red',
+                                options: true
+                            });
+                            
+                            await verificationError(accountData.name, true);
+                            throw new Error('Protected account');
+                        }
+                    }
+                }
+            } catch (configError) {
+                if (configError.message === 'Protected account') {
+                    throw configError;
+                }
+                console.warn("Error checking protected users config:", configError);
+            }
+            
+            // Check if account already exists and save/update
+            let account;
+            const existingAccount = await this.db.accountExists(accountData.name, accountData.meta?.type);
+            
+            if (existingAccount) {
+                console.log(`Account ${accountData.name} already exists, updating...`);
+                accountData.ID = existingAccount.ID;
+                await this.db.updateData('accounts', accountData, existingAccount.ID);
+                account = accountData;
+            } else {
+                console.log(`Creating new account: ${accountData.name}`);
+                account = await this.db.createData('accounts', accountData);
+                if (!account) {
+                    throw new Error('Failed to create account');
                 }
             }
-        }
-        
-        configClient.account_selected = account.ID;
-
-        // Verificar que instancesList existe antes de iterarlo
-        if (Array.isArray(instancesList)) {
-            for (let instance of instancesList) {
-                if (instance && instance.whitelistActive) {
-                    // Verificar que whitelist es un array antes de usar find
-                    if (Array.isArray(instance.whitelist)) {
-                        let whitelist = instance.whitelist.find(whitelist => whitelist == account.name);
-                        if (whitelist !== account.name) {
-                            if (instance.name == instanceSelect) {
-                                let newInstanceSelect = instancesList.find(i => i && i.whitelistActive == false);
-                                if (newInstanceSelect) {
-                                    configClient.instance_selct = newInstanceSelect.name;
-                                    await setStatus(newInstanceSelect);
+            
+            // Handle instance selection based on whitelists
+            try {
+                const instancesList = await config.getInstanceList();
+                let instanceSelect = configClient.instance_selct;
+                
+                if (Array.isArray(instancesList) && instancesList.length > 0) {
+                    // Check if current instance needs to change due to whitelist
+                    for (let instance of instancesList) {
+                        if (instance?.whitelistActive && Array.isArray(instance.whitelist)) {
+                            const isWhitelisted = instance.whitelist.includes(account.name);
+                            
+                            // If current selected instance has whitelist and user isn't on it
+                            if (!isWhitelisted && instance.name === instanceSelect) {
+                                // Find an instance without whitelist
+                                const publicInstance = instancesList.find(i => 
+                                    i && i.whitelistActive === false
+                                );
+                                
+                                if (publicInstance) {
+                                    configClient.instance_selct = publicInstance.name;
+                                    try {
+                                        await setStatus(publicInstance);
+                                    } catch (error) {
+                                        console.warn("Error setting instance status:", error);
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            } catch (instanceError) {
+                console.warn("Error processing instance selection:", instanceError);
             }
+            
+            // Update selected account in config
+            configClient.account_selected = account.ID;
+            await this.db.updateData('configClient', configClient);
+            
+            // Update UI and navigate to home
+            await addAccount(account);
+            await accountSelect(account);
+            
+            if (account.meta?.type === 'AZauth') {
+                clickableHead(true);
+            } else {
+                clickableHead(false);
+            }
+            
+            await setUsername(account.name);
+            await loginMSG();
+            changePanel('home');
+            
+            return account;
+        } catch (error) {
+            console.error("Error in saveData:", error);
+            throw error;
         }
-
-        await this.db.updateData('configClient', configClient);
-        await addAccount(account);
-        await accountSelect(account);
-        await setUsername(account.name);
-        await loginMSG();
-        changePanel('home');
     }
 }
+
 export default Login;

@@ -225,11 +225,45 @@ function fileExists(filePath) {
   });
 }
 
+function isImageUrl(url) {
+  if (!url) return false;
+  
+  // Verificar extensiones comunes de imágenes
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+  const lowerUrl = url.toLowerCase();
+  
+  // Si la URL termina con una extensión de imagen, es una imagen
+  if (imageExtensions.some(ext => lowerUrl.endsWith(ext))) {
+    return true;
+  }
+  
+  // Comprobar si contiene parámetros que indican que es una imagen
+  // Por ejemplo: imagen.php?type=jpg o cloudinary/image/upload
+  if (lowerUrl.includes('image/') || 
+      lowerUrl.includes('/img/') || 
+      lowerUrl.includes('=jpg') || 
+      lowerUrl.includes('=png') ||
+      lowerUrl.includes('=webp')) {
+    return true;
+  }
+  
+  return false;
+}
+
 async function captureAndSetVideoFrame(customUrl = null) {
   return new Promise(async (resolve) => {
     try {
+      // If we have a custom URL, mark it as an instance-specific background
       if (customUrl && customUrl.match(/^(http|https):\/\/[^ "]+$/)) {
         console.log(`Using instance-specific background for frame capture: ${customUrl}`);
+        // Mark that we're using an instance-specific background and store the URL
+        localStorage.setItem('hasInstanceBackground', 'true');
+        localStorage.setItem('instanceBackgroundUrl', customUrl);
+      } else if (!customUrl && localStorage.getItem('hasInstanceBackground') && !localStorage.getItem('forceBackgroundReset')) {
+        // Don't override instance-specific background unless explicitly reset
+        console.log("Instance-specific background detected, not overriding in captureAndSetVideoFrame");
+        resolve();
+        return;
       }
       
       const season = getSeason();
@@ -247,13 +281,96 @@ async function captureAndSetVideoFrame(customUrl = null) {
         }
       }
       
-      const videoPath = customUrl || configCustomVideoPath || seasonalVideoPath;
+      // Use custom URL if provided, otherwise use config URL or seasonal video
+      const backgroundPath = customUrl || configCustomVideoPath || seasonalVideoPath;
       
       const handleFallback = () => {
         console.log("Using fallback static background");
         setStaticBackground();
         resolve();
       };
+      
+      // Verificar si es una imagen en lugar de un video
+      if (isImageUrl(backgroundPath)) {
+        console.log("La URL proporcionada es una imagen, configurando como fondo estático");
+        
+        // Crear un nuevo elemento para el nuevo fondo estático
+        let newStaticBackground = document.createElement('div');
+        newStaticBackground.className = 'static-background new-background';
+        newStaticBackground.style.position = 'fixed';
+        newStaticBackground.style.top = '0';
+        newStaticBackground.style.left = '0';
+        newStaticBackground.style.width = '100%';
+        newStaticBackground.style.height = '100%';
+        newStaticBackground.style.backgroundSize = 'cover';
+        newStaticBackground.style.backgroundPosition = 'center';
+        newStaticBackground.style.backgroundRepeat = 'no-repeat';
+        newStaticBackground.style.zIndex = '-1';
+        // Start with opacity 0 but display block to ensure it's ready before transition starts
+        newStaticBackground.style.opacity = '0';
+        newStaticBackground.style.transition = 'opacity 1s ease';
+        document.body.appendChild(newStaticBackground);
+        
+        // Cargar la imagen directamente
+        const img = new Image();
+        img.onload = function() {
+          // Configurar la imagen en el nuevo fondo
+          newStaticBackground.style.backgroundImage = `url('${backgroundPath}')`;
+          
+          // MEJORA: Iniciar el fade in del nuevo fondo - PERO PRIMERO esperar un tick para asegurar que la imagen se ha aplicado
+          setTimeout(() => {
+            // Primero mostramos la nueva imagen (antes de ocultar los videos)
+            newStaticBackground.style.opacity = '1';
+            
+            // Esperar a que la nueva imagen sea visible antes de ocultar el video
+            // Solo después de que la nueva imagen comience a aparecer, ocultamos los videos
+            setTimeout(() => {
+              // Ocultar los videos y el antiguo fondo si existen
+              const videoElements = document.querySelectorAll('.background-video');
+              videoElements.forEach(video => {
+                if (!video.paused) {
+                  video.pause();
+                }
+                video.style.transition = 'opacity 1s ease';
+                video.style.opacity = '0';
+                
+                setTimeout(() => {
+                  video.style.display = 'none';
+                }, 1000);
+              });
+              
+              // Fade out del fondo estático anterior
+              const oldStaticBackground = document.querySelector('.static-background:not(.new-background)');
+              if (oldStaticBackground) {
+                oldStaticBackground.style.transition = 'opacity 1s ease';
+                oldStaticBackground.style.opacity = '0';
+                
+                // Eliminar el fondo antiguo después de la transición
+                setTimeout(() => {
+                  oldStaticBackground.remove();
+                  // Quitar la clase 'new-background' del nuevo fondo
+                  newStaticBackground.classList.remove('new-background');
+                }, 1000);
+              } else {
+                // Si no había fondo anterior, simplemente quitar la clase
+                setTimeout(() => {
+                  newStaticBackground.classList.remove('new-background');
+                }, 1000);
+              }
+            }, 300); // Aumentado el retraso para asegurar que la imagen está completamente visible
+          }, 50); // Pequeño retraso para asegurar que la imagen se ha aplicado correctamente
+          resolve();
+        };
+        
+        img.onerror = function() {
+          console.error("Error loading image:", backgroundPath);
+          newStaticBackground.remove();
+          handleFallback();
+        };
+        
+        img.src = backgroundPath;
+        return;
+      }
       
       const captureFrame = async (videoSrc) => {
         return new Promise((captureResolve) => {
@@ -306,7 +423,7 @@ async function captureAndSetVideoFrame(customUrl = null) {
       };
       
       const videoSources = [
-        videoPath,
+        backgroundPath,
         './assets/images/background/default.mp4'
       ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
       
@@ -324,31 +441,59 @@ async function captureAndSetVideoFrame(customUrl = null) {
         return handleFallback();
       }
       
-      const videoElements = document.querySelectorAll('.background-video');
-      videoElements.forEach(video => {
-        if (!video.paused) {
-          video.pause();
+      // Crear un nuevo fondo con transición
+      let newStaticBackground = document.createElement('div');
+      newStaticBackground.className = 'static-background new-background';
+      newStaticBackground.style.position = 'fixed';
+      newStaticBackground.style.top = '0';
+      newStaticBackground.style.left = '0';
+      newStaticBackground.style.width = '100%';
+      newStaticBackground.style.height = '100%';
+      newStaticBackground.style.backgroundSize = 'cover';
+      newStaticBackground.style.backgroundPosition = 'center';
+      newStaticBackground.style.backgroundRepeat = 'no-repeat';
+      newStaticBackground.style.zIndex = '-1';
+      newStaticBackground.style.opacity = '0';
+      newStaticBackground.style.transition = 'opacity 1s ease';
+      newStaticBackground.style.backgroundImage = `url('${frameDataUrl}')`;
+      document.body.appendChild(newStaticBackground);
+      
+      // MEJORA: Realizar un crossfade entre el fondo antiguo y el nuevo
+      setTimeout(() => {
+        // Fade in del nuevo fondo
+        newStaticBackground.style.opacity = '1';
+        
+        // Fade out de los videos y el viejo fondo
+        const videoElements = document.querySelectorAll('.background-video');
+        videoElements.forEach(video => {
+          if (!video.paused) {
+            video.pause();
+          }
+          video.style.transition = 'opacity 1s ease';
+          video.style.opacity = '0';
+          
+          setTimeout(() => {
+            video.style.display = 'none';
+          }, 1000);
+        });
+        
+        // Fade out del fondo estático anterior
+        const oldStaticBackground = document.querySelector('.static-background:not(.new-background)');
+        if (oldStaticBackground) {
+          oldStaticBackground.style.transition = 'opacity 1s ease';
+          oldStaticBackground.style.opacity = '0';
+          
+          setTimeout(() => {
+            oldStaticBackground.remove();
+            newStaticBackground.classList.remove('new-background');
+          }, 1000);
+        } else {
+          setTimeout(() => {
+            newStaticBackground.classList.remove('new-background');
+          }, 1000);
         }
-        video.style.display = 'none';
-      });
+      }, 0);
       
-      let staticBackground = document.querySelector('.static-background');
-      if (!staticBackground) {
-        staticBackground = document.createElement('div');
-        staticBackground.className = 'static-background';
-        staticBackground.style.position = 'fixed';
-        staticBackground.style.top = '0';
-        staticBackground.style.left = '0';
-        staticBackground.style.width = '100%';
-        staticBackground.style.height = '100%';
-        staticBackground.style.backgroundSize = 'cover';
-        staticBackground.style.backgroundPosition = 'center';
-        staticBackground.style.backgroundRepeat = 'no-repeat';
-        staticBackground.style.zIndex = '-1';
-        document.body.appendChild(staticBackground);
-      }
-      
-      staticBackground.style.backgroundImage = `url('${frameDataUrl}')`;
       resolve();
     } catch (err) {
       console.error("Error in captureAndSetVideoFrame:", err);
@@ -410,13 +555,22 @@ function setStaticBackground() {
   })();
 }
 
-async function setBackground(theme) {
-    theme = "dark";
-    let background
+async function setBackground() {
+    // Check if there's already a static background or a video background set
+    const staticBackground = document.querySelector('.static-background');
+    const videoBackground = document.querySelector('.background-video.current[style*="opacity: 1"]');
+    
+    // If there's already a visible background, don't override it
+    if (staticBackground && staticBackground.style.opacity !== "0" && 
+        staticBackground.style.backgroundImage && staticBackground.style.backgroundImage !== "none" ||
+        videoBackground) {
+        console.log("Background already set, not applying default background");
+        return;
+    }
+    
     let body = document.body;
     body.className = 'dark global';
-    background = `linear-gradient(#00000080, #00000080), url(./assets/images/background/default.png)`;
-    body.style.backgroundImage = background ? background : '#000';
+    body.style.backgroundImage = `linear-gradient(#00000080, #00000080), url(./assets/images/background/default.png)`;
     body.style.backgroundSize = 'cover';
 }
 
@@ -426,19 +580,45 @@ async function setVideoSource(game = '') {
     const db = new database();
     let configClient = await db.readData('configClient');
     
+    // If this is an instance-specific background, mark it as such
+    if (game) {
+        localStorage.setItem('hasInstanceBackground', 'true');
+    } else if (localStorage.getItem('forceBackgroundReset') === 'true') {
+        // If we're forcing a background reset, clear the instance flag
+        localStorage.removeItem('hasInstanceBackground');
+        localStorage.removeItem('forceBackgroundReset');
+    }
+    
     if (configClient && configClient.launcher_config.performance_mode) {
-        await captureAndSetVideoFrame();
+        await captureAndSetVideoFrame(game ? game : null);
         return;
     }
     
-    if (videoBusy) return;
+    // Block multiple simultaneous calls to prevent transition issues
+    if (videoBusy) {
+        console.log('Video transition already in progress, skipping');
+        return;
+    }
     videoBusy = true;
+    
     let source;
     let sourcePromise = new Promise(async (resolve) => {
       if (game) {
           source = `${game}`;
+          // Mark that we've set an instance-specific background
+          localStorage.setItem('hasInstanceBackground', 'true');
           resolve();
       } else {
+          // If we're trying to set a non-instance background but already have an instance background,
+          // don't override it unless explicitly reset
+          if (localStorage.getItem('hasInstanceBackground') && !localStorage.getItem('forceBackgroundReset')) {
+              source = null;
+              resolve();
+              return;
+          }
+          // Clear the instance background flag when explicitly setting a non-instance background
+          localStorage.removeItem('hasInstanceBackground');
+          
           let res = await config.GetConfig();
           if (res.custom_background && res.custom_background.match(/^(http|https):\/\/[^ "]+$/)) {
               source = res.custom_background;
@@ -463,34 +643,283 @@ async function setVideoSource(game = '') {
       }
     });
     
-    let timeoutPromise = new Promise(resolve => setTimeout(resolve, 1000));
+    // Ensure we always have at least some time to prepare the transition
+    let timeoutPromise = new Promise(resolve => setTimeout(resolve, 500));
     await Promise.all([sourcePromise, timeoutPromise]);
 
-    if (source) {
-      nextVideo.src = source;
-      try {
-          await nextVideo.play();
-          nextVideo.style.opacity = '1'; 
-          
-          nextVideo.ontransitionend = (event) => {
-              if (event.propertyName === 'opacity') {
-                  let temp = currentVideo;
-                  currentVideo = nextVideo;
-                  nextVideo = temp;
-                  
-                  nextVideo.ontransitionend = null;
-                  nextVideo.style.opacity = '0'; 
-              }
-          };
-      } catch (err) {
-          console.error('No se pudo iniciar la reproducción de un video', err);
-          setStaticBackground();
-      }
-    } else {
+    // If we tried to set a non-instance background but already have an instance background set,
+    // and we're not forcing a reset, then skip changing the background
+    if (!game && localStorage.getItem('hasInstanceBackground') && !source) {
+      console.log('Manteniendo fondo de instancia actual');
+      videoBusy = false;
+      return;
+    }
+
+    if (!source) {
       console.error('No se pudo establecer la fuente del video: source está indefinida');
       setStaticBackground();
+      videoBusy = false;
+      return;
     }
-    videoBusy = false;
+    
+    // Remove any forced background reset flag if it was set
+    localStorage.removeItem('forceBackgroundReset');
+
+    // Comprobar si la fuente es una imagen
+    if (isImageUrl(source)) {
+      console.log('Usando imagen como fondo:', source);
+      
+      // Crear o actualizar el fondo estático con la imagen
+      let staticBackground = document.querySelector('.static-background');
+      const needNewBackground = !staticBackground;
+      
+      if (needNewBackground) {
+        staticBackground = document.createElement('div');
+        staticBackground.className = 'static-background';
+        staticBackground.style.position = 'fixed';
+        staticBackground.style.top = '0';
+        staticBackground.style.left = '0';
+        staticBackground.style.width = '100%';
+        staticBackground.style.height = '100%';
+        staticBackground.style.backgroundSize = 'cover';
+        staticBackground.style.backgroundPosition = 'center';
+        staticBackground.style.backgroundRepeat = 'no-repeat';
+        staticBackground.style.zIndex = '-1';
+        staticBackground.style.opacity = '0';
+        staticBackground.style.transition = 'opacity 1s ease';
+        document.body.appendChild(staticBackground);
+      } else {
+        // Si ya existe un fondo estático, asegurarse de que sea visible
+        staticBackground.style.display = '';
+      }
+      
+      // Cargar la imagen primero y verificar que se carga correctamente
+      const img = new Image();
+      img.onload = function() {
+        // Configurar la imagen de fondo primero, antes de hacer cualquier cambio de opacidad
+        staticBackground.style.backgroundImage = `url('${source}')`;
+
+        // Pequeño retraso para asegurarnos que la imagen se ha renderizado correctamente
+        setTimeout(() => {
+          // PRIMERO mostramos la imagen de fondo
+          staticBackground.style.opacity = '1';
+          
+          // DESPUÉS de mostrar la imagen (con un retraso mayor), ocultamos los videos
+          // Este retraso es crucial para evitar el parpadeo del fondo de respaldo
+          setTimeout(() => {
+            // Asegurar que todos los videos se detienen y ocultan correctamente
+            const videoElements = document.querySelectorAll('.background-video');
+            videoElements.forEach(video => {
+              if (!video.paused) {
+                try {
+                  video.pause();
+                } catch (e) {
+                  console.warn('Error pausing video:', e);
+                }
+              }
+              video.style.transition = 'opacity 1s ease';
+              video.style.opacity = '0';
+              
+              setTimeout(() => {
+                video.style.display = 'none';
+                video.src = ''; // Limpiar la fuente para liberar recursos
+              }, 1000);
+            });
+            
+            // Liberar el flag después de asegurar que la transición ha finalizado
+            setTimeout(() => {
+              videoBusy = false;
+              console.log('Transition to image background completed');
+            }, 1200);
+          }, 300); // Aumentamos el retraso para asegurar que la imagen esté completamente visible
+        }, 50); // Pequeño retraso para asegurar que la imagen se ha aplicado al fondo
+      };
+      
+      img.onerror = function() {
+        console.error('Error al cargar la imagen de fondo:', source);
+        setStaticBackground();
+        videoBusy = false;
+      };
+      
+      img.src = source;
+    } else {
+      // Es un video, usar el flujo normal
+      console.log('Usando video como fondo:', source);
+      
+      // Ensure video elements exist and are properly configured
+      if (!currentVideo || !nextVideo) {
+        console.log('Initializing video elements');
+        
+        // Find or create video elements
+        currentVideo = document.querySelector('.background-video.current');
+        nextVideo = document.querySelector('.background-video.next');
+        
+        if (!currentVideo) {
+          currentVideo = document.createElement('video');
+          currentVideo.className = 'background-video current';
+          currentVideo.playsInline = true;
+          currentVideo.autoplay = true;
+          currentVideo.muted = true;
+          currentVideo.loop = true;
+          currentVideo.style.position = 'fixed';
+          currentVideo.style.top = '0';
+          currentVideo.style.left = '0';
+          currentVideo.style.width = '100%';
+          currentVideo.style.height = '100%';
+          currentVideo.style.objectFit = 'cover';
+          currentVideo.style.zIndex = '-1';
+          document.body.appendChild(currentVideo);
+        }
+        
+        if (!nextVideo) {
+          nextVideo = document.createElement('video');
+          nextVideo.className = 'background-video next';
+          nextVideo.playsInline = true;
+          nextVideo.autoplay = false;
+          nextVideo.muted = true;
+          nextVideo.loop = true;
+          nextVideo.style.position = 'fixed';
+          nextVideo.style.top = '0';
+          nextVideo.style.left = '0';
+          nextVideo.style.width = '100%';
+          nextVideo.style.height = '100%';
+          nextVideo.style.objectFit = 'cover';
+          nextVideo.style.zIndex = '-1';
+          nextVideo.style.opacity = '0';
+          document.body.appendChild(nextVideo);
+        }
+      }
+      
+      // Ensure videos are visible before starting transitions
+      currentVideo.style.display = '';
+      nextVideo.style.display = '';
+      
+      try {
+        // Preparar la transición del video
+        console.log('Preparing video transition');
+        
+        // Reset nextVideo properties
+        nextVideo.style.transition = '';
+        nextVideo.style.opacity = '0';
+        
+        // Load the new source into nextVideo
+        nextVideo.src = source;
+        nextVideo.load();
+        
+        // Wait for the video to be ready to play
+        await new Promise((resolve, reject) => {
+          const onCanPlay = () => {
+            nextVideo.removeEventListener('canplay', onCanPlay);
+            clearTimeout(timeoutId);
+            resolve();
+          };
+          
+          const timeoutId = setTimeout(() => {
+            nextVideo.removeEventListener('canplay', onCanPlay);
+            console.warn('Video loading timed out, trying to continue anyway');
+            resolve();
+          }, 5000);
+          
+          nextVideo.addEventListener('canplay', onCanPlay);
+          
+          nextVideo.addEventListener('error', (e) => {
+            clearTimeout(timeoutId);
+            nextVideo.removeEventListener('canplay', onCanPlay);
+            console.error('Error loading video:', e);
+            reject(e);
+          }, { once: true });
+        });
+        
+        // Start playing the video before making it visible
+        try {
+          await nextVideo.play();
+        } catch (e) {
+          console.error('Failed to play video:', e);
+          throw e;
+        }
+        
+        // Fade in the next video
+        console.log('Transitioning to new video');
+        nextVideo.style.transition = 'opacity 1.5s ease';
+        nextVideo.style.opacity = '1';
+        
+        // Wait for fade-in to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Hide the static background
+        const staticBackground = document.querySelector('.static-background');
+        if (staticBackground) {
+          staticBackground.style.transition = 'opacity 1.5s ease';
+          staticBackground.style.opacity = '0';
+          
+          // Delay hiding it completely to ensure smooth transition
+          setTimeout(() => {
+            staticBackground.style.display = 'none';
+          }, 1500);
+        }
+        
+        // If there's a current video playing, fade it out
+        if (currentVideo && currentVideo.style.opacity !== '0') {
+          currentVideo.style.transition = 'opacity 1.5s ease';
+          currentVideo.style.opacity = '0';
+          
+          // Complete the transition
+          setTimeout(() => {
+            if (!currentVideo.paused) {
+              try {
+                currentVideo.pause();
+              } catch (e) {
+                console.warn('Error pausing current video:', e);
+              }
+            }
+            
+            // Swap the videos for next transition
+            const temp = currentVideo;
+            currentVideo = nextVideo;
+            nextVideo = temp;
+            
+            // Reset nextVideo for future transitions
+            nextVideo.src = '';
+            
+            // Release the busy flag
+            videoBusy = false;
+            console.log('Video transition completed');
+          }, 1700);
+        } else {
+          // If there's no current video active, just update references
+          const temp = currentVideo;
+          currentVideo = nextVideo;
+          nextVideo = temp;
+          
+          // Reset nextVideo for future transitions
+          nextVideo.src = '';
+          
+          // Release the busy flag
+          videoBusy = false;
+          console.log('Initial video transition completed');
+        }
+      } catch (err) {
+        console.error('Error during video transition:', err);
+        
+        // Fallback to static background
+        setStaticBackground();
+        
+        // Ensure all videos are properly cleaned up
+        const videoElements = document.querySelectorAll('.background-video');
+        videoElements.forEach(video => {
+          try {
+            if (!video.paused) video.pause();
+            video.src = '';
+            video.style.opacity = '0';
+          } catch (e) {
+            console.warn('Error cleaning up video element:', e);
+          }
+        });
+        
+        // Release the busy flag
+        videoBusy = false;
+      }
+    }
 }
 
 function getSeason() {
@@ -652,6 +1081,10 @@ async function setStatus(opt) {
 async function setInstanceBackground(opt) {
     let instancebackground = opt
     if (instancebackground && instancebackground.match(/^(http|https):\/\/[^ "]+$/)) {
+        // Store the instance background URL in localStorage for persistence
+        localStorage.setItem('hasInstanceBackground', 'true');
+        localStorage.setItem('instanceBackgroundUrl', instancebackground);
+        
         const db = new database();
         let configClient = await db.readData('configClient');
         
@@ -662,6 +1095,10 @@ async function setInstanceBackground(opt) {
             setVideoSource(instancebackground);
         }
     } else {
+        // If no instance background is provided, use the default background
+        localStorage.removeItem('hasInstanceBackground');
+        localStorage.removeItem('instanceBackgroundUrl');
+        
         if (performanceMode) {
             await captureAndSetVideoFrame();
         } else {
@@ -772,15 +1209,26 @@ async function discordAccount() {
     let discordUsernameText = document.querySelector('.profile-username');
     let discordPFP = await getDiscordPFP();
     let discordPFPElement = document.querySelector('.discord-profile-image');
+    let discordAccountColumn = document.querySelector('#discord-account-column');
+    // Obtener la columna de cuentas de Minecraft (es el hermano siguiente del discord-account-column)
+    let minecraftAccountColumn = document.querySelector('#discord-account-column + .settings-column');
 
     if (discordUsername !== '') {
         discordUsernameText.textContent = discordUsername;
         discordPFPElement.src = discordPFP;
+        // Asegurarse de que las columnas tengan el ancho normal cuando hay cuenta de Discord
+        if (discordAccountColumn) discordAccountColumn.style.width = '45%';
+        if (minecraftAccountColumn) minecraftAccountColumn.style.width = '45%';
     } else {
         discordAccountManagerTitle.style.display = 'none';
         discordAccountManagerPanel.style.display = 'none';
+        // Ocultar completamente la columna de Discord
+        if (discordAccountColumn) discordAccountColumn.style.display = 'none';
+        // Expandir la columna de Minecraft para ocupar todo el ancho
+        if (minecraftAccountColumn) minecraftAccountColumn.style.width = '100%';
     }
 }
+
 async function getTermsAndConditions() {
     try {
         console.log('Iniciando descarga de términos y condiciones...');
@@ -1206,6 +1654,18 @@ async function removeUserFromQueue(hwid) {
   }
 }
 
+// Inicializamos el CleanupManager con la instancia de base de datos para evitar referencias circulares
+(async function initializeCleanupManager() {
+  try {
+    // Creamos una instancia de database en lugar de pasar la clase
+    const dbInstance = new database();
+    await cleanupManager.initializeWithDatabase(dbInstance);
+    console.log("CleanupManager inicializado correctamente");
+  } catch (error) {
+    console.error("Error al inicializar CleanupManager:", error);
+  }
+})();
+
 export {
     appdata as appdata,
     changePanel as changePanel,
@@ -1243,6 +1703,10 @@ export {
     isPerformanceModeEnabled as isPerformanceModeEnabled,
     patchLoader as patchLoader,
     cleanupManager as cleanupManager,
-    removeUserFromQueue as removeUserFromQueue
+    removeUserFromQueue as removeUserFromQueue,
+    captureAndSetVideoFrame as captureAndSetVideoFrame,
+    setStaticBackground as setStaticBackground,
+    fileExists as fileExists,
+    isImageUrl as isImageUrl
 }
 window.setVideoSource = setVideoSource;

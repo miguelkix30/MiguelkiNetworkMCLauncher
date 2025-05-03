@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername, isPerformanceModeEnabled, removeUserFromQueue } from '../utils.js'
+import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername, isPerformanceModeEnabled, removeUserFromQueue, captureAndSetVideoFrame } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG, installMKLibMods, hideFolder, killMinecraftProcess } from '../MKLib.js';
 import cleanupManager from '../utils/cleanup-manager.js';
 
@@ -395,6 +395,34 @@ class Home {
             instanceSelectBTN.removeEventListener('click', this.instanceSelectClickHandler);
             this.instanceSelectClickHandler = async () => {
                 if (instanceSelectBTN.disabled) return;
+                
+                // Verificar si hay bloqueo de dispositivo u otros errores antes de mostrar la ventana
+                let hwid = await getHWID();
+                let check = await checkHWID(hwid);
+                let fetchError = await getFetchError();
+                
+                if (check) {
+                    if (fetchError == false) {
+                        let popupError = new popup();
+                        popupError.openPopup({
+                            title: 'Error',
+                            content: 'No puedes seleccionar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Miguelki Network.',
+                            color: 'red',
+                            options: true
+                        });
+                        return;
+                    } else {
+                        let popupError = new popup();
+                        popupError.openPopup({
+                            title: 'Error',
+                            content: 'No se ha podido conectar con el Anticheat de Miguelki Network y por lo tanto no se podrá seleccionar ninguna instancia.',
+                            color: 'red',
+                            options: true
+                        });
+                        return;
+                    }
+                }
+                
                 let username = await getUsername();
                 
                 let refreshedInstancesList = await config.getInstanceList();
@@ -528,7 +556,7 @@ class Home {
         let instance = await config.getInstanceList();
         let authenticator = await this.db.readData('accounts', configClient.account_selected);
         let options = instance.find(i => i.name == configClient.instance_selct);
-        
+                
         if (!options) {
             this.enablePlayButton();
             let popupError = new popup();
@@ -711,6 +739,24 @@ class Home {
 
         console.log("Configurando opciones de lanzamiento...");
         let launch = new Launch();
+        
+        // Verificar y corregir la estructura del objeto authenticator
+        if (authenticator && !authenticator.meta) {
+            authenticator.meta = {};
+        }
+        
+        if (authenticator && !authenticator.meta.type) {
+            // Determinar el tipo basado en las propiedades disponibles
+            if (authenticator.accessToken && authenticator.accessToken.startsWith("ey")) {
+                authenticator.meta.type = "Microsoft";
+            } else if (authenticator.user && authenticator.user.username) {
+                authenticator.meta.type = "Mojang";
+            } else {
+                authenticator.meta.type = "Mojang"; // Default fallback
+            }
+            console.log(`Tipo de autenticación detectado: ${authenticator.meta.type}`);
+        }
+        
         let opt = {
             url: options.url,
             authenticator: authenticator,
@@ -972,11 +1018,10 @@ class Home {
         launch.on('error', err => {
             removeUserFromQueue(hwid);
             
-            let popupError = new popup()
             if (typeof err.error === 'undefined') {
                 if (configClient.launcher_config.closeLauncher == 'close-launcher') {
-                    ipcRenderer.send("main-window-show")
-                };
+                    ipcRenderer.send("main-window-show");
+                }
                 if (rpcActive) {
                     RPC.setActivity({
                         state: `En el launcher`,
@@ -993,28 +1038,46 @@ class Home {
                         ]
                     }).catch();
                 }
+                
+                // Handle undefined error case with patch toolkit option
+                const errorDialog = new popup();
+                errorDialog.openDialog({
+                    title: 'Error al iniciar el juego',
+                    content: 'Se ha producido un error al iniciar el juego. ¿Quieres ejecutar el toolkit de parches para intentar solucionarlo?',
+                    options: true,
+                    callback: (result) => {
+                        if (result === 'accept') {
+                            if (window.launcher && typeof window.launcher.runPatchToolkit === 'function') {
+                                window.launcher.runPatchToolkit();
+                            } else {
+                                patchLoader();
+                            }
+                        }
+                    }
+                });
             } else {
+                let popupError = new popup();
                 popupError.openPopup({
                     title: 'Error',
                     content: err.error,
                     color: 'red',
                     options: true
-                })
+                });
 
                 if (configClient.launcher_config.closeLauncher == 'close-launcher') {
-                    ipcRenderer.send("main-window-show")
-                };
-                ipcRenderer.send('main-window-progress-reset')
+                    ipcRenderer.send("main-window-show");
+                }
+                ipcRenderer.send('main-window-progress-reset');
                 if (!musicMuted && !musicPlaying) {
                     musicPlaying = true;
                     setBackgroundMusic(options.backgroundMusic);
                 }
-                infoStartingBOX.style.display = "none"
-                playInstanceBTN.style.display = "flex"
+                infoStartingBOX.style.display = "none";
+                playInstanceBTN.style.display = "flex";
                 instanceSelectBTN.disabled = false;
                 instanceSelectBTN.classList.remove('disabled');
-                infoStarting.innerHTML = `Verificando...`
-                this.notification()
+                infoStarting.innerHTML = `Verificando...`;
+                this.notification();
                 
                 this.enablePlayButton();
                 
