@@ -27,6 +27,157 @@ class Settings {
         this.discordAccount()
         
         this.applyPerfModeOverridesIfNeeded();
+        this.addAccountButtonEffects(); // Añadir efectos de pulsación a los botones de cuentas
+        this.addConfigButtonEffects(); // Añadir efectos de pulsación a los botones de configuración
+    }
+
+    // Añadir efectos de pulsación a los botones de configuración
+    addConfigButtonEffects() {
+        // Aplicar efectos a los botones de Java Path
+        const javaPathButtons = document.querySelectorAll('.java-path-btn');
+        javaPathButtons.forEach(button => {
+            this.applyButtonPressEffect(button);
+        });
+
+        // Aplicar efectos al botón de reset de resolución
+        const resolutionResetBtn = document.querySelector('.size-reset');
+        if (resolutionResetBtn) {
+            this.applyButtonPressEffect(resolutionResetBtn);
+        }
+
+        // Aplicar efectos al botón de reset de max-files
+        const maxFilesResetBtn = document.querySelector('.max-files-btn');
+        if (maxFilesResetBtn) {
+            this.applyButtonPressEffect(maxFilesResetBtn);
+        }
+
+        // Aplicar efectos a los botones de gestión de datos
+        const dataManagementBtns = document.querySelectorAll('.data-management-btn');
+        dataManagementBtns.forEach(button => {
+            this.applyButtonPressEffect(button);
+        });
+
+        // Aplicar efectos a los campos numéricos
+        const numericInputs = document.querySelectorAll('.input-resolution, .input-max-files');
+        numericInputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.style.borderColor = 'var(--box-button)';
+                input.style.boxShadow = '0 0 8px rgba(0, 120, 189, 0.5)';
+            });
+            
+            input.addEventListener('blur', () => {
+                input.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+                input.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.2)';
+            });
+        });
+
+        // Aplicar efectos a los opciones de comportamiento del launcher
+        const behaviorOptions = document.querySelectorAll('.launcher-behavior-option');
+        behaviorOptions.forEach(option => {
+            option.addEventListener('mousedown', () => {
+                if (!option.classList.contains('selected')) {
+                    option.style.transform = 'translateY(2px)';
+                    option.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.2)';
+                }
+            });
+            
+            option.addEventListener('mouseup', () => {
+                if (!option.classList.contains('selected')) {
+                    option.style.transform = '';
+                    option.style.boxShadow = '';
+                }
+            });
+            
+            option.addEventListener('mouseleave', () => {
+                if (!option.classList.contains('selected')) {
+                    option.style.transform = '';
+                    option.style.boxShadow = '';
+                }
+            });
+        });
+    }
+
+    // Función para aplicar efecto de pulsación a un botón
+    applyButtonPressEffect(button) {
+        button.addEventListener('mousedown', () => {
+            button.style.transform = 'translateY(3px)';
+            button.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.2)';
+        });
+        
+        button.addEventListener('mouseup', () => {
+            button.style.transform = '';
+            button.style.boxShadow = '';
+        });
+        
+        button.addEventListener('mouseleave', () => {
+            button.style.transform = '';
+            button.style.boxShadow = '';
+        });
+    }
+
+    // Añadir efecto de pulsación a los elementos de cuenta
+    addAccountButtonEffects() {
+        // Observador de mutaciones para aplicar efectos a elementos de cuenta que se añaden dinámicamente
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach(mutation => {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1 && (node.classList.contains('account') || 
+                                                    node.classList.contains('delete-profile'))) {
+                            this.applyAccountButtonEffect(node);
+                        }
+                    });
+                }
+            });
+        });
+
+        // Comenzar a observar la lista de cuentas
+        const accountsList = document.querySelector('.accounts-list');
+        if (accountsList) {
+            observer.observe(accountsList, { childList: true });
+            
+            // Aplicar efectos a los elementos existentes
+            accountsList.querySelectorAll('.account, .delete-profile').forEach(element => {
+                this.applyAccountButtonEffect(element);
+            });
+        }
+    }
+
+    // Aplicar efecto de pulsación a un elemento específico
+    applyAccountButtonEffect(element) {
+        if (element.classList.contains('account')) {
+            // Para los elementos de cuenta completos
+            element.addEventListener('mousedown', () => {
+                if (!element.classList.contains('account-select')) {
+                    element.style.transform = 'translateY(2px) scale(0.98)';
+                }
+            });
+            
+            element.addEventListener('mouseup', () => {
+                if (!element.classList.contains('account-select')) {
+                    element.style.transform = '';
+                }
+            });
+            
+            element.addEventListener('mouseleave', () => {
+                if (!element.classList.contains('account-select')) {
+                    element.style.transform = '';
+                }
+            });
+        } else if (element.classList.contains('delete-profile')) {
+            // Para los botones de eliminar
+            element.addEventListener('mousedown', () => {
+                element.style.transform = 'translateY(2px) scale(0.95)';
+            });
+            
+            element.addEventListener('mouseup', () => {
+                element.style.transform = '';
+            });
+            
+            element.addEventListener('mouseleave', () => {
+                element.style.transform = '';
+            });
+        }
     }
 
     async applyPerfModeOverridesIfNeeded() {

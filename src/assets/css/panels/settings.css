@@ -218,17 +218,66 @@ input:disabled::placeholder {
     margin: 1rem;
     background-color: var(--sidebar);
     border-right: 1px solid var(--sidebar-border);
-    transition: all 0.2s;
+    transition: all 0.3s ease; /* Cambio: transición más suave */
     background: rgba(0, 0, 0, 0.05);
     border-radius: 10px;
-    
     border: 1px solid rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(80px);
     -webkit-backdrop-filter: blur(80px);
+    position: relative; /* Añadido: para posicionar el pseudo-elemento */
+    overflow: hidden; /* Añadido: para contener efectos dentro del cuadro */
+}
+
+/* Añadido: Efecto de hover para las cuentas */
+.account:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 15px rgba(255, 255, 255, 0.4); /* Cambiado a blanco */
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Añadido: Efecto especial para el cuadro de añadir cuenta */
+.accounts-list #add:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 15px rgba(255, 255, 255, 0.4); /* Cambiado a blanco */
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Añadido: Efecto de brillo en hover */
+.account::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.5s;
+}
+
+.account:hover::before {
+    transform: scale(1);
+    opacity: 1;
 }
 
 .account-select {
     border: solid 4px #fff;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.4);
+}
+
+/* Añadido: Efecto para la cuenta seleccionada al hacer hover */
+.account-select:hover {
+    border: solid 4px var(--color);
+}
+
+/* Efecto especial para el botón de eliminar */
+.delete-profile:hover {
+    background: rgba(255, 0, 0, 0.2);
+    color: #ff0000;
+    transition: all 0.3s ease;
 }
 
 .accounts-list #add {
@@ -508,17 +557,49 @@ input:disabled::placeholder {
     align-items: center;
 }
 
-.java-path-btn {
-    padding: 0.3rem 1rem;
-    background: var(--element-color);
+/* Mejoras para botones */
+.java-path-btn, .size-btn, .max-files-btn {
+    padding: 0.5rem 1.2rem;
+    background: linear-gradient(135deg, var(--box-button) 0%, var(--box-button-hover) 100%);
     border-radius: 15px;
-    margin: 0 1rem;
+    margin: 0 0.8rem;
     cursor: pointer;
-    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
+    color: white;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.java-path-btn:hover {
-    background-color: var(--box-button-hover);
+.java-path-btn::before, .size-btn::before, .max-files-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.5s;
+    pointer-events: none;
+}
+
+.java-path-btn:hover, .size-btn:hover, .max-files-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.java-path-btn:hover::before, .size-btn:hover::before, .max-files-btn:hover::before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.java-path-btn:active, .size-btn:active, .max-files-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
 }
 
 /*******************************************************************************
@@ -531,36 +612,52 @@ input:disabled::placeholder {
     align-items: center;
 }
 
-.input-resolution {
-    background: var(--shadow);
-    border: none;
-    color: var(--color);
-    padding: 0.5rem 1rem;
+/* Mejoras para campos numéricos */
+.input-resolution, .input-max-files {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: white;
+    padding: 0.6rem 1rem;
     border-radius: 15px;
     text-align: center;
+    font-weight: 500;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.input-resolution {
     width: 6rem;
 }
 
+.input-max-files {
+    width: 4rem;
+}
+
+.input-resolution:hover, .input-max-files:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.input-resolution:focus, .input-max-files:focus {
+    outline: none;
+    border-color: var(--box-button);
+    box-shadow: 0 0 8px rgba(0, 120, 189, 0.5);
+}
+
 .size-cross {
-    margin: 0 0.5rem;
+    margin: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    text-align: center;
 }
 
 .size-cross:before {
     font: normal normal bold 20px Icons;
     content: "\e90e";
-}
-
-.size-btn {
-    padding: 0.3rem 1rem;
-    background: var(--element-color);
-    border-radius: 15px;
-    margin: 0 1rem;
-    cursor: pointer;
-    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
-}
-
-.size-btn:hover {
-    background-color: var(--box-button-hover);
+    display: block;
 }
 
 /*******************************************************************************
@@ -569,128 +666,79 @@ input:disabled::placeholder {
  *                                                                             *
  ******************************************************************************/
 
-.input-max-files {
-    background: var(--shadow);
-    border: none;
-    color: var(--color);
-    padding: 0.5rem 1rem;
-    border-radius: 15px;
-    text-align: center;
-    width: 4rem;
-    margin-right: 1rem;
-}
-
-.max-files-btn {
-    padding: 0.3rem 1rem;
-    background: var(--element-color);
-    border-radius: 15px;
-    margin: 0 1rem;
-    cursor: pointer;
-    transition: color 0.05s, background-color 0.2s, background-image 0.2s, top 0.2s, left 0.2s, height 0.2s, opacity 0.2s, margin 0.2s;
-}
-
-.max-files-btn:hover {
-    background-color: var(--box-button-hover);
-}
-
-.theme-btn {
-    margin: 0 1rem;
-    padding: calc(0.1rem + 4px) calc(1.5rem + 4px);
-    border-radius: 15px;
-    cursor: pointer;
-}
-
-.theme-btn-clair {
-    background: var(--light-color);
-    color: var(--dark-color);
-    border: 2px solid var(--dark-color);
-}
-
-.theme-btn-sombre {
-    background: var(--dark-color);
-    color: var(--light-color);
-    border: 2px solid var(--color);
-}
-
-.theme-btn-auto {
-    background: var(--background);
-    color: var(--color);
-    border: 2px solid var(--color);
-}
-
-.active-theme {
-    border: 4px solid var(--element-color);
-}
-
-.close-btn {
-    display: grid;
-    place-items: center;
-    font-size: 0.95rem;
-    width: 200px;
-    min-height: 80px;
-    text-align: center;
-    border: 4px solid var(--color);
-    border-radius: 15px;
-    padding: 1rem;
-    cursor: pointer;
-}
-
-.active-close {
-    border: 4px solid var(--element-color);
-}
-
-.performance-mode-container {
+/* Mejoras para los botones de gestión de datos */
+.data-management-btn {
     display: flex;
     align-items: center;
-    margin: 15px 0;
-}
-
-.performance-mode-checkbox {
-    width: 30px;
-    height: 30px;
-    margin-right: 15px;
+    justify-content: center;
+    padding: 14px 20px;
+    font-size: 1rem;
+    border-radius: 10px;
     cursor: pointer;
-}
-
-.performance-mode-container label {
-    font-size: 1.4rem;
+    transition: all 0.3s ease;
+    margin: 12px;
+    width: 250px;
+    text-align: center;
     font-weight: bold;
-    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
 }
 
-.performance-mode-info {
-    font-size: 1.1rem;
-    margin-top: 15px;
-    color: rgba(255, 255, 255, 0.8);
-    max-width: 90%;
+.data-management-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.5s;
+    pointer-events: none;
 }
 
-body.performance-mode .container-settings {
-    transition: none !important;
-    transition-property: none !important;
-    animation: none !important;
+.reset-config-btn {
+    background: linear-gradient(135deg, var(--box-button) 0%, var(--box-button-hover) 100%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-body.performance-mode .active-container-settings {
-    transform: translateX(0) !important;
-    opacity: 1 !important;
-    transition: none !important;
-    transition-property: none !important;
-    animation: none !important;
+.reset-config-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 120, 189, 0.5);
 }
 
-body.performance-mode .container-settings:not(.active-container-settings) {
-    transform: translateX(100%) !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    transition: none !important;
-    transition-property: none !important;
-    animation: none !important;
+.reset-config-btn:hover::before {
+    transform: scale(1);
+    opacity: 1;
 }
 
-body.performance-mode * {
-    transition-duration: 0ms !important;
-    animation-duration: 0ms !important;
+.reset-config-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.delete-all-btn {
+    background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.delete-all-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(255, 0, 0, 0.4);
+}
+
+.delete-all-btn:hover::before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.delete-all-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .launcher-behavior-box {
@@ -701,24 +749,55 @@ body.performance-mode * {
   margin: 15px 0;
 }
 
+/* Mejoras para la opción de comportamiento del launcher */
 .launcher-behavior-option {
-  display: flex;
-  align-items: center;
-  padding: 12px 15px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.launcher-behavior-option::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.5s;
+    pointer-events: none;
 }
 
 .launcher-behavior-option:hover {
-  background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.launcher-behavior-option:hover::before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.launcher-behavior-option:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .launcher-behavior-option.selected {
-  background-color: rgba(var(--color-rgb), 0.2);
-  border: 1px solid var(--color);
+    background-color: rgba(var(--color-rgb), 0.2);
+    border: 1px solid var(--color);
+    box-shadow: 0 0 10px rgba(var(--color-rgb), 0.3);
 }
 
 .launcher-behavior-radio {
@@ -854,42 +933,6 @@ body.performance-mode * {
     margin-bottom: 15px;
     font-size: 14px;
     color: #555;
-}
-
-/* Data Management Buttons */
-.data-management-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 20px;
-  font-size: 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin: 10px;
-  width: 250px;
-  text-align: center;
-  font-weight: bold;
-}
-
-.reset-config-btn {
-  background-color: var(--box-button);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.reset-config-btn:hover {
-  background-color: var(--box-button-hover);
-}
-
-.delete-all-btn {
-  background-color: #d32f2f;
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.delete-all-btn:hover {
-  background-color: #b71c1c;
 }
 
 .data-management-btn i {

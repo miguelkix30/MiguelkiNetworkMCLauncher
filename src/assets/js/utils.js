@@ -555,7 +555,7 @@ function setStaticBackground() {
   })();
 }
 
-async function setBackground(theme) {
+async function setBackground() {
     // Check if there's already a static background or a video background set
     const staticBackground = document.querySelector('.static-background');
     const videoBackground = document.querySelector('.background-video.current[style*="opacity: 1"]');
@@ -568,12 +568,9 @@ async function setBackground(theme) {
         return;
     }
     
-    theme = "dark";
-    let background;
     let body = document.body;
     body.className = 'dark global';
-    background = `linear-gradient(#00000080, #00000080), url(./assets/images/background/default.png)`;
-    body.style.backgroundImage = background ? background : '#000';
+    body.style.backgroundImage = `linear-gradient(#00000080, #00000080), url(./assets/images/background/default.png)`;
     body.style.backgroundSize = 'cover';
 }
 
