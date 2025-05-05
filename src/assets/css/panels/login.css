@@ -116,6 +116,7 @@
     margin-top: 0.8em;
     outline: none;
     background-color: #F3F3F3;
+    color: #000 !important;
     border-radius: 18px;
     transition: all 0.5s;
 }
@@ -129,4 +130,11 @@
     border: 2px solid #4A9DEC;
     box-shadow: 0px 0px 0px 7px rgba(74, 157, 236, 0.2);
     background-color: white;
+}
+
+.input-login .email::placeholder,
+.input-login .password::placeholder,
+.A2F::placeholder {
+    color: #000000 !important;
+    opacity: 0.5;
 }

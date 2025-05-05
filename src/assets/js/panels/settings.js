@@ -29,6 +29,55 @@ class Settings {
         this.applyPerfModeOverridesIfNeeded();
         this.addAccountButtonEffects(); // Añadir efectos de pulsación a los botones de cuentas
         this.addConfigButtonEffects(); // Añadir efectos de pulsación a los botones de configuración
+        
+        // Make sure the add account button is visible
+        this.ensureAddAccountButton();
+    }
+    
+    // Ensure the "Add Account" button is displayed
+    ensureAddAccountButton() {
+        try {
+            const accountsList = document.querySelector('.accounts-list');
+            if (!accountsList) {
+                console.error('Accounts list element not found');
+                return;
+            }
+            
+            // Check if the add button already exists
+            let addButton = accountsList.querySelector('#add');
+            if (addButton) {
+                console.log('Add account button already exists');
+                // Make sure it's visible
+                addButton.style.display = 'flex';
+                return;
+            }
+            
+            // Create the add account button if it doesn't exist
+            console.log('Creating add account button');
+            const addAccountBtn = document.createElement('div');
+            addAccountBtn.className = 'account';
+            addAccountBtn.id = 'add';
+            addAccountBtn.innerHTML = `
+                <div class="add-profile">
+                    <div class="icon-account-add"></div>
+                </div>
+                <div class="add-text-profile">Añadir una cuenta</div>
+            `;
+            
+            // Apply button style
+            addAccountBtn.style.display = 'flex';
+            addAccountBtn.style.flexDirection = 'column';
+            addAccountBtn.style.justifyContent = 'center';
+            addAccountBtn.style.alignItems = 'center';
+            
+            // Add to the accounts list
+            accountsList.appendChild(addAccountBtn);
+            
+            // Apply button effects
+            this.applyAccountButtonEffect(addAccountBtn);
+        } catch (error) {
+            console.error('Error ensuring add account button:', error);
+        }
     }
 
     // Añadir efectos de pulsación a los botones de configuración
@@ -303,22 +352,22 @@ class Settings {
 
     accounts() {
         document.querySelector('.accounts-list').addEventListener('click', async e => {
-            let popupAccount = new popup()
+            let popupAccount = new popup();
             try {
-                let id = e.target.id
+                let id = e.target.id;
                 if (e.target.classList.contains('account')) {
                     popupAccount.openPopup({
                         title: 'Iniciar sesión',
                         content: 'Espere, por favor...',
                         color: 'var(--color)'
-                    })
+                    });
 
                     if (id == 'add') {
-                        document.querySelector('.cancel-home').style.display = 'inline'
-                        document.querySelector('.cancel-AZauth').style.display = 'inline'
-                        document.querySelector('.cancel-offline').style.display = 'inline'
+                        document.querySelector('.cancel-home').style.display = 'inline';
+                        document.querySelector('.cancel-AZauth').style.display = 'inline';
+                        document.querySelector('.cancel-offline').style.display = 'inline';
                         popupAccount.closePopup();
-                        return changePanel('login')
+                        return changePanel('login');
                     }
 
                     // Primero comprobamos si la cuenta existe 
@@ -369,11 +418,25 @@ class Settings {
                         return;
                     }
 
+                    // Pedir confirmación antes de eliminar
+                    const confirmResult = await new Promise(resolve => {
+                        popupAccount.openDialog({
+                            title: 'Confirmar eliminación',
+                            content: '¿Estás seguro de que quieres eliminar esta cuenta?',
+                            options: true,
+                            callback: resolve
+                        });
+                    });
+
+                    if (confirmResult === 'cancel') {
+                        return;
+                    }
+
                     popupAccount.openPopup({
                         title: 'Eliminando cuenta',
                         content: 'Espere, por favor...',
                         color: 'var(--color)'
-                    })
+                    });
 
                     // Verificar que la cuenta existe antes de intentar eliminarla
                     let allAccounts = await this.db.readAllData('accounts');
@@ -390,7 +453,10 @@ class Settings {
                         return;
                     }
 
+                    // Eliminar la cuenta de la base de datos
                     await this.db.deleteData('accounts', deleteId);
+
+                    // Eliminar el elemento visual
                     let deleteProfile = document.getElementById(`${deleteId}`);
                     let accountListElement = document.querySelector('.accounts-list');
                     
@@ -398,18 +464,31 @@ class Settings {
                         accountListElement.removeChild(deleteProfile);
                     } else {
                         console.warn(`No se encontró el elemento DOM para la cuenta ID: ${deleteId}`);
-                        // Refrescar la lista de cuentas de forma manual
-                        location.reload();
-                        return;
                     }
 
-                    // Verificar cuántas cuentas quedan
-                    allAccounts = await this.db.readAllData('accounts');
+                    // Verificar que tengamos otras cuentas disponibles después de eliminar esta
+                    allAccounts = allAccounts.filter(acc => String(acc.ID) !== String(deleteId));
                     
-                    // Solo redirigir a login si no quedan cuentas disponibles
+                    // Verificar si no quedan cuentas disponibles
                     if (!allAccounts || allAccounts.length === 0) {
+                        configClient.account_selected = null;
+                        await this.db.updateData('configClient', configClient);
+                        
                         popupAccount.closePopup();
-                        return changePanel('login');
+                        popupAccount.openPopup({
+                            title: 'Cuenta eliminada',
+                            content: 'La cuenta se eliminó correctamente. Serás redirigido al panel de inicio de sesión ya que no quedan cuentas disponibles.',
+                            color: 'var(--color)',
+                            options: true,
+                            callback: () => {
+                                // Asegurar que se redirija al login después de cerrar el popup
+                                changePanel('login');
+                            }
+                        });
+                        
+                        // Asegurarse de que el botón de añadir cuenta esté visible
+                        this.ensureAddAccountButton();
+                        return;
                     }
 
                     let configClient = await this.db.readData('configClient');
@@ -432,16 +511,38 @@ class Settings {
                             try {
                                 let newInstanceSelect = await this.setInstance(nextAccount);
                                 configClient.instance_selct = newInstanceSelect.instance_selct;
+                                await this.db.updateData('configClient', configClient);
                             } catch (error) {
                                 console.warn(`Error al obtener instancia después de cambiar cuenta: ${error.message}`);
                                 // Continuar con la configuración actual si hay un error
+                                await this.db.updateData('configClient', configClient);
                             }
                             
-                            await this.db.updateData('configClient', configClient);
+                            popupAccount.closePopup();
+                            
+                            // Mensaje mejorado cuando la cuenta eliminada era la seleccionada
+                            popupAccount.openPopup({
+                                title: 'Cuenta eliminada',
+                                content: `La cuenta se eliminó correctamente. Se ha seleccionado automáticamente la cuenta ${nextAccount.name}.`,
+                                color: 'var(--color)',
+                                options: true
+                            });
                         }
+                    } else {
+                        // La cuenta eliminada no era la seleccionada
+                        popupAccount.closePopup();
+                        
+                        // Mensaje cuando se elimina una cuenta que no era la seleccionada
+                        popupAccount.openPopup({
+                            title: 'Cuenta eliminada',
+                            content: 'La cuenta se eliminó correctamente.',
+                            color: 'var(--color)',
+                            options: true
+                        });
                     }
                     
-                    popupAccount.closePopup();
+                    // Asegurarse de que el botón de añadir cuenta esté visible después de eliminar una cuenta
+                    this.ensureAddAccountButton();
                 }
             } catch (err) {
                 console.error('Error al cambiar/eliminar cuenta:', err);
@@ -453,7 +554,7 @@ class Settings {
                     options: true
                 });
             }
-        })
+        });
     }
 
     async setInstance(auth) {
@@ -872,9 +973,9 @@ class Settings {
                 color: 'var(--color)'
             });
             
-            console.log('Limpiando base de datos y archivos encriptados...');
+            console.log('Limpiando archivos de configuración...');
             
-            // Usar clearDatabase que elimina tanto los archivos encriptados como la base de datos antigua
+            // Eliminar solo los archivos de configuración
             await this.db.clearDatabase();
             
             // Esperar un momento antes de reiniciar

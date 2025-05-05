@@ -556,7 +556,7 @@ class Home {
         let instance = await config.getInstanceList();
         let authenticator = await this.db.readData('accounts', configClient.account_selected);
         let options = instance.find(i => i.name == configClient.instance_selct);
-        
+                
         if (!options) {
             this.enablePlayButton();
             let popupError = new popup();
@@ -739,6 +739,24 @@ class Home {
 
         console.log("Configurando opciones de lanzamiento...");
         let launch = new Launch();
+        
+        // Verificar y corregir la estructura del objeto authenticator
+        if (authenticator && !authenticator.meta) {
+            authenticator.meta = {};
+        }
+        
+        if (authenticator && !authenticator.meta.type) {
+            // Determinar el tipo basado en las propiedades disponibles
+            if (authenticator.accessToken && authenticator.accessToken.startsWith("ey")) {
+                authenticator.meta.type = "Microsoft";
+            } else if (authenticator.user && authenticator.user.username) {
+                authenticator.meta.type = "Mojang";
+            } else {
+                authenticator.meta.type = "Mojang"; // Default fallback
+            }
+            console.log(`Tipo de autenticación detectado: ${authenticator.meta.type}`);
+        }
+        
         let opt = {
             url: options.url,
             authenticator: authenticator,

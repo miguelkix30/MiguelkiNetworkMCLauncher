@@ -51,17 +51,38 @@ class Config {
     }
 
     async getInstanceList() {
-        let urlInstance = `${url}/files?checksum=${Launcherkey}&id=${hwid}`
-        let instances = await nodeFetch(urlInstance).then(res => res.json()).catch(err => err)
-        let instancesList = []
-        instances = Object.entries(instances)
+        try {
+            let urlInstance = `${url}/files?checksum=${Launcherkey}&id=${hwid}`;
+            let response = await nodeFetch(urlInstance);
+            
+            // Check if the response is OK
+            if (!response.ok) {
+                console.error(`Server returned status: ${response.status} ${response.statusText}`);
+                return [];
+            }
+            
+            let instances = await response.json();
+            
+            if (!instances || typeof instances !== 'object') {
+                console.error("Invalid instance data received:", instances);
+                return [];
+            }
+            
+            let instancesList = [];
+            instances = Object.entries(instances);
 
-        for (let [name, data] of instances) {
-            let instance = data
-            instance.name = name
-            instancesList.push(instance)
+            for (let [name, data] of instances) {
+                if (data) {
+                    let instance = data;
+                    instance.name = name;
+                    instancesList.push(instance);
+                }
+            }
+            return instancesList;
+        } catch (err) {
+            console.error("Error fetching instance list:", err);
+            return [];
         }
-        return instancesList
     }
 
     async getNews() {

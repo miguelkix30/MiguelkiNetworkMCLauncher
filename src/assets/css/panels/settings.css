@@ -226,6 +226,7 @@ input:disabled::placeholder {
     -webkit-backdrop-filter: blur(80px);
     position: relative; /* Añadido: para posicionar el pseudo-elemento */
     overflow: hidden; /* Añadido: para contener efectos dentro del cuadro */
+    cursor: pointer; /* Added to improve UX */
 }
 
 /* Añadido: Efecto de hover para las cuentas */
@@ -237,11 +238,61 @@ input:disabled::placeholder {
 }
 
 /* Añadido: Efecto especial para el cuadro de añadir cuenta */
-.accounts-list #add:hover {
+.account#add {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.15);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.account#add:hover {
     transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 8px 15px rgba(255, 255, 255, 0.4); /* Cambiado a blanco */
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    background: rgba(0, 0, 0, 0.2);
+    border: 2px dashed rgba(255, 255, 255, 0.6);
+    background: rgba(0, 0, 0, 0.25);
+    box-shadow: 0 8px 15px rgba(255, 255, 255, 0.2);
+}
+
+.account#add:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.add-profile {
+    width: 70px;
+    height: 70px;
+    font-size: 3rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+}
+
+.icon-account-add {
+    font-size: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.icon-account-add:before {
+    content: "+";
+    font-size: 3.5rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.add-text-profile {
+    font-size: 1.5rem;
+    pointer-events: none;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 /* Añadido: Efecto de brillo en hover */
@@ -278,26 +329,6 @@ input:disabled::placeholder {
     background: rgba(255, 0, 0, 0.2);
     color: #ff0000;
     transition: all 0.3s ease;
-}
-
-.accounts-list #add {
-    justify-content: center;
-    cursor: pointer;
-}
-
-.add-profile {
-    width: 70px;
-    height: 70px;
-    font-size: 3rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    pointer-events: none;
-}
-
-.add-text-profile {
-    font-size: 1.5rem;
-    pointer-events: none;
 }
 
 .profile-image {

@@ -72,9 +72,6 @@ class Launcher {
       console.error("Error al consolidar almacenamiento:", error);
     }
     
-    // Forzar explícitamente el intento de migración antes de verificar la configuración
-    console.log("Verificando datos para migración...");
-    await this.db.attemptMigration();
     
     // Ahora que la migración ha terminado (si era necesaria), verificamos la configuración
     const configClient = await this.db.readData("configClient");
@@ -1140,10 +1137,47 @@ class Launcher {
         account_selected = null;
     }
 
-    console.log(`Cuentas encontradas al inicio: ${accounts ? accounts.length : 0}`);
+    // Ensure accounts is always an array
+    if (!Array.isArray(accounts)) {
+        if (accounts && typeof accounts === 'object' && accounts.ID) {
+            // If a single account object was received, convert to array
+            accounts = [accounts];
+            console.log("Cuentas convertidas de objeto único a array");
+        } else {
+            // Initialize as empty array if null, undefined or invalid
+            accounts = [];
+            console.log("Inicializando array vacío de cuentas");
+        }
+    }
+
+    console.log(`Cuentas encontradas al inicio: ${accounts.length}`);
 
     // Limpiar lista de cuentas en la UI antes de comenzar
-    document.querySelector('.accounts-list').innerHTML = '';
+    const accountsList = document.querySelector('.accounts-list');
+    if (accountsList) {
+        accountsList.innerHTML = '';
+        
+        // Asegurar que siempre haya un botón de "Añadir cuenta"
+        const addAccountBtn = document.createElement('div');
+        addAccountBtn.className = 'account';
+        addAccountBtn.id = 'add';
+        addAccountBtn.innerHTML = `
+            <div class="add-profile">
+                <div class="icon-account-add"></div>
+            </div>
+            <div class="add-text-profile">Añadir una cuenta</div>
+        `;
+        
+        // Apply button style
+        addAccountBtn.style.display = 'flex';
+        addAccountBtn.style.flexDirection = 'column';
+        addAccountBtn.style.justifyContent = 'center';
+        addAccountBtn.style.alignItems = 'center';
+        
+        // Add to the accounts list
+        accountsList.appendChild(addAccountBtn);
+        console.log("Botón 'Añadir cuenta' añadido a la interfaz");
+    }
 
     if (accounts && accounts.length > 0) {
         const serverConfig = await config.GetConfig();
@@ -1452,10 +1486,46 @@ class Launcher {
         
         // Asegurar que las cuentas actualizadas sean persistidas como un array
         try {
-            await this.db.updateData("accounts", [...refreshedAccounts]);
-            console.log(`Guardadas ${refreshedAccounts.length} cuentas correctamente`);
+            if (!refreshedAccounts || !Array.isArray(refreshedAccounts)) {
+                console.error("refreshedAccounts no es un array válido");
+                refreshedAccounts = [];
+            }
+            console.log(`Intentando guardar ${refreshedAccounts.length} cuentas refrescadas`);
+            
+            // Verificar que todos los elementos sean objetos válidos
+            let validAccounts = refreshedAccounts.filter(acc => acc && typeof acc === 'object' && acc.ID !== undefined);
+            
+            if (validAccounts.length !== refreshedAccounts.length) {
+                console.warn(`Se encontraron ${refreshedAccounts.length - validAccounts.length} cuentas inválidas que serán omitidas`);
+            }
+            
+            if (validAccounts.length > 0) {
+                // Asegurarse de que se guarde como array
+                if (!Array.isArray(validAccounts)) {
+                    validAccounts = [validAccounts];
+                    console.log("Convirtiendo a array para guardado");
+                }
+                
+                // Verificar explícitamente que validAccounts sea un array antes de guardarlo
+                if (Array.isArray(validAccounts)) {
+                    await this.db.updateData("accounts", validAccounts);
+                    console.log(`Guardadas ${validAccounts.length} cuentas correctamente como array`);
+                } else {
+                    console.error("Error crítico: validAccounts no es un array después de la conversión");
+                }
+            } else {
+                console.warn("No hay cuentas válidas para guardar");
+                // Si no hay cuentas válidas, guardar un array vacío para evitar problemas
+                await this.db.updateData("accounts", []);
+            }
         } catch (error) {
             console.error("Error al guardar las cuentas:", error);
+            // Intentar guardar un array vacío en caso de error para evitar problemas
+            try {
+                await this.db.updateData("accounts", []);
+            } catch (innerError) {
+                console.error("Error también al intentar guardar array vacío:", innerError);
+            }
         }
         
         // Actualizar la selección de cuenta si es necesario
