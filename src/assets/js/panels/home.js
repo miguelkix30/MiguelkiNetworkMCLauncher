@@ -32,7 +32,7 @@ RPC.on('ready', async () => {
         largeImageKey: 'icon',
         largeImageText: pkg.preductname,
         instance: true
-    }).catch(err => {console.error('Error al establecer la actividad de Discord:', err)});
+    }).catch(err => { console.error('Error al establecer la actividad de Discord:', err) });
     setInterval(() => {
         setActivity();
     }, 1000);
@@ -51,9 +51,9 @@ class Home {
     async init(config) {
         this.config = config;
         this.db = new database();
-        
+
         await cleanupManager.initialize();
-        
+
         this.news();
         this.showstore();
         this.notification();
@@ -74,29 +74,29 @@ class Home {
         let storebutton = document.querySelector('.storebutton')
         let res = await config.GetConfig();
         if (res.store_enabled) {
-        try {
-            const response = await fetch(pkg.store_url).catch(err => console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda.'));
-            if (response.ok) {
-                document.querySelector('.news-blockshop').style.display = 'block';
+            try {
+                const response = await fetch(pkg.store_url).catch(err => console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda.'));
+                if (response.ok) {
+                    document.querySelector('.news-blockshop').style.display = 'block';
 
-            } else {
+                } else {
+                    console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda...');
+                    document.querySelector('.news-blockshop').style.display = 'none';
+                }
+            } catch (error) {
                 console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda...');
                 document.querySelector('.news-blockshop').style.display = 'none';
             }
-        } catch (error) {
-            console.error('Parece que la tienda no se encuentra online. Ocultando sección de tienda...');
+            storebutton.addEventListener('click', e => {
+                ipcRenderer.send('create-store-window');
+            })
+        } else {
             document.querySelector('.news-blockshop').style.display = 'none';
+            console.log('La tienda se encuentra desactivada. Ocultando sección de tienda...');
         }
-        storebutton.addEventListener('click', e => {
-            ipcRenderer.send('create-store-window');
-        })
-    } else {
-        document.querySelector('.news-blockshop').style.display = 'none';
-        console.log('La tienda se encuentra desactivada. Ocultando sección de tienda...');
-    }
     }
 
-    async notification() { 
+    async notification() {
         let res = await config.GetConfig();
         let hwid = await getHWID();
         let check = await checkHWID(hwid);
@@ -134,7 +134,7 @@ class Home {
                 notificationIcon.src = 'assets/images/notification/error.png';
                 await this.showNotification();
             }
-            
+
         } else if (res.notification.enabled) {
             notificationTitle.innerHTML = res.notification.title;
             notificationContent.innerHTML = res.notification.content;
@@ -146,7 +146,7 @@ class Home {
             if (res.notification.color == 'red') notification.style.background = colorRed; else if (res.notification.color == 'green') notification.style.background = colorGreen; else if (res.notification.color == 'blue') notification.style.background = colorBlue; else if (res.notification.color == 'yellow') notification.style.background = colorYellow; else notification.style.background = res.notification.color;
             if (res.notification.icon.match(/^(http|https):\/\/[^ "]+$/)) notificationIcon.src = res.notification.icon; else if (res.notification.icon == 'info') notificationIcon.src = 'assets/images/notification/info.png'; else if (res.notification.icon == 'warning') notificationIcon.src = 'assets/images/notification/exclamation2.png'; else if (res.notification.icon == 'error') notificationIcon.src = 'assets/images/notification/error.png'; else if (res.notification.icon == 'exclamation') notificationIcon.src = 'assets/images/notification/exclamation.png'; else notificationIcon.style.display = 'none';
             await this.showNotification();
-            
+
         } else {
             await this.hideNotification();
         }
@@ -156,14 +156,14 @@ class Home {
         let notification = document.querySelector('.message-container');
         notification.style.display = 'flex';
         notification.style.visibility = 'visible';
-        requestAnimationFrame(function() {
-            requestAnimationFrame(function() {
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
                 notification.style.opacity = '1';
             });
         });
 
     }
-    
+
     async hideNotification() {
         let notification = document.querySelector('.message-container');
         notification.style.opacity = '0';
@@ -207,7 +207,7 @@ class Home {
         if (res.musicBeta || dev) {
             let configClient = await this.db.readData('configClient')
             document.querySelector('.action-button:nth-child(1)').style.display = 'flex';
-            document.querySelector('.action-button:nth-child(1)').addEventListener('click', function() {if (!playing) toggleMusic();});
+            document.querySelector('.action-button:nth-child(1)').addEventListener('click', function () { if (!playing) toggleMusic(); });
             if (configClient.launcher_config.music_muted) {
                 document.querySelector('.music-btn').classList.remove('icon-speaker-on');
                 document.querySelector('.music-btn').classList.add('icon-speaker-off');
@@ -219,7 +219,7 @@ class Home {
             document.querySelector('.action-button:nth-child(1)').style.display = 'none';
         }
     }
-    
+
     async news() {
 
         let name = pkg.preductname
@@ -337,7 +337,7 @@ class Home {
 
         if (!instanceSelect) {
             let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
-            
+
             if (newInstanceSelect) {
                 configClient.instance_selct = newInstanceSelect.name;
                 instanceSelect = newInstanceSelect.name;
@@ -356,7 +356,7 @@ class Home {
                     if (whitelist !== username) {
                         if (instance.name == instanceSelect) {
                             let newInstanceSelect = instancesList.find(i => i.whitelistActive == false);
-                            
+
                             if (newInstanceSelect) {
                                 configClient.instance_selct = newInstanceSelect.name;
                                 instanceSelect = newInstanceSelect.name;
@@ -377,26 +377,26 @@ class Home {
                 } else {
                     console.log(`Configurando instancia ${instance.name}...`);
                 }
-                
+
                 if (instanceSelect && instance.name == instanceSelect) {
                     setStatus(instance);
                     setBackgroundMusic(instance.backgroundMusic);
                     setInstanceBackground(instance.background);
                     this.updateSelectedInstanceStyle(instanceSelect);
                 }
-                
+
                 this.notification();
             }
 
             instanceSelectBTN.removeEventListener('click', this.instanceSelectClickHandler);
             this.instanceSelectClickHandler = async () => {
                 if (instanceSelectBTN.disabled) return;
-                
+
                 // Verificar si hay bloqueo de dispositivo u otros errores antes de mostrar la ventana
                 let hwid = await getHWID();
                 let check = await checkHWID(hwid);
                 let fetchError = await getFetchError();
-                
+
                 if (check) {
                     if (fetchError == false) {
                         let popupError = new popup();
@@ -418,13 +418,13 @@ class Home {
                         return;
                     }
                 }
-                
+
                 let username = await getUsername();
-                
+
                 let refreshedInstancesList = await config.getInstanceList();
-                
+
                 instancesGrid.innerHTML = '';
-                
+
                 if (!refreshedInstancesList || refreshedInstancesList.length === 0) {
                     instancesGrid.innerHTML = `
                         <div class="no-instances-message">
@@ -434,7 +434,7 @@ class Home {
                     `;
                 } else {
                     let visibleInstanceCount = 0;
-                    
+
                     for (let instance of refreshedInstancesList) {
                         let color = instance.maintenance ? 'red' : 'green';
                         let whitelist = instance.whitelistActive && instance.whitelist.includes(username);
@@ -448,7 +448,7 @@ class Home {
                             visibleInstanceCount++;
                         }
                     }
-                    
+
                     if (visibleInstanceCount === 0) {
                         instancesGrid.innerHTML = `
                             <div class="no-instances-message">
@@ -459,7 +459,7 @@ class Home {
                     } else {
                         const remainder = visibleInstanceCount % 3;
                         instancesGrid.classList.remove('one-item', 'two-items');
-                        
+
                         if (remainder === 1) {
                             instancesGrid.classList.add('one-item');
                         } else if (remainder === 2) {
@@ -467,7 +467,7 @@ class Home {
                         }
                     }
                 }
-                
+
                 instancePopup.classList.add('show');
             };
 
@@ -518,14 +518,14 @@ class Home {
             });
         }
     }
-    
+
     disablePlayButton() {
         const playInstanceBTN = document.querySelector('.play-instance');
         playInstanceBTN.disabled = true;
         playInstanceBTN.style.pointerEvents = "none";
         playInstanceBTN.style.opacity = "0.5";
     }
-    
+
     enablePlayButton() {
         const playInstanceBTN = document.querySelector('.play-instance');
         playInstanceBTN.disabled = false;
@@ -535,7 +535,7 @@ class Home {
 
     async startGame() {
         let configClient = await this.db.readData('configClient');
-        
+
         if (!configClient.instance_selct) {
             this.enablePlayButton();
             let popupError = new popup();
@@ -547,9 +547,9 @@ class Home {
             });
             return;
         }
-        
+
         let instance = await config.getInstanceList();
-        
+
         // Verify valid account selection and retrieve account
         if (!configClient.account_selected) {
             this.enablePlayButton();
@@ -562,31 +562,31 @@ class Home {
             });
             return;
         }
-        
+
         console.log(`Obteniendo cuenta con ID: ${configClient.account_selected}`);
-        
+
         // First, attempt to sync account IDs to ensure consistency
         await this.db.syncAccountIds();
-        
+
         // Try multiple methods to ensure we get the account
         let authenticator = null;
-        
+
         try {
             // Method 1: Get account directly
             authenticator = await this.db.getSelectedAccount();
-            
+
             if (authenticator) {
                 console.log(`Cuenta obtenida mediante getSelectedAccount: ${authenticator.name} (ID: ${authenticator.ID})`);
             }
         } catch (err) {
             console.warn(`Error al obtener cuenta seleccionada: ${err.message}`);
         }
-        
+
         // Method 2: Direct reading by ID if Method 1 failed
         if (!authenticator) {
             try {
                 authenticator = await this.db.readData('accounts', configClient.account_selected);
-                
+
                 if (authenticator) {
                     console.log(`Cuenta obtenida mediante readData: ${authenticator.name} (ID: ${authenticator.ID})`);
                 }
@@ -594,36 +594,36 @@ class Home {
                 console.warn(`Error al leer cuenta directamente: ${err.message}`);
             }
         }
-        
+
         // Method 3: If both methods failed, try getting all accounts and filter
         if (!authenticator) {
             console.log(`Intentando obtener cuenta desde la lista completa...`);
             let allAccounts = await this.db.readAllData('accounts');
             if (Array.isArray(allAccounts) && allAccounts.length > 0) {
                 // Try with both string and number comparison
-                authenticator = allAccounts.find(acc => 
-                    String(acc.ID) === String(configClient.account_selected) || 
+                authenticator = allAccounts.find(acc =>
+                    String(acc.ID) === String(configClient.account_selected) ||
                     Number(acc.ID) === Number(configClient.account_selected)
                 );
-                
+
                 if (authenticator) {
                     console.log(`Cuenta encontrada por método alternativo: ${authenticator.name} (ID: ${authenticator.ID})`);
-                    
+
                     // Update the account in the database to sync
                     await this.db.updateData('accounts', authenticator, authenticator.ID);
                 }
             }
         }
-        
+
         if (!authenticator) {
             console.error(`No se pudo encontrar la cuenta con ID: ${configClient.account_selected}`);
-            
+
             // Get all accounts for logging
             let allAccounts = await this.db.readAllData('accounts');
             if (Array.isArray(allAccounts)) {
                 console.log(`Cuentas disponibles: ${allAccounts.map(a => `${a.name}(${a.ID})`).join(', ')}`);
             }
-            
+
             this.enablePlayButton();
             let popupError = new popup();
             popupError.openPopup({
@@ -634,10 +634,10 @@ class Home {
             });
             return;
         }
-        
+
         console.log(`Cuenta recuperada: ${authenticator.name} (ID: ${authenticator.ID})`);
         let options = instance.find(i => i.name == configClient.instance_selct);
-                
+
         if (!options) {
             this.enablePlayButton();
             let popupError = new popup();
@@ -740,7 +740,7 @@ class Home {
         instanceSelectBTN.disabled = true;
         instanceSelectBTN.classList.add('disabled');
         progressBar.style.display = "none";
-        
+
         try {
             const queueResult = await this.checkQueueStatus(hwid, username);
             if (queueResult.cancelled) {
@@ -758,7 +758,7 @@ class Home {
             infoStartingBOX.style.display = "none";
             instanceSelectBTN.disabled = false;
             instanceSelectBTN.classList.remove('disabled');
-            
+
             let popupError = new popup();
             popupError.openPopup({
                 title: 'Error en la cola',
@@ -768,10 +768,10 @@ class Home {
             });
             return;
         }
-        
+
         progressBar.style.display = "";
         ipcRenderer.send('main-window-progress-load');
-        
+
         let recentInstances = configClient.recent_instances || [];
         recentInstances = recentInstances.filter(name => name !== options.name);
         recentInstances.unshift(options.name);
@@ -786,7 +786,7 @@ class Home {
             infoStarting.innerHTML = `Descargando librerias extra...`;
             const loaderType = options.loadder.loadder_type;
             const minecraftVersion = options.loadder.minecraft_version;
-            
+
             // Asegurar que la carpeta mods existe y está oculta
             const instanceModsPath = path.join(
                 await appdata(),
@@ -795,22 +795,22 @@ class Home {
                 options.name,
                 'mods'
             );
-            
+
             // Crear la carpeta mods si no existe
             if (!fs.existsSync(instanceModsPath)) {
                 fs.mkdirSync(instanceModsPath, { recursive: true });
             }
-        
+
             await hideFolder(instanceModsPath);
-            
+
             const installResult = await installMKLibMods(options.name, minecraftVersion, loaderType);
-            
+
             if (installResult.success && installResult.modFile) {
                 if (!ignoredFiles.includes(installResult.modFile)) {
                     ignoredFiles.push(installResult.modFile);
                 }
             }
-            
+
             await new Promise(resolve => setTimeout(resolve, 500));
             infoStarting.innerHTML = `Conectando...`;
             progressBar.value = 0;
@@ -820,8 +820,8 @@ class Home {
 
         console.log("Configurando opciones de lanzamiento...");
         let launch = new Launch();
-        
-        
+
+
         let opt = {
             url: options.url,
             authenticator: authenticator,
@@ -855,17 +855,17 @@ class Home {
                 max: `${configClient.java_config.java_memory.max * 1024}M`
             }
         }
-        
+
         let musicMuted = configClient.launcher_config.music_muted;
         let musicPlaying = true;
-        
+
         let modsApplied = false;
         let specialModCleaned = false;
-        
+
         // Inicializar el proceso de limpieza antes del lanzamiento
         let gameStartMonitoringStarted = false;
         let cleanupTriggered = false;
-        
+
         if (options.cleaning && options.cleaning.enabled && cleanupManager.enabled) {
             console.log(`Configurando limpieza para la instancia: ${options.name}`);
             await cleanupManager.queueCleanup(options.name, opt.path, options.cleaning.files, false);
@@ -884,7 +884,7 @@ class Home {
             if (closeGameButton) {
                 closeGameButton.style.display = 'none';
             }
-            
+
             let errorPopup = new popup();
             errorPopup.openPopup({
                 title: 'Error al iniciar el juego',
@@ -930,17 +930,17 @@ class Home {
                         instance: true
                     })
                 }
-                
+
                 // Procesar la salida para detectar patrones de limpieza si la limpieza está activada
                 if (options.cleaning && options.cleaning.enabled && cleanupManager.enabled) {
                     // Procesa la salida para detectar patrones que indiquen que el juego se inició completamente
                     cleanupManager.processGameOutput(options.name, e);
-                    
+
                     // Si el juego ya se inició completamente y no hemos ejecutado la limpieza
                     if (cleanupManager.isGameFullyStarted(options.name) && !cleanupTriggered) {
                         cleanupTriggered = true;
                         console.log(`Juego completamente iniciado. Ejecutando limpieza de archivos para: ${options.name}`);
-                        
+
                         try {
                             // Esperar un poco para asegurar que el juego esté estable
                             setTimeout(async () => {
@@ -951,14 +951,14 @@ class Home {
                             console.error(`Error durante la limpieza de archivos: ${error.message}`);
                         }
                     }
-                    
+
                     if (!gameStartMonitoringStarted) {
                         gameStartMonitoringStarted = true;
                         console.log(`Monitoreo de inicio del juego activado para: ${options.name}`);
                     }
                 }
             }
-            
+
             if (!modsApplied) {
                 modsApplied = true;
                 try {
@@ -971,7 +971,7 @@ class Home {
             }
 
 
-            if (!specialModCleaned && (e.includes("Setting user:") || e.includes("Connecting to") || 
+            if (!specialModCleaned && (e.includes("Setting user:") || e.includes("Connecting to") ||
                 e.includes("LWJGL Version:") || e.includes("OpenAL initialized"))) {
                 specialModCleaned = true;
                 try {
@@ -998,10 +998,10 @@ class Home {
             if (!playing) {
                 playing = true;
                 playMSG(configClient.instance_selct);
-                
+
                 removeUserFromQueue(hwid);
             }
-            
+
             ipcRenderer.send('main-window-progress-load')
             infoStarting.innerHTML = `Jugando...`
         })
@@ -1039,13 +1039,13 @@ class Home {
             instanceSelectBTN.classList.remove('disabled');
             infoStarting.innerHTML = `Cerrando...`
             console.log('Close');
-            
+
             if (closeGameButton) {
                 closeGameButton.style.display = 'none';
             }
-            
+
             this.enablePlayButton();
-            
+
             // Ejecutar limpieza en cierre si está configurada
             if (options.cleaning && options.cleaning.enabled && cleanupManager.enabled) {
                 try {
@@ -1055,7 +1055,7 @@ class Home {
                     console.error(`Error durante limpieza en cierre: ${error.message}`);
                 }
             }
-            
+
             if (rpcActive) {
                 username = await getUsername();
                 RPC.setActivity({
@@ -1070,15 +1070,15 @@ class Home {
             }
         });
 
-        launch.on('error', err => {
+        launch.on('error', async (err) => {
             removeUserFromQueue(hwid);
-            
+
             if (typeof err.error === 'undefined') {
                 if (configClient.launcher_config.closeLauncher == 'close-launcher') {
                     ipcRenderer.send("main-window-show");
                 }
                 if (rpcActive) {
-                    username = getUsername();
+                    username = await getUsername();
                     RPC.setActivity({
                         state: `En el launcher`,
                         startTimestamp: startingTime,
@@ -1089,7 +1089,7 @@ class Home {
                         instance: true
                     }).catch();
                 }
-                
+
                 // Handle undefined error case with patch toolkit option
                 const errorDialog = new popup();
                 errorDialog.openDialog({
@@ -1129,9 +1129,9 @@ class Home {
                 instanceSelectBTN.classList.remove('disabled');
                 infoStarting.innerHTML = `Verificando...`;
                 this.notification();
-                
+
                 this.enablePlayButton();
-                
+
                 if (rpcActive) {
                     username = getUsername();
                     RPC.setActivity({
@@ -1148,18 +1148,18 @@ class Home {
 
     async applyOptionalMods(instanceName) {
         console.log(`Aplicando mods opcionales para instancia: ${instanceName}`);
-        
+
         const instances = await config.getInstanceList();
         const instance = instances.find(i => i.name === instanceName);
-        
+
         if (!instance || !instance.optionalMods || instance.optionalMods.length === 0) {
             console.log(`No hay mods opcionales para la instancia: ${instanceName}`);
             return;
         }
-        
+
         const db = new database();
         let configClient = await db.readData('configClient');
-        
+
         const activeModsForInstance = configClient.mods_enabled.filter(modId => {
             const [modIdInstanceName] = modId.split('-');
             return modIdInstanceName === instanceName;
@@ -1167,7 +1167,7 @@ class Home {
             const [, modIdModName] = modId.split('-');
             return modIdModName;
         });
-        
+
         let res = await config.GetConfig();
         const appdataPath = await appdata();
         const instanceModsPath = path.join(
@@ -1177,11 +1177,11 @@ class Home {
             instanceName,
             'mods'
         );
-        
+
         for (const mod of instance.optionalMods) {
             const modIsActiveInConfig = activeModsForInstance.includes(mod.name);
             const modFile = mod.file;
-            
+
             const activeModPath = path.join(instanceModsPath, `${modFile}.jar`);
             const disabledModPath = path.join(instanceModsPath, `${modFile}.disabled`);
 
@@ -1202,7 +1202,7 @@ class Home {
                 console.error(`Error al procesar el mod ${modFile}:`, error);
             }
         }
-        
+
         return true;
     }
 
@@ -1210,28 +1210,28 @@ class Home {
         return new Promise(async (resolve, reject) => {
             let cancelled = false;
             let infoStarting = document.querySelector(".info-starting-game-text");
-            
+
             let cancelButton = document.createElement('button');
             cancelButton.textContent = 'Cancelar';
             cancelButton.classList.add('cancel-queue-button');
-            
+
             cancelButton.addEventListener('click', async () => {
                 cancelled = true;
                 document.querySelector('.info-starting-game').removeChild(cancelButton);
                 await removeUserFromQueue(hwid);
                 resolve({ cancelled: true });
             });
-            
+
             document.querySelector('.info-starting-game').appendChild(cancelButton);
-            
+
             const checkStatus = async () => {
                 if (cancelled) return;
-                
+
                 try {
                     const formData = new URLSearchParams();
                     formData.append('hwid', hwid);
                     formData.append('username', username);
-                    
+
                     const response = await fetch(`${pkg.url}/api/queue-status.php`, {
                         method: 'POST',
                         body: formData,
@@ -1239,13 +1239,13 @@ class Home {
                             'Content-Type': 'application/x-www-form-urlencoded'
                         }
                     });
-                    
+
                     if (!response.ok) {
                         throw new Error(`Error en la respuesta: ${response.status}`);
                     }
-                    
+
                     const data = await response.json();
-                    
+
                     if (data.status === 'open') {
                         if (document.querySelector('.info-starting-game').contains(cancelButton)) {
                             document.querySelector('.info-starting-game').removeChild(cancelButton);
@@ -1255,7 +1255,7 @@ class Home {
                         return;
                     } else if (data.status === 'on_queue') {
                         infoStarting.innerHTML = `En cola, posición: ${data.position}`;
-                        
+
                         if (!cancelled) {
                             setTimeout(checkStatus, 30000);
                         }
@@ -1266,11 +1266,11 @@ class Home {
                     if (document.querySelector('.info-starting-game').contains(cancelButton)) {
                         document.querySelector('.info-starting-game').removeChild(cancelButton);
                     }
-                    
+
                     reject(error);
                 }
             };
-            
+
             await checkStatus();
         });
     }
@@ -1281,44 +1281,44 @@ class Home {
             const recentInstances = configClient.recent_instances || [];
             const recentInstancesContainer = document.querySelector('.recent-instances');
             const instancesList = await config.getInstanceList();
-            
+
             recentInstancesContainer.innerHTML = '';
-            
+
             if (!recentInstances.length || !instancesList || instancesList.length === 0) {
                 return;
             }
 
-            const validInstances = recentInstances.filter(name => 
+            const validInstances = recentInstances.filter(name =>
                 instancesList.some(instance => instance.name === name)
             );
-            
+
             if (validInstances.length !== recentInstances.length) {
                 configClient.recent_instances = validInstances;
                 await this.db.updateData('configClient', configClient);
             }
-            
+
             const username = await getUsername();
-            
+
             for (const instanceName of validInstances) {
                 const instance = instancesList.find(i => i.name === instanceName);
-                
+
                 if (!instance) continue;
-                
+
                 const button = document.createElement('div');
                 button.classList.add('recent-instance-button');
                 button.style.backgroundImage = `url(${instance.icon || instance.thumbnail || 'assets/images/default/placeholder.jpg'})`;
                 button.dataset.instanceName = instanceName;
-                
+
                 if (instanceName === configClient.instance_selct) {
                     button.classList.add('selected-instance');
                 }
-                
+
                 button.addEventListener('click', async () => {
                     const refreshedInstances = await config.getInstanceList();
                     const refreshedInstance = refreshedInstances.find(i => i.name === instanceName);
                     const currentUsername = await getUsername();
-                    
-                    if (refreshedInstance && refreshedInstance.whitelistActive && 
+
+                    if (refreshedInstance && refreshedInstance.whitelistActive &&
                         (!refreshedInstance.whitelist || !refreshedInstance.whitelist.includes(currentUsername))) {
                         const popupError = new popup();
                         popupError.openPopup({
@@ -1331,9 +1331,9 @@ class Home {
                         await this.selectInstance(instanceName);
                     }
                 });
-                
+
                 this.addTooltipToElement(button, instanceName);
-                
+
                 recentInstancesContainer.appendChild(button);
             }
         } catch (error) {
@@ -1345,7 +1345,7 @@ class Home {
         if (!window.tooltipManager) {
             this.initializeTooltipManager();
         }
-        
+
         element.addEventListener('mouseenter', (e) => {
             window.tooltipManager.showTooltip(element, text);
         });
@@ -1353,11 +1353,11 @@ class Home {
         element.addEventListener('mouseleave', (e) => {
             window.tooltipManager.hideTooltip(element);
         });
-        
+
         const observer = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
-                if (mutation.type === 'childList' && 
-                    Array.from(mutation.removedNodes).some(node => 
+                if (mutation.type === 'childList' &&
+                    Array.from(mutation.removedNodes).some(node =>
                         node === element || (node.contains && node.contains(element))
                     )) {
                     window.tooltipManager.hideTooltip(element);
@@ -1365,7 +1365,7 @@ class Home {
                 }
             }
         });
-        
+
         if (element.parentNode) {
             observer.observe(element.parentNode, { childList: true, subtree: true });
         }
@@ -1373,18 +1373,18 @@ class Home {
 
     addPlayerTooltip() {
         const playerOptions = document.querySelector('.player-options');
-        
+
         if (!window.tooltipManager) {
             this.initializeTooltipManager();
         }
-        
+
         if (playerOptions) {
             let tooltipActive = false;
-            
+
             playerOptions.addEventListener('mouseenter', async (e) => {
                 if (tooltipActive) return;
                 tooltipActive = true;
-                
+
                 try {
                     const username = await getUsername();
                     if (username) {
@@ -1394,12 +1394,12 @@ class Home {
                     console.error('Error al obtener el nombre de usuario:', error);
                 }
             });
-            
+
             playerOptions.addEventListener('mouseleave', (e) => {
                 tooltipActive = false;
                 window.tooltipManager.hideTooltip(playerOptions);
             });
-            
+
             playerOptions.style.pointerEvents = 'auto';
         }
     }
@@ -1409,32 +1409,32 @@ class Home {
 
         window.tooltipManager = {
             activeTooltips: new Map(),
-            
+
             showTooltip(element, text) {
                 this.hideTooltip(element);
-                
+
                 const tooltip = document.createElement('div');
                 tooltip.classList.add('tooltip');
                 tooltip.innerHTML = text;
                 document.body.appendChild(tooltip);
-                
+
                 const rect = element.getBoundingClientRect();
                 tooltip.style.left = `${rect.right + window.scrollX + 10}px`;
                 tooltip.style.top = `${rect.top + window.scrollY + rect.height / 2 - tooltip.offsetHeight / 2}px`;
-                
+
                 tooltip.style.zIndex = '10000';
-                
+
                 this.activeTooltips.set(element, tooltip);
-                
+
                 tooltip.style.opacity = '1';
             },
-            
+
             hideTooltip(element) {
                 const tooltip = this.activeTooltips.get(element);
                 if (tooltip) {
                     tooltip.style.opacity = '0';
                     this.activeTooltips.delete(element);
-                    
+
                     setTimeout(() => {
                         if (document.body.contains(tooltip)) {
                             document.body.removeChild(tooltip);
@@ -1442,13 +1442,13 @@ class Home {
                     }, 200);
                 }
             },
-            
+
             hideAllTooltips() {
                 this.activeTooltips.forEach((tooltip, element) => {
                     this.hideTooltip(element);
                 });
             },
-            
+
             cleanupOrphanedTooltips() {
                 document.querySelectorAll('.tooltip').forEach(tooltip => {
                     if (!Array.from(this.activeTooltips.values()).includes(tooltip)) {
@@ -1459,23 +1459,23 @@ class Home {
                 });
             }
         };
-        
+
         document.addEventListener('mouseleave', () => {
             window.tooltipManager.hideAllTooltips();
         });
-        
+
         window.addEventListener('blur', () => {
             window.tooltipManager.hideAllTooltips();
         });
-        
+
         setInterval(() => {
             window.tooltipManager.cleanupOrphanedTooltips();
         }, 5000);
-        
+
         document.addEventListener('click', () => {
             window.tooltipManager.hideAllTooltips();
         });
-        
+
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 window.tooltipManager.hideAllTooltips();
@@ -1486,24 +1486,24 @@ class Home {
     async selectInstance(instanceName) {
         let selectInstanceBTN = document.querySelector('.instance-select');
         if (selectInstanceBTN.disabled) return;
-        
+
         try {
             let configClient = await this.db.readData('configClient');
             const oldInstance = configClient.instance_selct;
             configClient.instance_selct = instanceName;
             await this.db.updateData('configClient', configClient);
-            
-            let instance = await config.getInstanceList().then(instances => 
+
+            let instance = await config.getInstanceList().then(instances =>
                 instances.find(i => i.name === instanceName)
             );
-            
+
             if (!instance) {
                 return;
             }
-            
+
             this.notification();
             setStatus(instance);
-            
+
             const performanceMode = isPerformanceModeEnabled();
             if (performanceMode) {
                 setBackgroundMusic(instance.backgroundMusic);
@@ -1516,7 +1516,7 @@ class Home {
                 setBackgroundMusic(instance.backgroundMusic);
                 setInstanceBackground(instance.background);
             }
-            
+
             this.updateSelectedInstanceStyle(instanceName);
         } catch (error) {
             console.error('Error al seleccionar instancia:', error);
@@ -1526,7 +1526,7 @@ class Home {
     updateSelectedInstanceStyle(instanceName) {
         const recentInstancesContainer = document.querySelector('.recent-instances');
         const buttons = recentInstancesContainer.querySelectorAll('.recent-instance-button');
-        
+
         buttons.forEach(button => {
             if (button.dataset.instanceName === instanceName) {
                 button.classList.add('selected-instance');
@@ -1612,16 +1612,16 @@ class Home {
             const path = require('path');
             const glob = require('glob');
             const { exec } = require('child_process');
-            
+
             const appDir = await appdata();
             const instancesDir = path.join(appDir, process.platform === 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`, 'instances');
-            
+
             if (!fs.existsSync(instancesDir)) {
                 return;
             }
-            
+
             const batchFiles = glob.sync(path.join(instancesDir, '**', '_cleanup_*.bat'));
-            
+
             if (batchFiles.length > 0) {
                 for (const batchFile of batchFiles) {
                     exec(`"${batchFile}"`, (error, stdout, stderr) => {
@@ -1643,30 +1643,30 @@ class Home {
         if (!window.tooltipManager) {
             this.initializeTooltipManager();
         }
-        
+
         const addInstanceButton = document.querySelector('.add-instance');
         if (addInstanceButton) {
             this.addTooltipToElement(addInstanceButton, "Añadir instancia");
         }
-        
+
         const instanceSelectButton = document.querySelector('.instance-select');
         if (instanceSelectButton) {
             this.addTooltipToElement(instanceSelectButton, "Seleccionar instancia");
         }
-        
+
         const musicButton = document.querySelector('.action-button:nth-child(1)');
         if (musicButton) {
-            this.addDynamicTooltipToElement(musicButton, () => 
-                musicButton.querySelector('.music-btn').classList.contains('icon-speaker-on') ? 
+            this.addDynamicTooltipToElement(musicButton, () =>
+                musicButton.querySelector('.music-btn').classList.contains('icon-speaker-on') ?
                     "Silenciar música" : "Activar música"
             );
         }
-        
+
         const modsButton = document.querySelector('.action-button:nth-child(2)');
         if (modsButton) {
             this.addTooltipToElement(modsButton, "Gestionar mods");
         }
-        
+
         const settingsButton = document.querySelector('.action-button:nth-child(3)');
         if (settingsButton) {
             this.addTooltipToElement(settingsButton, "Configuración");
@@ -1677,7 +1677,7 @@ class Home {
         if (!window.tooltipManager) {
             this.initializeTooltipManager();
         }
-        
+
         element.addEventListener('mouseenter', (e) => {
             const text = typeof textCallback === 'function' ? textCallback() : textCallback;
             window.tooltipManager.showTooltip(element, text);
@@ -1686,11 +1686,11 @@ class Home {
         element.addEventListener('mouseleave', (e) => {
             window.tooltipManager.hideTooltip(element);
         });
-        
+
         const observer = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
-                if (mutation.type === 'childList' && 
-                    Array.from(mutation.removedNodes).some(node => 
+                if (mutation.type === 'childList' &&
+                    Array.from(mutation.removedNodes).some(node =>
                         node === element || (node.contains && node.contains(element))
                     )) {
                     window.tooltipManager.hideTooltip(element);
@@ -1698,7 +1698,7 @@ class Home {
                 }
             }
         });
-        
+
         if (element.parentNode) {
             observer.observe(element.parentNode, { childList: true, subtree: true });
         }
@@ -1708,14 +1708,14 @@ class Home {
         if (!document.querySelector('.force-close-button')) {
             const progressBar = document.querySelector('.progress-bar');
             const parentElement = progressBar.parentElement;
-            
+
             const closeGameButton = document.createElement('div');
             closeGameButton.className = 'force-close-button';
             closeGameButton.innerHTML = 'Cerrar Juego';
             closeGameButton.style.display = 'none';
 
             closeGameButton.addEventListener('click', () => this.closeRunningGame());
-            
+
             parentElement.insertBefore(closeGameButton, progressBar.nextSibling);
         }
     }
@@ -1725,7 +1725,7 @@ class Home {
             console.warn("No hay juego en ejecución para cerrar");
             return;
         }
-        
+
         try {
             const closeGamePopup = new popup();
             closeGamePopup.openDialog({
@@ -1736,7 +1736,7 @@ class Home {
                     if (result === 'cancel') {
                         return;
                     }
-                    
+
                     try {
                         console.log("Intentando cerrar el proceso de Minecraft...");
                         closeGamePopup.openPopup({
@@ -1747,10 +1747,10 @@ class Home {
                         });
                         const killed = await killMinecraftProcess();
                         closeGamePopup.closePopup();
-                        
+
                         if (killed) {
                             console.log("Proceso de Minecraft terminado correctamente");
-                            
+
                             const successPopup = new popup();
                             successPopup.openPopup({
                                 title: 'Juego cerrado',
@@ -1760,7 +1760,7 @@ class Home {
                             });
                         } else {
                             console.error("No se pudo terminar el proceso de Minecraft");
-                            
+
                             const errorPopup = new popup();
                             errorPopup.openPopup({
                                 title: 'Error',
@@ -1771,7 +1771,7 @@ class Home {
                         }
                     } catch (err) {
                         console.error('Error al intentar cerrar el juego:', err);
-                        
+
                         const errorPopup = new popup();
                         errorPopup.openPopup({
                             title: 'Error',
