@@ -637,6 +637,7 @@ class Home {
 
         console.log(`Cuenta recuperada: ${authenticator.name} (ID: ${authenticator.ID})`);
         let options = instance.find(i => i.name == configClient.instance_selct);
+                    
 
         if (!options) {
             this.enablePlayButton();
@@ -718,23 +719,6 @@ class Home {
             return;
         }
 
-        let clickHead = await getClickeableHead();
-        if (!options.mkid && clickHead) {
-            let popupInstance = new popup();
-            let dialogResult = await new Promise(resolve => {
-                popupInstance.openDialog({
-                    title: 'Instancia no compatible con MKNetworkID',
-                    content: 'Se ha detectado que estás intentando iniciar una instancia que no es compatible con MKNetworkID. ¿Deseas continuar?',
-                    options: true,
-                    callback: resolve
-                });
-            });
-            if (dialogResult === 'cancel') {
-                this.enablePlayButton();
-                return;
-            }
-        }
-
         playInstanceBTN.style.display = "none";
         infoStartingBOX.style.display = "block";
         instanceSelectBTN.disabled = true;
@@ -773,12 +757,20 @@ class Home {
         ipcRenderer.send('main-window-progress-load');
 
         let recentInstances = configClient.recent_instances || [];
+        
         recentInstances = recentInstances.filter(name => name !== options.name);
+        
         recentInstances.unshift(options.name);
-        if (recentInstances.length > 3) recentInstances.pop();
+        
+        if (recentInstances.length > 3) recentInstances = recentInstances.slice(0, 3);
+        
         configClient.recent_instances = recentInstances;
+        
         await this.db.updateData('configClient', configClient);
+        
         await this.loadRecentInstances();
+        
+        console.log("Instancias recientes actualizadas:", recentInstances);
 
         const ignoredFiles = [...options.ignored];
 
@@ -1089,8 +1081,8 @@ class Home {
                         instance: true
                     }).catch();
                 }
-
-                // Handle undefined error case with patch toolkit option
+                
+                /* // Handle undefined error case with patch toolkit option
                 const errorDialog = new popup();
                 errorDialog.openDialog({
                     title: 'Error al iniciar el juego',
@@ -1105,7 +1097,7 @@ class Home {
                             }
                         }
                     }
-                });
+                }); */
             } else {
                 let popupError = new popup();
                 popupError.openPopup({

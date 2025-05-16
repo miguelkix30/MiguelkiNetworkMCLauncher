@@ -36,7 +36,7 @@
         "express": "^4.19.2",
         "html2canvas": "^1.4.1",
         "marked": "^14.1.2",
-        "minecraft-java-core": "^4.0.0",
+        "minecraft-java-core": "^4.0.2",
         "node-bdd": "^2.0.4",
         "node-fetch": "^2.7.0",
         "node-machine-id": "^1.0.0",
