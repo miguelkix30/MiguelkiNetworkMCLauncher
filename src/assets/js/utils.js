@@ -1640,7 +1640,8 @@ async function removeUserFromQueue(hwid) {
           method: 'POST',
           body: formData,
           headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'User-Agent': 'MiguelkiNetworkMCLauncher'
           }
       });
       console.log('User removed from queue');

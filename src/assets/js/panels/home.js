@@ -812,6 +812,7 @@ class Home {
 
         console.log("Configurando opciones de lanzamiento...");
         let launch = new Launch();
+        console.log(options.url);
 
 
         let opt = {
@@ -1228,7 +1229,8 @@ class Home {
                         method: 'POST',
                         body: formData,
                         headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'User-Agent': 'MiguelkiNetworkMCLauncher'
                         }
                     });
 
@@ -1563,7 +1565,11 @@ class Home {
             if (code) {
                 try {
                     const username = await getUsername();
-                    const response = await fetch(`${pkg.url}/api/instance-code.php?code=${code}&user=${username}`);
+                    const response = await fetch(`${pkg.url}/api/instance-code.php?code=${code}&user=${username}`, {
+                        headers: {
+                            'User-Agent': 'MiguelkiNetworkMCLauncher'
+                        }
+                    });
                     const result = await response.json();
 
                     const popupMessage = new popup();
