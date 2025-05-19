@@ -635,32 +635,9 @@ class Home {
             return;
         }
 
-        console.log(`Cuenta recuperada: ${authenticator.name} (ID: ${authenticator.ID})`);
-        let options = instance.find(i => i.name == configClient.instance_selct);
-                    
-
-        if (!options) {
-            this.enablePlayButton();
-            let popupError = new popup();
-            popupError.openPopup({
-                title: 'Instancia no encontrada',
-                content: 'La instancia seleccionada ya no existe. Por favor, selecciona otra instancia.',
-                color: 'var(--color)',
-                options: true
-            });
-            return;
-        }
-
         let hwid = await getHWID();
         let check = await checkHWID(hwid);
         let fetchError = await getFetchError();
-
-        let playInstanceBTN = document.querySelector('.play-instance');
-        let infoStartingBOX = document.querySelector('.info-starting-game');
-        let instanceSelectBTN = document.querySelector('.instance-select');
-        let infoStarting = document.querySelector(".info-starting-game-text");
-        let progressBar = document.querySelector('.progress-bar');
-        let closeGameButton = document.querySelector('.force-close-button');
 
         if (check) {
             if (fetchError == false) {
@@ -685,6 +662,32 @@ class Home {
                 return;
             }
         }
+
+        console.log(`Cuenta recuperada: ${authenticator.name} (ID: ${authenticator.ID})`);
+        let options = instance.find(i => i.name == configClient.instance_selct);
+                    
+
+        if (!options) {
+            this.enablePlayButton();
+            let popupError = new popup();
+            popupError.openPopup({
+                title: 'Instancia no encontrada',
+                content: 'La instancia seleccionada ya no existe. Por favor, selecciona otra instancia.',
+                color: 'var(--color)',
+                options: true
+            });
+            return;
+        }
+
+        
+
+        let playInstanceBTN = document.querySelector('.play-instance');
+        let infoStartingBOX = document.querySelector('.info-starting-game');
+        let instanceSelectBTN = document.querySelector('.instance-select');
+        let infoStarting = document.querySelector(".info-starting-game-text");
+        let progressBar = document.querySelector('.progress-bar');
+        let closeGameButton = document.querySelector('.force-close-button');
+
         if (options.maintenance) {
             this.enablePlayButton();
             let popupError = new popup()
@@ -1248,7 +1251,7 @@ class Home {
                         resolve({ cancelled: false });
                         return;
                     } else if (data.status === 'on_queue') {
-                        infoStarting.innerHTML = `En cola, posición: ${data.position}`;
+                        infoStarting.innerHTML = `En cola, posición: ${data.position} / ${data.total_in_queue}`;
 
                         if (!cancelled) {
                             setTimeout(checkStatus, 30000);
