@@ -2,7 +2,7 @@
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
     "version": "3.3.3",
-    "sub_version": "",
+    "sub_version": "B",
     "changelog": "Se ha añadido el panel de skins.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
