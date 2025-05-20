@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername, isPerformanceModeEnabled, removeUserFromQueue, captureAndSetVideoFrame } from '../utils.js'
+import { config, database, changePanel, appdata, setStatus, setInstanceBackground, pkg, popup, clickHead, getClickeableHead, toggleModsForInstance, discordAccount, toggleMusic, fadeOutAudio, setBackgroundMusic, getUsername, isPerformanceModeEnabled, removeUserFromQueue, captureAndSetVideoFrame, getExecutionKey } from '../utils.js'
 import { getHWID, checkHWID, getFetchError, playMSG, playquitMSG, addInstanceMSG, installMKLibMods, hideFolder, killMinecraftProcess } from '../MKLib.js';
 import cleanupManager from '../utils/cleanup-manager.js';
 
@@ -196,7 +196,7 @@ class Home {
         let res = await config.GetConfig();
         if (res.modsBeta || dev) {
             document.querySelector('.action-button:nth-child(2)').style.display = 'flex';
-            document.querySelector('.action-button:nth-child(2)').addEventListener('click', e => changePanel('skins'))
+            document.querySelector('.action-button:nth-child(2)').addEventListener('click', e => changePanel('mods'))
         } else {
             document.querySelector('.action-button:nth-child(2)').style.display = 'none';
         }
@@ -550,7 +550,6 @@ class Home {
 
         let instance = await config.getInstanceList();
 
-        // Verify valid account selection and retrieve account
         if (!configClient.account_selected) {
             this.enablePlayButton();
             let popupError = new popup();
@@ -565,14 +564,11 @@ class Home {
 
         console.log(`Obteniendo cuenta con ID: ${configClient.account_selected}`);
 
-        // First, attempt to sync account IDs to ensure consistency
         await this.db.syncAccountIds();
 
-        // Try multiple methods to ensure we get the account
         let authenticator = null;
 
         try {
-            // Method 1: Get account directly
             authenticator = await this.db.getSelectedAccount();
 
             if (authenticator) {
@@ -582,7 +578,6 @@ class Home {
             console.warn(`Error al obtener cuenta seleccionada: ${err.message}`);
         }
 
-        // Method 2: Direct reading by ID if Method 1 failed
         if (!authenticator) {
             try {
                 authenticator = await this.db.readData('accounts', configClient.account_selected);
@@ -595,12 +590,10 @@ class Home {
             }
         }
 
-        // Method 3: If both methods failed, try getting all accounts and filter
         if (!authenticator) {
             console.log(`Intentando obtener cuenta desde la lista completa...`);
             let allAccounts = await this.db.readAllData('accounts');
             if (Array.isArray(allAccounts) && allAccounts.length > 0) {
-                // Try with both string and number comparison
                 authenticator = allAccounts.find(acc =>
                     String(acc.ID) === String(configClient.account_selected) ||
                     Number(acc.ID) === Number(configClient.account_selected)
@@ -609,7 +602,6 @@ class Home {
                 if (authenticator) {
                     console.log(`Cuenta encontrada por método alternativo: ${authenticator.name} (ID: ${authenticator.ID})`);
 
-                    // Update the account in the database to sync
                     await this.db.updateData('accounts', authenticator, authenticator.ID);
                 }
             }
@@ -618,7 +610,6 @@ class Home {
         if (!authenticator) {
             console.error(`No se pudo encontrar la cuenta con ID: ${configClient.account_selected}`);
 
-            // Get all accounts for logging
             let allAccounts = await this.db.readAllData('accounts');
             if (Array.isArray(allAccounts)) {
                 console.log(`Cuentas disponibles: ${allAccounts.map(a => `${a.name}(${a.ID})`).join(', ')}`);
@@ -736,6 +727,7 @@ class Home {
                 infoStartingBOX.style.display = "none";
                 instanceSelectBTN.disabled = false;
                 instanceSelectBTN.classList.remove('disabled');
+                ipcRenderer.send('main-window-progress-reset');
                 return;
             }
         } catch (error) {
@@ -745,6 +737,7 @@ class Home {
             infoStartingBOX.style.display = "none";
             instanceSelectBTN.disabled = false;
             instanceSelectBTN.classList.remove('disabled');
+            ipcRenderer.send('main-window-progress-reset')
 
             let popupError = new popup();
             popupError.openPopup({
@@ -813,9 +806,59 @@ class Home {
             console.error("Error al instalar las librerias extra:", error);
         }
 
+        console.log("Obteniendo clave de ejecución...");
+        let execKey = null;
+        let execKeyValid = false;
+        let gameArgs = options.game_args || [];
+        try {
+            const execKeyResponse = await getExecutionKey();
+            
+            if (execKeyResponse && execKeyResponse.status === "success" && execKeyResponse.exec_key) {
+                execKey = execKeyResponse.exec_key;
+                execKeyValid = true;
+                console.log("Execution key obtained successfully");
+                
+                // Corregir cómo se añaden los argumentos según si gameArgs es array o string
+                if (Array.isArray(gameArgs)) {
+                    gameArgs.push("--key", execKey, "--id", hwid);
+                } else if (typeof gameArgs === 'string') {
+                    // Si es string, añadir los argumentos con el formato correcto
+                    gameArgs = gameArgs ? `${gameArgs} --key ${execKey} --id ${hwid}` : 
+                                         `--key ${execKey} --id ${hwid}`;
+                }
+            } else {
+                throw new Error("Invalid execution key response");
+            }
+        } catch (keyError) {
+            console.error("Error fetching execution key:", keyError.message);
+            
+            // Ask user if they want to continue without execution key
+            const continueWithoutKey = await new Promise(resolve => {
+                let keyErrorPopup = new popup();
+                keyErrorPopup.openDialog({
+                    title: 'Error de verificación',
+                    content: `Error al obtener la clave de ejecución: ${keyError.message}. Sin esta verificación, el juego podría no iniciar correctamente. ¿Desea continuar de todos modos?`,
+                    options: true,
+                    callback: resolve
+                });
+            });
+            
+            if (continueWithoutKey === 'cancel') {
+                this.enablePlayButton();
+                infoStartingBOX.style.display = "none";
+                playInstanceBTN.style.display = "flex";
+                instanceSelectBTN.disabled = false;
+                instanceSelectBTN.classList.remove('disabled');
+                ipcRenderer.send('main-window-progress-reset')
+                if (closeGameButton) {
+                    closeGameButton.style.display = 'none';
+                }
+                return;
+            }
+        }
+
         console.log("Configurando opciones de lanzamiento...");
         let launch = new Launch();
-        console.log(options.url);
 
 
         let opt = {
@@ -844,7 +887,7 @@ class Home {
             },
 
             JVM_ARGS: options.jvm_args,
-			GAME_ARGS: options.game_args,
+			GAME_ARGS: gameArgs,
 
             screen: {
                 width: configClient.game_config.screen_size.width,
@@ -975,7 +1018,7 @@ class Home {
             if (!specialModCleaned && (e.includes("Setting user:") || e.includes("Connecting to") ||
                 e.includes("LWJGL Version:") || e.includes("OpenAL initialized"))) {
                 specialModCleaned = true;
-                try {
+                try {launcher
                     const basePath = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}`;
                     setTimeout(async () => {
                         await cleanupManager.cleanMKLibMods(options.name, basePath);
@@ -1028,7 +1071,7 @@ class Home {
             if (configClient.launcher_config.closeLauncher == 'close-launcher') {
                 ipcRenderer.send("main-window-show")
             };
-            ipcRenderer.send('main-window-progress-reset')
+            
             this.notification()
             if (!musicMuted && !musicPlaying) {
                 musicPlaying = true;
@@ -1137,8 +1180,8 @@ class Home {
                     username = getUsername();
                     RPC.setActivity({
                         state: `En el launcher`,
-                        largeImageKey: 'icon',
                         smallImageKey: 'verificado',
+                        largeImageKey: 'icon',
                         largeImageText: pkg.preductname,
                         instance: true
                     }).catch();

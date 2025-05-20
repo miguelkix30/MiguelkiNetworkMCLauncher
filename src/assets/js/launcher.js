@@ -55,8 +55,7 @@ let dev = process.env.NODE_ENV === "dev";
 
 class Launcher {
   async init() {
-    if (!dev) this.initLog();
-    else this.initWindow();
+    this.initLog();
 
     console.log("Iniciando Launcher...");
     
@@ -1766,6 +1765,8 @@ class Launcher {
       addTooltip(patchToolkit, "Ejecutar Toolkit de Parches");
     } else {
       patchToolkit.style.display = "none";
+      // Adjust scroll button position when patch toolkit is hidden
+      scrollToBottomButton.style.bottom = "80px";
     }
 
     // Configurar el botón de reportar problema

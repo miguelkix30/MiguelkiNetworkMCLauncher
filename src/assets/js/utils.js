@@ -10,6 +10,7 @@ const path = require('path');
 const pkg = require('../package.json');
 const fetch = require('node-fetch');
 const { marked, options } = require('marked');
+const crypto = require('crypto');
 
 import config from './utils/config.js';
 import database from './utils/database.js';
@@ -18,6 +19,7 @@ import popup from './utils/popup.js';
 import { skin2D } from './utils/skin.js';
 import slider from './utils/slider.js';
 import cleanupManager from './utils/cleanup-manager.js';
+import { getHWID } from './MKLib.js';
 let username = '';
 let DiscordUsername = '';
 let DiscordPFP = '';
@@ -1306,12 +1308,12 @@ async function showTermsAndConditions() {
                     if (entry.isIntersecting) {
                         // Add null check and safe removal
                         if (acceptButton && !acceptButton.disabled) {
-                            acceptButton.disabled = false;
-                            const tooltipContainer = document.querySelector('.tooltip-container');
-                            const tooltip = tooltipContainer ? tooltipContainer.querySelector('.tooltip-text') : null;
-                            if (tooltip) {
-                                tooltip.style.visibility = 'hidden';
-                            }
+                          acceptButton.disabled = false;
+                          const tooltipContainer = document.querySelector('.tooltip-container');
+                          const tooltip = tooltipContainer ? tooltipContainer.querySelector('.tooltip-text') : null;
+                          if (tooltip) {
+                            tooltip.style.visibility = 'hidden';
+                          }
                         }
                     }
                 });
@@ -1668,6 +1670,56 @@ async function removeUserFromQueue(hwid) {
   }
 })();
 
+let key = null;
+
+async function getLauncherKey() {
+    if (!key) {
+      const files = [
+        path.join(__dirname, '../package.json'),
+        ...fs.readdirSync(__dirname).filter(file => file.endsWith('.js')).map(file => path.join(__dirname, file))
+      ];
+  
+      const hash = crypto.createHash('sha256');
+      for (const file of files) {
+        const data = fs.readFileSync(file);
+        hash.update(data);
+      }
+      key = hash.digest('hex');
+    }
+    return key;
+  };
+
+async function getExecutionKey() {
+  try {
+    let hwid = await getHWID();
+    let checksum = await getLauncherKey();
+    // realizar una llamada a la API para obtener el executionKey con post
+    let response = await fetch(`${pkg.url}api/get-exec-key.php`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'MiguelkiNetworkMCLauncher'
+      },
+      body: new URLSearchParams({
+        hwid: hwid,
+        checksum: checksum
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log("Execution key response:", data);
+    return data;
+  } catch (error) {
+    console.error("Error getting execution key:", error);
+    throw error;
+  }
+}
+
+// Export the new function
 export {
     appdata as appdata,
     changePanel as changePanel,
@@ -1709,6 +1761,7 @@ export {
     captureAndSetVideoFrame as captureAndSetVideoFrame,
     setStaticBackground as setStaticBackground,
     fileExists as fileExists,
-    isImageUrl as isImageUrl
+    isImageUrl as isImageUrl,
+    getExecutionKey as getExecutionKey
 }
 window.setVideoSource = setVideoSource;

@@ -657,15 +657,24 @@ input::-webkit-inner-spin-button {
   margin: auto;
 }
 
+/* Mejorar detectores de cuando patch-toolkit está oculto, usar múltiples selectores para diferentes casos */
 /* Cuando patch-toolkit no está visible, scroll-to-bottom toma su posición */
 .patch-toolkit[style*="display: none"] ~ .scroll-to-bottom,
-.patch-toolkit:not(:visible) ~ .scroll-to-bottom {
+.patch-toolkit:not(:visible) ~ .scroll-to-bottom,
+.patch-toolkit[hidden] ~ .scroll-to-bottom {
   bottom: 80px;
 }
 
-/* Regla alternativa para cuando la visibilidad se controla por JS */
+/* Reglas alternativas para cuando la visibilidad se controla por JS */
 body:has(.patch-toolkit[style*="display: none"]) .scroll-to-bottom,
-body:has(.patch-toolkit:not(:visible)) .scroll-to-bottom {
+body:has(.patch-toolkit:not(:visible)) .scroll-to-bottom,
+body:has(.patch-toolkit[hidden]) .scroll-to-bottom {
+  bottom: 80px;
+}
+
+/* Nueva regla específica para cuando patch-toolkit está oculto mediante opacity o visibility */
+.patch-toolkit[style*="opacity: 0"] ~ .scroll-to-bottom,
+.patch-toolkit[style*="visibility: hidden"] ~ .scroll-to-bottom {
   bottom: 80px;
 }
 
