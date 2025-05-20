@@ -1362,8 +1362,11 @@ class Home {
                     Array.from(mutation.removedNodes).some(node =>
                         node === element || (node.contains && node.contains(element))
                     )) {
-                    window.tooltipManager.hideTooltip(element);
+                    if (window.tooltipManager) {
+                        window.tooltipManager.hideTooltip(element);
+                    }
                     observer.disconnect();
+                    break;
                 }
             }
         });
