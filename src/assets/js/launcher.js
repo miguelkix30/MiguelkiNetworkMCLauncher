@@ -55,7 +55,7 @@ let dev = process.env.NODE_ENV === "dev";
 
 class Launcher {
   async init() {
-    this.initLog();
+    this.initWindow();
 
     console.log("Iniciando Launcher...");
     
