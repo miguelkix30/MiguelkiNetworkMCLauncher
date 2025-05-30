@@ -1,9 +1,9 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "preductname": "Miguelki Network MC Launcher",
-    "version": "3.3.3",
-    "sub_version": "B",
-    "changelog": "Se ha añadido el panel de skins.",
+    "version": "3.3.4",
+    "sub_version": "",
+    "changelog": "Actualizada la API interna y mejoras de rendimiento.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
@@ -11,7 +11,7 @@
         "email": "admin@miguelkinetwork.fun",
         "url": "https://github.com/miguelkix30"
     },
-    "url": "http://node1.miguelkinetwork.info:25565/",
+    "url": "http://mclauncherapi.miguelkiwebservices.com/",
     "store_url": "https://minecraft.miguelkinetwork.info/shop/",
     "azuriom_url": "https://minecraft.miguelkinetwork.info/",
     "discord_url": "https://dsc.gg/miguelkinetwork",
