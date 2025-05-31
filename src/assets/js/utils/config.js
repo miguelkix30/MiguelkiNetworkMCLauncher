@@ -57,7 +57,6 @@ class Config {
     async getInstanceList() {
         try {
             let urlInstance = `${url}/files?checksum=${Launcherkey}&id=${hwid}`;
-            console.log(`Fetching instance list from: ${urlInstance}`);
             let response = await nodeFetch(urlInstance, {
                 headers: {
                     'User-Agent': 'MiguelkiNetworkMCLauncher'
