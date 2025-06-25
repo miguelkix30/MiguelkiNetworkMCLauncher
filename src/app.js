@@ -1,5 +1,5 @@
 const { app, ipcMain, BrowserWindow } = require('electron');
-const { Microsoft } = require('minecraft-java-core');
+const { Authenticator } = require('minecraft-launcher-core');
 const { autoUpdater } = require('electron-updater');
 const pkg = require('../package.json');
 const path = require('path');
@@ -153,6 +153,7 @@ else app.whenReady().then(() => {
     UpdateWindow.createWindow();
 });
 
+// Main window IPC handlers
 ipcMain.on('main-window-open', () => MainWindow.createWindow());
 ipcMain.on('main-window-dev-tools', () => MainWindow.getWindow().webContents.openDevTools({ mode: 'detach' }));
 ipcMain.on('main-window-dev-tools-close', () => MainWindow.getWindow().webContents.closeDevTools());
@@ -178,13 +179,6 @@ ipcMain.on('update-window-progress-load', () => UpdateWindow.getWindow().setProg
 ipcMain.handle('path-user-data', () => app.getPath('userData'));
 ipcMain.handle('appData', e => app.getPath('appData'));
 
-ipcMain.on('main-window-maximize', () => {
-    if (MainWindow.getWindow().isMaximized()) {
-        MainWindow.getWindow().unmaximize();
-    } else {
-        MainWindow.getWindow().maximize();
-    }
-});
 
 ipcMain.on('main-window-hide', () => MainWindow.getWindow().hide());
 ipcMain.on('main-window-show', () => MainWindow.getWindow().show());
@@ -233,10 +227,12 @@ ipcMain.on('create-register-window', () => {
     registerWin.loadURL(pkg.azuriom_url + 'user/register');
 });
 
+// External URL handlers
 ipcMain.on('open-discord-url', () => {
     require('electron').shell.openExternal(pkg.discord_url);
 });
 
+// App control handlers
 ipcMain.on('app-restart', () => {
     console.log('Reiniciando aplicación...');
     
@@ -244,6 +240,7 @@ ipcMain.on('app-restart', () => {
     app.exit(0);
 });
 
+// Discord auth handler
 ipcMain.handle('open-discord-auth', async () => {
     return new Promise((resolve, reject) => {
         authToken = null;
@@ -276,7 +273,63 @@ ipcMain.handle('open-discord-auth', async () => {
 });
 
 ipcMain.handle('Microsoft-window', async (_, client_id) => {
-    return await new Microsoft(client_id).getAuth();
+    const { Auth } = require('msmc');
+    
+    try {
+        console.log('Starting Microsoft authentication with msmc...');
+        console.log('Using client_id:', client_id || 'default');
+        
+        // Create a new Auth manager with select_account prompt
+        // Use the provided client_id for better security
+        const authManager = client_id ? new Auth("select_account", client_id) : new Auth("select_account");
+        
+        // Launch using the 'electron' framework 
+        const xboxManager = await authManager.launch("electron", {
+            width: 500,
+            height: 700,
+            resizable: false,
+            center: true,
+            show: true,
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true
+            }
+        });
+        
+        console.log('Xbox authentication successful, getting Minecraft token...');
+        
+        // Get Minecraft authentication
+        const minecraftAuth = await xboxManager.getMinecraft();
+        
+        console.log('Minecraft authentication successful');
+        
+        // Return the authentication data in the expected format
+        return {
+            access_token: minecraftAuth.mcToken,
+            client_token: null,
+            uuid: minecraftAuth.profile.id,
+            name: minecraftAuth.profile.name,
+            user_properties: "{}",
+            meta: {
+                type: "Microsoft",
+                demo: minecraftAuth.profile.demo || false
+            },
+            refresh_token: xboxManager.save(),
+            profile: minecraftAuth.profile
+        };
+        
+    } catch (error) {
+        console.error('Microsoft authentication error in main process:', error);
+        
+        // Handle specific errors for better debugging
+        if (error.message && error.message.includes('closed')) {
+            throw new Error('error.gui.closed');
+        } else if (error.message && error.message.includes('cancelled')) {
+            throw new Error('error.user.cancelled');
+        } else {
+            throw error;
+        }
+    }
 });
 
 ipcMain.handle('is-dark-theme', (_, theme) => {

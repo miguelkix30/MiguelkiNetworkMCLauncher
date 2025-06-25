@@ -45,7 +45,9 @@ import {
   deleteDiscordToken,
   migrateDiscordToken
 } from "./MKLib.js";
-const { AZauth, Microsoft, Mojang } = require("minecraft-java-core");
+const { AZauth } = require("minecraft-java-core");
+const { Auth } = require("msmc");
+const { Authenticator } = require("minecraft-launcher-core");
 
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
@@ -71,6 +73,15 @@ class Launcher {
     } catch (error) {
       console.error("Error al consolidar almacenamiento:", error);
     }
+    
+    // Migrate accounts to new authentication system
+    console.log("Checking for account authentication migration...");
+    try {
+      await this.db.migrateAccountsToNewAuth();
+    } catch (error) {
+      console.error("Error migrating accounts to new auth system:", error);
+    }
+    
     this.config = await config
       .GetConfig()
       .then((res) => res)
@@ -1325,7 +1336,7 @@ class Launcher {
                 continue;
             }
             
-            if (account.meta.type === "Xbox") {
+            if (account.meta.type === "Xbox" || account.meta.type === "Microsoft") {
               console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
                 popupRefresh.openPopup({
                   title: "Conectando...",
@@ -1335,108 +1346,64 @@ class Launcher {
                 });
                 
                 try {
-                    let refresh_accounts = await new Microsoft(this.config.client_id).refresh(account);
-                    if (refresh_accounts.error) {
-                      await this.db.deleteData("accounts", account_ID);
-                      if (account_ID == account_selected) {
-                        configClient.account_selected = null;
-                        await this.db.updateData("configClient", configClient);
-                      }
-                      console.error(`[Account] ${account.name}: ${refresh_accounts.errorMessage || "Error desconocido"}`);
-                      continue;
-                    }
-                    
-                    if (!refresh_accounts || !refresh_accounts.name) {
-                        console.error(`[Account] ${account.name}: La actualización devolvió datos incompletos`);
-                        continue;
-                    }
-                    
-                    refresh_accounts.ID = account_ID;
-                    await this.db.updateData("accounts", refresh_accounts, account_ID);
-                    // Agregar la cuenta actualizada al array de cuentas refrescadas
-                    refreshedAccounts.push(refresh_accounts);
-                    
-                    if (account_ID == account_selected) {
-                      // Solo seleccionar la cuenta pero no agregar visualmente aquí
-                      clickableHead();
-                      await setUsername(refresh_accounts.name);
-                      await loginMSG();
-                    }
-                } catch (error) {
-                    console.error(`Error al refrescar cuenta ${account.name}:`, error);
-                    // Agregar la cuenta original si falla la actualización
-                    refreshedAccounts.push(account);
-                    continue;
-                }
-            } else if (account.meta.type == "Microsoft") {
-              console.log(`Plataforma: Microsoft | Usuario: ${account.name}`);
-                popupRefresh.openPopup({
-                  title: "Conectando...",
-                  content: `Plataforma: Microsoft | Usuario: ${account.name}`,
-                  color: "var(--color)",
-                  background: false,
-                });
-                
-                const serverConfig = await config.GetConfig();
-                if (serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
-                  const hwid = await getHWID();
-                  
-                  if (serverConfig.protectedUsers[account.name]) {
-                    const allowedHWIDs = serverConfig.protectedUsers[account.name];
-                    
-                    if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
-                      await this.db.deleteData("accounts", account_ID);
-                      if (account_ID == account_selected) {
-                        configClient.account_selected = null;
-                        await this.db.updateData("configClient", configClient);
-                      }
-                      
-                      popupRefresh.closePopup();
-                      let popupError = new popup();
-                      popupError.openPopup({
-                        title: 'Cuenta protegida',
-                        content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo. Por favor, contacta con el administrador si crees que esto es un error.',
-                        color: 'red',
-                        options: true
-                      });
-                      
-                      await verificationError(account.name, true);
-                      continue;
-                    }
-                  }
-                }
-                
-                try {
-                    let refresh_accounts = await new Microsoft(this.config.client_id).refresh(account);
-                    if (refresh_accounts.error) {
-                      await this.db.deleteData("accounts", account_ID);
-                      if (account_ID == account_selected) {
-                        configClient.account_selected = null;
-                        await this.db.updateData("configClient", configClient);
-                      }
-                      console.error(`[Account] ${account.name}: ${refresh_accounts.errorMessage || "Error desconocido"}`);
-                      continue;
-                    }
-                    
-                    if (!refresh_accounts || !refresh_accounts.name) {
-                        console.error(`[Account] ${account.name}: La actualización devolvió datos incompletos`);
-                        continue;
-                    }
-                    
-                    refresh_accounts.ID = account_ID;
-                    await this.db.updateData("accounts", refresh_accounts, account_ID);
-                    // Agregar la cuenta actualizada al array de cuentas refrescadas
-                    refreshedAccounts.push(refresh_accounts);
-                    
-                    if (account_ID == account_selected) {
-                      // Solo seleccionar la cuenta pero no agregar visualmente aquí
-                      clickableHead();
-                      await setUsername(refresh_accounts.name);
-                      await loginMSG();
+                    // Use new msmc refresh system
+                    if (account.refresh_token) {
+                        const authManager = new Auth("select_account");
+                        const xboxManager = await authManager.refresh(account.refresh_token);
+                        const minecraftAuth = await xboxManager.getMinecraft();
+                        
+                        const refresh_accounts = {
+                            access_token: minecraftAuth.mcToken,
+                            client_token: null,
+                            uuid: minecraftAuth.profile.id,
+                            name: minecraftAuth.profile.name,
+                            user_properties: "{}",
+                            meta: {
+                                type: account.meta.type,
+                                demo: minecraftAuth.profile.demo || false
+                            },
+                            refresh_token: xboxManager.save(),
+                            profile: minecraftAuth.profile,
+                            ID: account_ID
+                        };
+                        
+                        await this.db.updateData("accounts", refresh_accounts, account_ID);
+                        refreshedAccounts.push(refresh_accounts);
+                        
+                        if (account_ID == account_selected) {
+                          clickableHead();
+                          await setUsername(refresh_accounts.name);
+                          await loginMSG();
+                        }
+                    } else {
+                        // Fallback: account needs re-authentication
+                        console.warn(`Account ${account.name} missing refresh token, keeping original data`);
+                        refreshedAccounts.push(account);
                     }
                 } catch (error) {
-                    console.error(`Error al refrescar cuenta ${account.name}:`, error);
-                    // Agregar la cuenta original si falla la actualización
+                    console.error(`Error refreshing Microsoft account ${account.name}:`, error);
+                    
+                    // Try to handle msmc errors gracefully
+                    try {
+                        const { wrapError } = require('msmc').assets;
+                        const wrappedError = wrapError(error);
+                        console.error(`Wrapped error: ${wrappedError.message}`);
+                        
+                        // If refresh fails, remove the account or mark for re-authentication
+                        if (wrappedError.name.includes('auth')) {
+                            await this.db.deleteData("accounts", account_ID);
+                            if (account_ID == account_selected) {
+                                configClient.account_selected = null;
+                                await this.db.updateData("configClient", configClient);
+                            }
+                            console.error(`[Account] ${account.name}: Authentication expired, account removed`);
+                            continue;
+                        }
+                    } catch (wrapErr) {
+                        console.warn('Could not wrap msmc error:', wrapErr);
+                    }
+                    
+                    // Keep original account data if refresh fails for other reasons
                     refreshedAccounts.push(account);
                     continue;
                 }
@@ -1507,27 +1474,53 @@ class Launcher {
                 color: "var(--color)",
                 background: false,
               });
-              if (account.meta.online == false) {
-                let refresh_accounts = await Mojang.login(account.name);
-  
-                refresh_accounts.ID = account_ID;
-                // Agregar la cuenta actualizada al array de cuentas refrescadas
-                refreshedAccounts.push(refresh_accounts);
-                await this.db.updateData("accounts", refresh_accounts, account_ID);
-                
-                if (account_ID == account_selected) {
-                  // Solo seleccionar la cuenta pero no agregar visualmente aquí
-                  clickableHead();
-                  await setUsername(account.name);
-                  await loginMSG();
+              
+              try {
+                if (account.meta.online == false || account.meta.offline) {
+                  // Use minecraft-launcher-core for offline accounts
+                  let refresh_accounts;
+                  
+                  // Check if getAuth returns a Promise
+                  const authResult = Authenticator.getAuth(account.name);
+                  if (authResult && typeof authResult.then === 'function') {
+                    refresh_accounts = await authResult;
+                  } else {
+                    refresh_accounts = authResult;
+                  }
+                  
+                  // Ensure the account has the required properties
+                  if (!refresh_accounts || !refresh_accounts.name) {
+                    console.error(`Failed to refresh offline account: ${account.name}`);
+                    // Keep the original account if refresh fails
+                    refreshedAccounts.push(account);
+                    continue;
+                  }
+                  
+                  refresh_accounts.ID = account_ID;
+                  refresh_accounts.meta = {
+                      type: "Mojang",
+                      offline: true
+                  };
+                  
+                  refreshedAccounts.push(refresh_accounts);
+                  await this.db.updateData("accounts", refresh_accounts, account_ID);
+                  
+                  if (account_ID == account_selected) {
+                    clickableHead();
+                    await setUsername(account.name);
+                    await loginMSG();
+                  }
+                } else {
+                  // For online Mojang accounts (legacy)
+                  refreshedAccounts.push(account);
                 }
-                continue;
-              } else {
-                // Para cuentas Mojang que no son offline
+              } catch (error) {
+                console.error(`Error refreshing Mojang account ${account.name}:`, error);
+                // Keep the original account if refresh fails
                 refreshedAccounts.push(account);
               }
             } else {
-              // Para otros tipos de cuentas no manejadas específicamente
+              // For other account types
               refreshedAccounts.push(account);
             }
         }
@@ -1556,10 +1549,18 @@ class Launcher {
             );
             
             if (!accountExists) {
-                console.warn(`La cuenta seleccionada ID:${account_selected} ya no existe, eligiendo primera cuenta disponible`);
-                account_selected = refreshedAccounts[0].ID;
-                configClient.account_selected = account_selected;
-                await this.db.updateData("configClient", configClient);
+                console.warn(`La cuenta seleccionada ID:${account_selected} ya no existe`);
+                if (refreshedAccounts.length > 0) {
+                    console.log(`Eligiendo primera cuenta disponible: ${refreshedAccounts[0].name} (ID: ${refreshedAccounts[0].ID})`);
+                    account_selected = refreshedAccounts[0].ID;
+                    configClient.account_selected = account_selected;
+                    await this.db.updateData("configClient", configClient);
+                } else {
+                    console.log("No hay cuentas disponibles, limpiando selección");
+                    account_selected = null;
+                    configClient.account_selected = null;
+                    await this.db.updateData("configClient", configClient);
+                }
             }
         }
         
@@ -1651,7 +1652,7 @@ class Launcher {
                 clickableHead();
                 await setUsername(refreshedAccounts[0].name);
             }
-        } else if (account_selected) {
+        } else if (account_selected && refreshedAccounts.length > 0) {
             // Asegurar que la cuenta seleccionada exista
             console.log(`Verificando cuenta seleccionada ID: ${account_selected}`);
             const selectedAccount = refreshedAccounts.find(acc => acc && String(acc.ID) === String(account_selected));
@@ -1674,7 +1675,13 @@ class Launcher {
         console.log(`Cuentas finales disponibles: ${refreshedAccounts.length}`);
         
         popupRefresh.closePopup();
-        changePanel("home");
+        
+        if (refreshedAccounts.length > 0) {
+            changePanel("home");
+        } else {
+            console.log("No hay cuentas después del refresco, redirigiendo a login");
+            changePanel("login");
+        }
     } else {
         // No hay cuentas desde el inicio
         if (configClient) {
