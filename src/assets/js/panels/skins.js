@@ -9,7 +9,6 @@ import { skin2D } from '../utils/skin.js';
 const fs = require('fs');
 const path = require('path');
 const fetch = require('node-fetch');
-const { Microsoft } = require('minecraft-java-core');
 
 class Skins {
     static id = "skins";

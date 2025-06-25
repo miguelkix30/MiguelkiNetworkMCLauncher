@@ -85,10 +85,18 @@
                 <div class="titre-tab">Ubicación de Java</div>
                 <div class="settings-elements-box">
                     <div class="setting-text">
-                        Para ejecutar Minecraft, el launcher utiliza la versión de Java
-                        directamente proporcionada por el launcher.<br />
-                        Sin embargo, puedes seleccionar tu propia versión de Java, lo que puede
-                        ayudar a corregir algunos errores.
+                        Para ejecutar Minecraft, el launcher descarga automáticamente la versión de Java 
+                        compatible con cada versión de Minecraft y la almacena en la carpeta 'runtime'.<br />
+                        Sin embargo, puedes seleccionar tu propia versión de Java personalizada si lo prefieres.
+                        
+                        <br /><br />
+                        <strong>💡 Gestión Automática:</strong><br />
+                        • Java 8: Minecraft 1.7 - 1.16.5<br />
+                        • Java 17: Minecraft 1.17 - 1.20.6<br />
+                        • Java 21: Minecraft 1.21+<br />
+                    </div>
+                    <div class="java-path-txt" style="font-size: 0.9rem; color: rgba(255,255,255,0.7); margin: 0.5rem 0; font-family: 'Courier New', monospace;">
+                        Ruta de instalaciones automáticas: Cargando...
                     </div>
                     <div class="java-path-input-text">
                         Utilice la versión de java suministrada con el launcher
@@ -98,6 +106,7 @@
                         <div class="java-path-set java-path-btn">Cambiar</div>
                         <div class="java-path-reset java-path-btn">Por defecto</div>
                     </div>
+                    <br><br>
                 </div>
             </div>
         </div>
@@ -149,6 +158,25 @@
                         <div class="max-files-btn size-btn">Por defecto</div>
                     </div>
                 </div>
+
+                <div class="titre-tab">Gestión de datos</div>
+                <div class="settings-elements-box">
+                    <div class="setting-text">
+                        Estas opciones te permiten reiniciar la configuración o eliminar todos los datos del
+                        launcher. Úsalas con precaución.
+                    </div>
+                    <div class="settings-elements content-evenly">
+                        <div class="reset-config-btn data-management-btn">
+                            <i class="fas fa-sync-alt"></i> Reiniciar configuración
+                        </div>
+                        <div class="delete-assets-btn data-management-btn">
+                            <i class="fas fa-gamepad"></i> Eliminar assets del juego
+                        </div>
+                        <div class="delete-all-btn data-management-btn">
+                            <i class="fas fa-trash"></i> Eliminar todo
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="settings-column content-scroll">
@@ -177,21 +205,18 @@
                     </div>
                 </div>
                 
-                <div class="titre-tab">Gestión de datos</div>
+                
+                <div class="titre-tab">Herramientas de desarrollo</div>
                 <div class="settings-elements-box">
                     <div class="setting-text">
-                        Estas opciones te permiten reiniciar la configuración o eliminar todos los datos del
-                        launcher. Úsalas con precaución.
+                        Herramientas útiles para diagnóstico y desarrollo.
                     </div>
                     <div class="settings-elements content-evenly">
-                        <div class="reset-config-btn data-management-btn">
-                            <i class="fas fa-sync-alt"></i> Reiniciar configuración
+                        <div class="open-console-btn data-management-btn">
+                            <i class="fas fa-terminal"></i> Abrir consola
                         </div>
-                        <div class="delete-assets-btn data-management-btn">
-                            <i class="fas fa-gamepad"></i> Eliminar assets del juego
-                        </div>
-                        <div class="delete-all-btn data-management-btn">
-                            <i class="fas fa-trash"></i> Eliminar todo
+                        <div class="open-logs-folder-btn data-management-btn">
+                            <i class="fas fa-folder"></i> Abrir carpeta de logs
                         </div>
                     </div>
                 </div>

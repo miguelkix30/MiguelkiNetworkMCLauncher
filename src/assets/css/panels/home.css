@@ -602,6 +602,9 @@
 
 .info-starting-game {
     display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     text-align: center;
     background: rgba(0, 0, 0, 0.05);
     border-radius: 10px;
@@ -610,6 +613,15 @@
     -webkit-backdrop-filter: blur(15.5px);
     transition: all 0.2s, border 0.2s;
     padding: 0.5rem;
+    height: 3.2rem;
+    min-width: 200px;
+}
+
+.info-starting-game-text {
+    color: #fff;
+    font-size: 1rem;
+    margin: 0;
+    white-space: nowrap;
 }
 
 .progress-bar {
@@ -617,6 +629,8 @@
     height: 10px;
     margin: 0.5rem 0;
     width: 15rem;
+    align-self: center;
+    transition: all 0.2s ease;
 }
 
 .progress-bar::-webkit-progress-bar {
@@ -630,6 +644,35 @@
 .progress-bar::-webkit-progress-value {
     background-color: var(--box-button);
     border-radius: 10px;
+    transition: width 0.2s ease;
+}
+
+.progress-bar.indeterminate {
+    position: relative;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 10px;
+}
+
+.progress-bar.indeterminate::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        #ffffff, 
+        transparent
+    );
+    animation: slide 1.5s infinite;
+}
+
+@keyframes slide {
+    0% { left: -100%; }
+    100% { left: 100%; }
 }
 
 .button-container {
@@ -1243,26 +1286,7 @@
     justify-content: center;
     align-items: center;
     margin-top: 10px;
-    margin-right: 60px;
-    margin-left: 60px;
-    padding: 5px 10px;
-    border: none;
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 5px;
-    background-color: rgba(255, 0, 0, 0.7);
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.force-close-button {
-    justify-content: center;
-    align-items: center;
-    margin-top: 10px;
-    margin-right: 60px;
-    margin-left: 60px;
-    padding: 5px;
+    padding: 5px 15px;
     border: none;
     color: white;
     font-size: 14px;
@@ -1271,6 +1295,22 @@
     background-color: rgba(255, 0, 0, 0.7);
     cursor: pointer;
     transition: background-color 0.2s;
+    align-self: center;
+}
+
+.force-close-button {
+    justify-content: center;
+    align-items: center;
+    padding: 5px 15px;
+    border: none;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 5px;
+    background-color: rgba(255, 0, 0, 0.7);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    align-self: center;
 }
 
 .cancel-queue-button:hover, .force-close-button:hover {

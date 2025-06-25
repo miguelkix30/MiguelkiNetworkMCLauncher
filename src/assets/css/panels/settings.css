@@ -793,6 +793,48 @@ input:disabled::placeholder {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
+.open-console-btn {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.open-console-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(255, 152, 0, 0.4);
+}
+
+.open-console-btn:hover::before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.open-console-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.open-logs-folder-btn {
+    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.open-logs-folder-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(156, 39, 176, 0.4);
+}
+
+.open-logs-folder-btn:hover::before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.open-logs-folder-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
 .launcher-behavior-box {
   display: flex;
   flex-direction: column;
@@ -1014,3 +1056,217 @@ body.performance-mode .data-management-btn {
 .active-step {
     background-color: rgba(from var(--box-button) r g b / 0.582);
 }
+
+/* Estilos para la gestión automática de Java */
+.java-info-container {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.java-info-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #4CAF50;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.java-info-description {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+.java-installations-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #2196F3;
+    margin: 1rem 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.java-installations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.java-installation-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.8rem;
+    transition: all 0.2s ease;
+}
+
+.java-installation-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateX(4px);
+}
+
+.java-installation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3rem;
+}
+
+.java-version {
+    font-weight: bold;
+    color: #4CAF50;
+    font-size: 1rem;
+}
+
+.java-size {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+}
+
+.java-installation-path {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-family: 'Courier New', monospace;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.3rem;
+    border-radius: 4px;
+    margin-bottom: 0.3rem;
+    word-break: break-all;
+}
+
+.java-installation-compatibility {
+    font-size: 0.8rem;
+    color: #FF9800;
+    font-style: italic;
+}
+
+.java-installations-empty {
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+    text-align: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.java-management-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.java-cleanup-btn,
+.java-refresh-btn {
+    background: linear-gradient(135deg, #FF5722, #FF7043);
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.java-refresh-btn {
+    background: linear-gradient(135deg, #2196F3, #42A5F5);
+}
+
+.java-cleanup-btn:hover {
+    background: linear-gradient(135deg, #E64A19, #FF5722);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 87, 34, 0.3);
+}
+
+.java-refresh-btn:hover {
+    background: linear-gradient(135deg, #1976D2, #2196F3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.java-cleanup-btn:active,
+.java-refresh-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilos adicionales para diagnóstico de Java */
+    .java-management-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .java-cleanup-btn, .java-refresh-btn, .java-debug-btn {
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        background: var(--box-button);
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+    
+    .java-cleanup-btn:hover, .java-refresh-btn:hover, .java-debug-btn:hover {
+        background: var(--box-button-hover);
+        transform: translateY(-1px);
+    }
+    
+    .java-diagnostic-container {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 15px;
+        text-align: left;
+    }
+    
+    .diagnostic-section {
+        margin-bottom: 20px;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 5px;
+    }
+    
+    .diagnostic-section h4 {
+        margin: 0 0 10px 0;
+        color: var(--text-color);
+    }
+    
+    .diagnostic-java-dir {
+        margin: 10px 0;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 3px;
+        border-left: 3px solid var(--box-button);
+    }
+    
+    .diagnostic-java-dir ul {
+        margin: 5px 0 0 0;
+        padding-left: 20px;
+        list-style-type: disc;
+    }
+    
+    .diagnostic-java-dir li {
+        margin: 2px 0;
+        font-size: 12px;
+        color: #ccc;
+    }
+    

@@ -5,6 +5,8 @@
 
 import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead, getTermsAndConditions, setPerformanceMode, isPerformanceModeEnabled, getDiscordUsername, getDiscordPFP, setDiscordUsername } from '../utils.js'
 import { deleteDiscordToken } from '../MKLib.js'
+import { listAvailableJavaInstallations, cleanupUnusedJava, getRuntimePath, getGameStatus } from '../utils/java-manager.js';
+
 const os = require('os');
 const { shell, ipcRenderer, dialog } = require('electron');
 const { marked } = require('marked');
@@ -865,7 +867,19 @@ class Settings {
     async javaPath() {
         let javaPathText = document.querySelector(".java-path-txt");
         if (javaPathText) {
-            javaPathText.textContent = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}/runtime`;
+            try {
+                // Obtener la ruta real del runtime desde java-manager
+                const runtimePath = getRuntimePath();
+                if (runtimePath) {
+                    javaPathText.textContent = runtimePath;
+                } else {
+                    // Fallback a la ruta calculada
+                    javaPathText.textContent = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}/runtime`;
+                }
+            } catch (error) {
+                console.warn('Error obteniendo ruta de runtime:', error);
+                javaPathText.textContent = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}/runtime`;
+            }
         }
 
         let configClient = await this.db.readData('configClient')
@@ -876,6 +890,9 @@ class Settings {
         if (javaPathInputTxt) {
             javaPathInputTxt.value = javaPath;
         }
+
+        // Mostrar información sobre instalaciones automáticas de Java
+        await this.displayJavaInfo();
 
         let javaPathSetBtn = document.querySelector(".java-path-set");
         let javaPathResetBtn = document.querySelector(".java-path-reset");
@@ -901,6 +918,9 @@ class Settings {
                     }
                     configClient.java_config.java_path = file
                     await this.db.updateData('configClient', configClient);
+                    
+                    // Actualizar información de Java
+                    await this.displayJavaInfo();
                 } else alert("El nombre del archivo debe ser java o javaw");
             });
         }
@@ -913,7 +933,296 @@ class Settings {
                 }
                 configClient.java_config.java_path = null
                 await this.db.updateData('configClient', configClient);
+                
+                // Actualizar información de Java
+                await this.displayJavaInfo();
             });
+        }
+    }
+
+    async displayJavaInfo() {
+        try {
+            console.log('🔍 Iniciando displayJavaInfo...');
+            
+            // Buscar contenedor para información de Java
+            let javaInfoContainer = document.querySelector(".java-info-container");
+            
+            if (!javaInfoContainer) {
+                console.log('📦 Creando contenedor de Java info...');
+                // Buscar el contenedor de java path de manera más específica
+                const javaPathInput = document.querySelector('.java-path-input-text');
+                const settingsBox = javaPathInput ? javaPathInput.closest('.settings-elements-box') : null;
+                
+                if (settingsBox) {
+                    javaInfoContainer = document.createElement('div');
+                    javaInfoContainer.className = 'java-info-container';
+                    settingsBox.appendChild(javaInfoContainer);
+                    console.log('✅ Contenedor de Java info creado');
+                } else {
+                    console.error('❌ No se pudo encontrar el contenedor parent para Java info');
+                }
+            }
+            
+            if (!javaInfoContainer) {
+                console.warn('❌ No se pudo encontrar o crear el contenedor para información de Java');
+                return;
+            }
+            
+            console.log('🔍 Obteniendo instalaciones de Java...');
+            
+            // Obtener instalaciones de Java disponibles
+            const installations = await listAvailableJavaInstallations();
+            
+            console.log(`📦 Encontradas ${installations.length} instalaciones de Java:`, installations);
+            
+            let infoHTML = `
+                <div class="java-info-title">🔧 Gestión Automática de Java</div>
+                <div class="java-info-description">
+                    El launcher descarga automáticamente la versión de Java compatible con cada versión de Minecraft.
+                    Las instalaciones se almacenan en la carpeta 'runtime' y se reutilizan automáticamente.
+                </div>
+                <div class="java-runtime-path">
+                    📁 Directorio runtime: <code>${getRuntimePath() || 'No inicializado'}</code>
+                </div>
+            `;
+            
+            if (installations.length > 0) {
+                infoHTML += `<div class="java-installations-title">📦 Versiones de Java Instaladas:</div>`;
+                infoHTML += `<div class="java-installations-list">`;
+                
+                for (const installation of installations) {
+                    const javaVersionStr = `Java ${installation.javaVersion.major}`;
+                    const sizeInfo = await this.getDirectorySize(installation.directory);
+                    
+                    infoHTML += `
+                        <div class="java-installation-item">
+                            <div class="java-installation-header">
+                                <span class="java-version">${javaVersionStr}</span>
+                                <span class="java-size">${sizeInfo}</span>
+                            </div>
+                            <div class="java-installation-path">${installation.path}</div>
+                            <div class="java-installation-compatibility">
+                                Compatible con: ${this.getMinecraftCompatibility(installation.version)}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                infoHTML += `</div>`;
+                
+                // Agregar botón de limpieza
+                infoHTML += `
+                    <div class="java-management-buttons">
+                        <button class="java-cleanup-btn" id="java-cleanup-btn">🗑️ Eliminar instalaciones de Java</button>
+                        <button class="java-refresh-btn" id="java-refresh-btn">🔄 Actualizar Lista</button>
+                    </div>
+                `;
+            } else {
+                infoHTML += `
+                    <div class="java-installations-empty">
+                        📥 No hay versiones de Java descargadas automáticamente.
+                        Se descargarán automáticamente cuando sea necesario.
+                    </div>
+                    <div class="java-management-buttons">
+                        <button class="java-refresh-btn" id="java-refresh-btn">🔄 Refrescar Instalaciones</button>
+                    </div>
+                `;
+            }
+            
+            javaInfoContainer.innerHTML = infoHTML;
+            
+            // Agregar event listeners para los botones
+            const cleanupBtn = document.getElementById('java-cleanup-btn');
+            const refreshBtn = document.getElementById('java-refresh-btn');
+            
+            if (cleanupBtn) {
+                cleanupBtn.addEventListener('click', () => this.showJavaCleanupDialog());
+            }
+            
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', () => this.displayJavaInfo());
+            }
+            
+        } catch (error) {
+            console.error('❌ Error mostrando información de Java:', error);
+            
+            // Mostrar información básica aunque falle
+            if (javaInfoContainer) {
+                javaInfoContainer.innerHTML = `
+                    <div class="java-info-title">🔧 Gestión Automática de Java</div>
+                    <div class="java-info-description">
+                        El launcher descarga automáticamente la versión de Java compatible con cada versión de Minecraft.
+                    </div>
+                    <div class="java-installations-empty">
+                        ⚠️ Error al cargar información de Java: ${error.message}
+                    </div>
+                `;
+            }
+        }
+    }
+
+    getMinecraftCompatibility(javaVersion) {
+        const compatibility = {
+            'java8': 'Minecraft 1.7 - 1.16.5',
+            'java17': 'Minecraft 1.17 - 1.20.6',
+            'java21': 'Minecraft 1.21+'
+        };
+        
+        return compatibility[javaVersion] || 'Versiones específicas';
+    }
+
+    async getDirectorySize(dirPath) {
+        try {
+            const stats = await this.calculateDirectorySize(dirPath);
+            const sizeMB = Math.round(stats / (1024 * 1024));
+            return `${sizeMB} MB`;
+        } catch (error) {
+            return 'Tamaño desconocido';
+        }
+    }
+
+    async calculateDirectorySize(dirPath) {
+        const fs = require('fs').promises;
+        const path = require('path');
+        
+        let totalSize = 0;
+        
+        try {
+            const items = await fs.readdir(dirPath);
+            
+            for (const item of items) {
+                const itemPath = path.join(dirPath, item);
+                const stats = await fs.stat(itemPath);
+                
+                if (stats.isDirectory()) {
+                    totalSize += await this.calculateDirectorySize(itemPath);
+                } else {
+                    totalSize += stats.size;
+                }
+            }
+        } catch (error) {
+            // Ignorar errores de permisos
+        }
+        
+        return totalSize;
+    }
+
+    async showJavaCleanupDialog() {
+        try {
+            // Verificar si el juego está en progreso
+            const gameStatus = getGameStatus();
+            
+            const popup = new (await import('../utils/popup.js')).default();
+            
+            if (gameStatus.inProgress) {
+                // Mostrar advertencia si el juego está ejecutándose
+                const warningResult = await new Promise(resolve => {
+                    popup.openDialog({
+                        title: '⚠️ Juego en Progreso',
+                        content: `🎮 Hay un juego ejecutándose actualmente usando Java.<br>La limpieza está bloqueada para evitar problemas con el juego en curso.<br>`,
+                        options: true,
+                        acceptText: 'Forzar Limpieza',
+                        cancelText: 'Cancelar',
+                        callback: resolve
+                    });
+                });
+                
+                if (warningResult === 'cancel') {
+                    return;
+                }
+                
+                // Si el usuario eligió forzar, continuar con forceClean = true
+                return this.executeJavaCleanup(true, popup);
+            }
+            
+            // Si no hay juego en progreso, mostrar diálogo normal
+            const dialogResult = await new Promise(resolve => {
+                popup.openDialog({
+                    title: '🗑️ Limpiar Instalaciones de Java',
+                    content: `¿Estás seguro de que quieres limpiar las instalaciones de Java no utilizadas?<br>
+                    Esta acción eliminará versiones de Java que no se hayan usado recientemente, liberando espacio en disco.<br><br>
+                    ⚠️ Las versiones se volverán a descargar automáticamente cuando sea necesario.`,
+                    options: true,
+                    callback: resolve
+                });
+            });
+            
+            if (dialogResult === 'cancel') {
+                return;
+            }
+            
+            // Ejecutar limpieza normal
+            return this.executeJavaCleanup(false, popup);
+            
+        } catch (error) {
+            console.error('❌ Error en diálogo de limpieza de Java:', error);
+            const popup = new (await import('../utils/popup.js')).default();
+            popup.openPopup({
+                title: "Error",
+                content: `❌ Error mostrando diálogo de limpieza: ${error.message}`,
+                color: "red",
+                options: true
+            });
+        }
+    }
+    
+    async executeJavaCleanup(forceClean, popup) {
+        try {
+            // Mostrar progreso
+            popup.closePopup();
+            popup.openPopup({
+                title: "Limpiando Java...",
+                content: forceClean ? 
+                    "Forzando limpieza de instalaciones Java... ⚠️" :
+                    "Por favor espera mientras se limpian las instalaciones no utilizadas.",
+                color: "var(--color)",
+                background: false
+            });
+            
+            // Ejecutar limpieza
+            const result = await cleanupUnusedJava(forceClean);
+            popup.closePopup();
+            
+            if (result.success) {
+                // Mostrar resultados detallados
+                const results = result.results;
+                let contentMsg = `✅ Limpieza de Java completada.\n\n`;
+                
+                if (results.cleaned.length > 0) {
+                    contentMsg += `🗑️ Eliminadas: ${results.cleaned.length} instalaciones<br>`;
+                    contentMsg += `💾 Espacio liberado: ${Math.round(results.freedSpace / (1024 * 1024))} MB<br>`;
+                }
+                
+                if (results.skipped.length > 0) {
+                    contentMsg += `⏭️ Saltadas: ${results.skipped.length} instalaciones (en uso)<br>`;
+                }
+                
+                if (results.errors.length > 0) {
+                    contentMsg += `❌ Errores: ${results.errors.length} instalaciones<br>`;
+                }
+                
+                contentMsg += `Tamaño total procesado: ${Math.round(results.totalSize / (1024 * 1024))} MB<br>`;
+                
+                popup.openPopup({
+                    title: "Limpieza Completada",
+                    content: contentMsg,
+                    color: "var(--color)",
+                    options: true
+                });
+                
+                // Actualizar la información mostrada
+                await this.displayJavaInfo();
+            } else {
+                popup.openPopup({
+                    title: "Error en Limpieza",
+                    content: `❌ Error durante la limpieza: ${result.error}`,
+                    color: "red",
+                    options: true
+                });
+            }
+            
+        } catch (error) {
+            console.error('❌ Error en limpieza de Java:', error);
         }
     }
 
@@ -1044,6 +1353,22 @@ class Settings {
         if (deleteAssetsBtn) {
             deleteAssetsBtn.addEventListener('click', async () => {
                 this.handleDeleteAssets();
+            });
+        }
+
+        // Botones de herramientas de desarrollo
+        const openConsoleBtn = document.querySelector('.open-console-btn');
+        const openLogsFolderBtn = document.querySelector('.open-logs-folder-btn');
+
+        if (openConsoleBtn) {
+            openConsoleBtn.addEventListener('click', () => {
+                this.handleOpenConsole();
+            });
+        }
+
+        if (openLogsFolderBtn) {
+            openLogsFolderBtn.addEventListener('click', () => {
+                this.handleOpenLogsFolder();
             });
         }
     }
@@ -1336,5 +1661,47 @@ class Settings {
             });
         }
     }
+
+    // Manejar apertura de consola
+    handleOpenConsole() {
+        console.log('Abriendo consola...');
+        ipcRenderer.send('console-window-open');
+    }
+
+    // Manejar apertura de carpeta de logs
+    async handleOpenLogsFolder() {
+        try {
+            console.log('Abriendo carpeta de logs...');
+            const { shell } = require('electron');
+            const path = require('path');
+            const fs = require('fs');
+            
+            // Obtener el productName del package.json
+            const pkg = require('../../../package.json');
+            const productName = pkg.productname || 'Miguelki Network MC Launcher';
+            
+            // Usar la ruta estándar: %APPDATA%/MiguelkiNetwork/ProductName/logs
+            const appDataPath = await ipcRenderer.invoke('appData');
+            const logsPath = path.join(appDataPath, 'MiguelkiNetwork', productName, 'logs');
+            
+            // Crear el directorio si no existe
+            if (!fs.existsSync(logsPath)) {
+                fs.mkdirSync(logsPath, { recursive: true });
+            }
+            
+            // Abrir la carpeta
+            shell.openPath(logsPath);
+        } catch (error) {
+            console.error('Error abriendo carpeta de logs:', error);
+            
+            const errorPopup = new popup();
+            errorPopup.openPopup({
+                title: 'Error',
+                content: 'No se pudo abrir la carpeta de logs: ' + error.message,
+                color: 'red',
+                options: true
+            });
+        }
+   }
 }
 export default Settings;

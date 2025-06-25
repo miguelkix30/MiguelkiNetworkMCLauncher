@@ -45,7 +45,9 @@ import {
   deleteDiscordToken,
   migrateDiscordToken
 } from "./MKLib.js";
-const { AZauth, Microsoft, Mojang } = require("minecraft-java-core");
+const { AZauth } = require("minecraft-java-core");
+const { Auth } = require("msmc");
+const { Authenticator } = require("minecraft-launcher-core");
 
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
@@ -71,6 +73,15 @@ class Launcher {
     } catch (error) {
       console.error("Error al consolidar almacenamiento:", error);
     }
+    
+    // Migrate accounts to new authentication system
+    console.log("Checking for account authentication migration...");
+    try {
+      await this.db.migrateAccountsToNewAuth();
+    } catch (error) {
+      console.error("Error migrating accounts to new auth system:", error);
+    }
+    
     this.config = await config
       .GetConfig()
       .then((res) => res)
@@ -192,6 +203,7 @@ class Launcher {
       'box-button': '#0078bd',
       'box-button-hover': '#053e8a',
       'box-button-hover-2': '#001f47',
+      'box-hover': '#202020',
       'box-button-gradient-1': '#00FFFF',
       'box-button-gradient-2': '#0096FF'
     };
@@ -201,18 +213,40 @@ class Launcher {
       'box-button',
       'box-button-hover', 
       'box-button-hover-2',
+      'box-hover',
       'box-button-gradient-1',
       'box-button-gradient-2'
     ];
+    
+    const appliedColors = {};
     
     themeProperties.forEach(property => {
       const value = res.theme[property] || defaultTheme[property];
       if (value) {
         document.documentElement.style.setProperty(`--${property}`, value);
+        appliedColors[property] = value;
       } else {
         console.warn(`No se encontró '${property}' en la configuración del servidor, aplicando valor predeterminado`);
       }
     });
+
+    // Enviar colores a la consola separada con reintentos
+    try {
+      const sendColorsWithRetry = (colors, retries = 5) => {
+        ipcRenderer.send('apply-dynamic-colors', colors);
+        
+        // Reenviar colores cada 2 segundos por si la consola se inicializa después
+        if (retries > 0) {
+          setTimeout(() => {
+            sendColorsWithRetry(colors, retries - 1);
+          }, 2000);
+        }
+      };
+      
+      sendColorsWithRetry(appliedColors);
+    } catch (error) {
+      console.warn('Error enviando colores a la consola:', error);
+    }
   }
   
   startLoadingDisplayTimer() {
@@ -736,22 +770,41 @@ class Launcher {
   }
 
   async initWindow() {
+    // Configurar FileLogger y ConsoleWindow para los loggers
+    const fileLogger = {
+      log: (level, ...args) => {
+        ipcRenderer.send('log-message', {
+          level: level,
+          args: args,
+          timestamp: new Date(),
+          identifier: 'Launcher'
+        });
+      }
+    };
+
+    const consoleWindow = {
+      isReady: () => true,
+      sendLog: (logData) => {
+        ipcRenderer.send('log-message', logData);
+      }
+    };
+
     window.logger2 = {
-      launcher: new Logger2("Launcher", "#FF7F18"),
-      minecraft: new Logger2("Minecraft", "#43B581"),
+      launcher: new Logger2("Launcher", "#FF7F18", fileLogger, consoleWindow),
+      minecraft: new Logger2("Minecraft", "#43B581", fileLogger, consoleWindow),
     };
 
     this.initLogs();
 
     let hwid = await getHWID();
-    let hwidConsoleLabel = document.querySelector(".console-hwid");
-    hwidConsoleLabel.innerHTML = hwid;
     
-    let hwidCopyButton = document.querySelector(".copy-console-hwid");
-    hwidCopyButton.addEventListener("click", () => {
-      navigator.clipboard.writeText(hwid);
+    // Enviar HWID a la consola separada
+    ipcRenderer.send('log-message', {
+      level: 'info',
+      args: [`ID de soporte: ${hwid}`],
+      timestamp: new Date(),
+      identifier: 'System'
     });
-
 
     window.console = window.logger2.launcher;
 
@@ -1325,7 +1378,7 @@ class Launcher {
                 continue;
             }
             
-            if (account.meta.type === "Xbox") {
+            if (account.meta.type === "Xbox" || account.meta.type === "Microsoft") {
               console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
                 popupRefresh.openPopup({
                   title: "Conectando...",
@@ -1335,108 +1388,64 @@ class Launcher {
                 });
                 
                 try {
-                    let refresh_accounts = await new Microsoft(this.config.client_id).refresh(account);
-                    if (refresh_accounts.error) {
-                      await this.db.deleteData("accounts", account_ID);
-                      if (account_ID == account_selected) {
-                        configClient.account_selected = null;
-                        await this.db.updateData("configClient", configClient);
-                      }
-                      console.error(`[Account] ${account.name}: ${refresh_accounts.errorMessage || "Error desconocido"}`);
-                      continue;
-                    }
-                    
-                    if (!refresh_accounts || !refresh_accounts.name) {
-                        console.error(`[Account] ${account.name}: La actualización devolvió datos incompletos`);
-                        continue;
-                    }
-                    
-                    refresh_accounts.ID = account_ID;
-                    await this.db.updateData("accounts", refresh_accounts, account_ID);
-                    // Agregar la cuenta actualizada al array de cuentas refrescadas
-                    refreshedAccounts.push(refresh_accounts);
-                    
-                    if (account_ID == account_selected) {
-                      // Solo seleccionar la cuenta pero no agregar visualmente aquí
-                      clickableHead();
-                      await setUsername(refresh_accounts.name);
-                      await loginMSG();
-                    }
-                } catch (error) {
-                    console.error(`Error al refrescar cuenta ${account.name}:`, error);
-                    // Agregar la cuenta original si falla la actualización
-                    refreshedAccounts.push(account);
-                    continue;
-                }
-            } else if (account.meta.type == "Microsoft") {
-              console.log(`Plataforma: Microsoft | Usuario: ${account.name}`);
-                popupRefresh.openPopup({
-                  title: "Conectando...",
-                  content: `Plataforma: Microsoft | Usuario: ${account.name}`,
-                  color: "var(--color)",
-                  background: false,
-                });
-                
-                const serverConfig = await config.GetConfig();
-                if (serverConfig.protectedUsers && typeof serverConfig.protectedUsers === 'object') {
-                  const hwid = await getHWID();
-                  
-                  if (serverConfig.protectedUsers[account.name]) {
-                    const allowedHWIDs = serverConfig.protectedUsers[account.name];
-                    
-                    if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
-                      await this.db.deleteData("accounts", account_ID);
-                      if (account_ID == account_selected) {
-                        configClient.account_selected = null;
-                        await this.db.updateData("configClient", configClient);
-                      }
-                      
-                      popupRefresh.closePopup();
-                      let popupError = new popup();
-                      popupError.openPopup({
-                        title: 'Cuenta protegida',
-                        content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo. Por favor, contacta con el administrador si crees que esto es un error.',
-                        color: 'red',
-                        options: true
-                      });
-                      
-                      await verificationError(account.name, true);
-                      continue;
-                    }
-                  }
-                }
-                
-                try {
-                    let refresh_accounts = await new Microsoft(this.config.client_id).refresh(account);
-                    if (refresh_accounts.error) {
-                      await this.db.deleteData("accounts", account_ID);
-                      if (account_ID == account_selected) {
-                        configClient.account_selected = null;
-                        await this.db.updateData("configClient", configClient);
-                      }
-                      console.error(`[Account] ${account.name}: ${refresh_accounts.errorMessage || "Error desconocido"}`);
-                      continue;
-                    }
-                    
-                    if (!refresh_accounts || !refresh_accounts.name) {
-                        console.error(`[Account] ${account.name}: La actualización devolvió datos incompletos`);
-                        continue;
-                    }
-                    
-                    refresh_accounts.ID = account_ID;
-                    await this.db.updateData("accounts", refresh_accounts, account_ID);
-                    // Agregar la cuenta actualizada al array de cuentas refrescadas
-                    refreshedAccounts.push(refresh_accounts);
-                    
-                    if (account_ID == account_selected) {
-                      // Solo seleccionar la cuenta pero no agregar visualmente aquí
-                      clickableHead();
-                      await setUsername(refresh_accounts.name);
-                      await loginMSG();
+                    // Use new msmc refresh system
+                    if (account.refresh_token) {
+                        const authManager = new Auth("select_account");
+                        const xboxManager = await authManager.refresh(account.refresh_token);
+                        const minecraftAuth = await xboxManager.getMinecraft();
+                        
+                        const refresh_accounts = {
+                            access_token: minecraftAuth.mcToken,
+                            client_token: null,
+                            uuid: minecraftAuth.profile.id,
+                            name: minecraftAuth.profile.name,
+                            user_properties: "{}",
+                            meta: {
+                                type: account.meta.type,
+                                demo: minecraftAuth.profile.demo || false
+                            },
+                            refresh_token: xboxManager.save(),
+                            profile: minecraftAuth.profile,
+                            ID: account_ID
+                        };
+                        
+                        await this.db.updateData("accounts", refresh_accounts, account_ID);
+                        refreshedAccounts.push(refresh_accounts);
+                        
+                        if (account_ID == account_selected) {
+                          clickableHead();
+                          await setUsername(refresh_accounts.name);
+                          await loginMSG();
+                        }
+                    } else {
+                        // Fallback: account needs re-authentication
+                        console.warn(`Account ${account.name} missing refresh token, keeping original data`);
+                        refreshedAccounts.push(account);
                     }
                 } catch (error) {
-                    console.error(`Error al refrescar cuenta ${account.name}:`, error);
-                    // Agregar la cuenta original si falla la actualización
+                    console.error(`Error refreshing Microsoft account ${account.name}:`, error);
+                    
+                    // Try to handle msmc errors gracefully
+                    try {
+                        const { wrapError } = require('msmc').assets;
+                        const wrappedError = wrapError(error);
+                        console.error(`Wrapped error: ${wrappedError.message}`);
+                        
+                        // If refresh fails, remove the account or mark for re-authentication
+                        if (wrappedError.name.includes('auth')) {
+                            await this.db.deleteData("accounts", account_ID);
+                            if (account_ID == account_selected) {
+                                configClient.account_selected = null;
+                                await this.db.updateData("configClient", configClient);
+                            }
+                            console.error(`[Account] ${account.name}: Authentication expired, account removed`);
+                            continue;
+                        }
+                    } catch (wrapErr) {
+                        console.warn('Could not wrap msmc error:', wrapErr);
+                    }
+                    
+                    // Keep original account data if refresh fails for other reasons
                     refreshedAccounts.push(account);
                     continue;
                 }
@@ -1507,27 +1516,53 @@ class Launcher {
                 color: "var(--color)",
                 background: false,
               });
-              if (account.meta.online == false) {
-                let refresh_accounts = await Mojang.login(account.name);
-  
-                refresh_accounts.ID = account_ID;
-                // Agregar la cuenta actualizada al array de cuentas refrescadas
-                refreshedAccounts.push(refresh_accounts);
-                await this.db.updateData("accounts", refresh_accounts, account_ID);
-                
-                if (account_ID == account_selected) {
-                  // Solo seleccionar la cuenta pero no agregar visualmente aquí
-                  clickableHead();
-                  await setUsername(account.name);
-                  await loginMSG();
+              
+              try {
+                if (account.meta.online == false || account.meta.offline) {
+                  // Use minecraft-launcher-core for offline accounts
+                  let refresh_accounts;
+                  
+                  // Check if getAuth returns a Promise
+                  const authResult = Authenticator.getAuth(account.name);
+                  if (authResult && typeof authResult.then === 'function') {
+                    refresh_accounts = await authResult;
+                  } else {
+                    refresh_accounts = authResult;
+                  }
+                  
+                  // Ensure the account has the required properties
+                  if (!refresh_accounts || !refresh_accounts.name) {
+                    console.error(`Failed to refresh offline account: ${account.name}`);
+                    // Keep the original account if refresh fails
+                    refreshedAccounts.push(account);
+                    continue;
+                  }
+                  
+                  refresh_accounts.ID = account_ID;
+                  refresh_accounts.meta = {
+                      type: "Mojang",
+                      offline: true
+                  };
+                  
+                  refreshedAccounts.push(refresh_accounts);
+                  await this.db.updateData("accounts", refresh_accounts, account_ID);
+                  
+                  if (account_ID == account_selected) {
+                    clickableHead();
+                    await setUsername(account.name);
+                    await loginMSG();
+                  }
+                } else {
+                  // For online Mojang accounts (legacy)
+                  refreshedAccounts.push(account);
                 }
-                continue;
-              } else {
-                // Para cuentas Mojang que no son offline
+              } catch (error) {
+                console.error(`Error refreshing Mojang account ${account.name}:`, error);
+                // Keep the original account if refresh fails
                 refreshedAccounts.push(account);
               }
             } else {
-              // Para otros tipos de cuentas no manejadas específicamente
+              // For other account types
               refreshedAccounts.push(account);
             }
         }
@@ -1556,10 +1591,18 @@ class Launcher {
             );
             
             if (!accountExists) {
-                console.warn(`La cuenta seleccionada ID:${account_selected} ya no existe, eligiendo primera cuenta disponible`);
-                account_selected = refreshedAccounts[0].ID;
-                configClient.account_selected = account_selected;
-                await this.db.updateData("configClient", configClient);
+                console.warn(`La cuenta seleccionada ID:${account_selected} ya no existe`);
+                if (refreshedAccounts.length > 0) {
+                    console.log(`Eligiendo primera cuenta disponible: ${refreshedAccounts[0].name} (ID: ${refreshedAccounts[0].ID})`);
+                    account_selected = refreshedAccounts[0].ID;
+                    configClient.account_selected = account_selected;
+                    await this.db.updateData("configClient", configClient);
+                } else {
+                    console.log("No hay cuentas disponibles, limpiando selección");
+                    account_selected = null;
+                    configClient.account_selected = null;
+                    await this.db.updateData("configClient", configClient);
+                }
             }
         }
         
@@ -1651,7 +1694,7 @@ class Launcher {
                 clickableHead();
                 await setUsername(refreshedAccounts[0].name);
             }
-        } else if (account_selected) {
+        } else if (account_selected && refreshedAccounts.length > 0) {
             // Asegurar que la cuenta seleccionada exista
             console.log(`Verificando cuenta seleccionada ID: ${account_selected}`);
             const selectedAccount = refreshedAccounts.find(acc => acc && String(acc.ID) === String(account_selected));
@@ -1674,7 +1717,13 @@ class Launcher {
         console.log(`Cuentas finales disponibles: ${refreshedAccounts.length}`);
         
         popupRefresh.closePopup();
-        changePanel("home");
+        
+        if (refreshedAccounts.length > 0) {
+            changePanel("home");
+        } else {
+            console.log("No hay cuentas después del refresco, redirigiendo a login");
+            changePanel("login");
+        }
     } else {
         // No hay cuentas desde el inicio
         if (configClient) {
@@ -1687,178 +1736,65 @@ class Launcher {
   }
 
   async initLogs() {
-    let logs = document.querySelector(".log-bg");
-    let logContent = document.querySelector(".logger .content");
-    let scrollToBottomButton = document.querySelector(".scroll-to-bottom");
-    let autoScroll = true;
-
+    // Configurar atajos de teclado para abrir la consola separada
     document.addEventListener("keydown", (e) => {
       if ((e.ctrlKey && e.shiftKey && e.keyCode == 73) || e.keyCode == 123) {
-        logs.classList.toggle("show");
+        // Abrir consola separada
+        ipcRenderer.send('console-window-toggle');
       }
     });
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === 'Escape' && logs.classList.contains('show')) {
-        logs.classList.toggle("show");
+      if (e.key === 'Escape') {
+        // Cerrar consola separada si está abierta
+        ipcRenderer.send('console-window-close');
       }
     });
 
-    let close = document.querySelector(".log-close");
-    close.addEventListener("click", () => {
-      logs.classList.toggle("show");
-    });
-
-    logContent.addEventListener("scroll", () => {
-      // Calculamos si estamos cerca del final del scroll
-      const isNearBottom = logContent.scrollTop + logContent.clientHeight >= logContent.scrollHeight - 50;
-      
-      if (!isNearBottom) {
-        autoScroll = false;
-        scrollToBottomButton.classList.add("show");
-      } else {
-        autoScroll = true;
-        scrollToBottomButton.classList.remove("show");
-      }
-    });
-
-    scrollToBottomButton.addEventListener("click", () => {
-      autoScroll = true;
-      logContent.scrollTo({
-        top: logContent.scrollHeight,
-        behavior: "smooth"
-      });
-      scrollToBottomButton.classList.remove("show");
-    });
-
-    // Inicialización del scrollToBottomButton para asegurar que tenga los estilos correctos
-    scrollToBottomButton.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
-    scrollToBottomButton.querySelector('i').style.fontSize = '24px';
-    
-    // Verificar si hay scroll al inicio y mostrar el botón si es necesario
-    setTimeout(() => {
-      if (logContent.scrollHeight > logContent.clientHeight) {
-        const isNearBottom = logContent.scrollTop + logContent.clientHeight >= logContent.scrollHeight - 50;
-        if (!isNearBottom) {
-          scrollToBottomButton.classList.add("show");
-        }
-      }
-    }, 500);
-
-    // Obtener referencias a botones y preparar tooltips
-    let patchToolkit = document.querySelector(".patch-toolkit");
-    let reportIssueButton = document.querySelector(".report-issue");
-    let copyButton = document.querySelector(".copy-console-hwid");
-
-    // Función para añadir tooltips
-    const addTooltip = (element, text) => {
-      let tooltip = null;
-      
-      element.addEventListener('mouseenter', () => {
-        tooltip = document.createElement('div');
-        tooltip.className = 'tooltip';
-        tooltip.innerText = text;
-        document.body.appendChild(tooltip);
-
-        const rect = element.getBoundingClientRect();
-        tooltip.style.left = rect.left - tooltip.offsetWidth - 10 + 'px';
-        tooltip.style.top = rect.top + (rect.height / 2) - (tooltip.offsetHeight / 2) + 'px';
-        
-        // Cambiar flecha al lado derecho
-        tooltip.style.setProperty('--tooltip-arrow-side', 'right');
-        
-        // Hacer que el tooltip sea visible
-        setTimeout(() => {
-          tooltip.style.opacity = '1';
-        }, 10);
-      });
-      
-      element.addEventListener('mouseleave', () => {
-        if (tooltip) {
-          tooltip.style.opacity = '0';
-          setTimeout(() => {
-            // Add null check before accessing parentNode
-            if (tooltip && tooltip.parentNode) {
-              tooltip.parentNode.removeChild(tooltip);
-            }
-            tooltip = null;
-          }, 200);
-        }
-      });
-    };
-
-    // Añadir tooltips a los botones
-    addTooltip(copyButton, "Copiar ID al portapapeles");
-    addTooltip(scrollToBottomButton, "Desplazar al final de los registros");
-    
-    // Configurar el botón de patch toolkit
-    let res = await config.GetConfig();
-    if (res.patchToolkit) {
-      patchToolkit.addEventListener("click", () => {
-        logs.classList.toggle("show");
-        this.runPatchToolkit();
-      });
-      addTooltip(patchToolkit, "Ejecutar Toolkit de Parches");
-    } else {
-      patchToolkit.style.display = "none";
-      // Adjust scroll button position when patch toolkit is hidden
-      scrollToBottomButton.style.bottom = "80px";
-    }
-
-    // Configurar el botón de reportar problema
-    reportIssueButton.classList.add("show");
-    reportIssueButton.addEventListener("click", () => {
-      logs.classList.toggle("show");
+    // Configurar listeners para eventos de la consola desde app.js
+    ipcRenderer.on('report-issue-triggered', () => {
       this.confirmReportIssue();
     });
-    addTooltip(reportIssueButton, "Reportar un problema");
 
-    // Configurar eventos de logger
-    logger2.launcher.on("info", (...args) => {
-      addLog(logContent, "info", args);
+    ipcRenderer.on('patch-toolkit-triggered', () => {
+      this.runPatchToolkit();
     });
 
-    logger2.launcher.on("warn", (...args) => {
-      addLog(logContent, "warn", args);
-    });
-
-    logger2.launcher.on("debug", (...args) => {
-      addLog(logContent, "debug", args);
-    });
-
-    logger2.launcher.on("error", (...args) => {
-      addLog(logContent, "error", args);
-    });
-
-    function addLog(content, type, args) {
-      let final = [];
-      for (let arg of args) {
-        if (typeof arg == "string") {
-          final.push(arg);
-        } else if (arg instanceof Error) {
-          final.push(arg.stack);
-        } else if (typeof arg == "object") {
-          final.push(JSON.stringify(arg));
-        } else {
-          final.push(arg);
-        }
+    // Listener para enviar colores cuando la consola los solicite
+    ipcRenderer.on('send-colors-to-console', async () => {
+      console.log('Consola solicita colores dinámicos, reenviando...');
+      try {
+        // Releer los colores del servidor y enviarlos a la consola
+        await this.loadColors();
+      } catch (error) {
+        console.warn('Error reenviando colores a la consola:', error);
       }
-      let span = document.createElement("span");
-      span.classList.add(type);
-      span.innerHTML = `${final.join(" ")}<br>`
-        .replace(/\x20/g, "&nbsp;")
-        .replace(/\n/g, "<br>");
+    });
 
-      content.appendChild(span);
-      if (autoScroll) {
-        content.scrollTop = content.scrollHeight;
-      } else if (content.scrollHeight > content.clientHeight) {
-        // Si no está en autoScroll y hay suficiente contenido para scroll, mostrar el botón
-        scrollToBottomButton.classList.add("show");
+    // Listener para enviar configuración del servidor cuando la consola la solicite
+    ipcRenderer.on('send-server-config-to-console', async () => {
+      console.log('Consola solicita configuración del servidor, enviando...');
+      try {
+        const res = await config.GetConfig();
+        const configForConsole = {
+          patchToolkit: res.patchToolkit !== false // Por defecto true, false solo si se especifica
+        };
+        
+        ipcRenderer.send('apply-server-config', configForConsole);
+        console.log('Configuración del servidor enviada a la consola:', configForConsole);
+      } catch (error) {
+        console.warn('Error enviando configuración del servidor a la consola:', error);
       }
-    }
+    });
 
-    logContent.scrollTop = logContent.scrollHeight;
+    // Enviar cleanup queue cuando se cierre la aplicación
+    ipcRenderer.on('process-cleanup-queue', async () => {
+      await this.processCleanupQueue();
+    });
+
+    // Ya no necesitamos configurar la consola interna,
+    // todos los logs se envían automáticamente a la consola separada
+    console.log("Sistema de logs configurado para consola separada");
   }
 
   async confirmReportIssue() {
@@ -1873,7 +1809,7 @@ class Launcher {
         });
     });
     if (dialogResult === 'cancel') {
-        logs.classList.toggle("show");
+        ipcRenderer.send('console-window-open');
         return;
     }
     this.sendReport();
@@ -1896,7 +1832,7 @@ class Launcher {
         });
     });
     if (dialogResult === 'cancel') {
-      logs.classList.toggle("show");
+      ipcRenderer.send('console-window-open');
       return;
     }
     patchLoader();
