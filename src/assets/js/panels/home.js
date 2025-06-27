@@ -36,6 +36,7 @@ import {
 	killMinecraftProcess,
 } from "../MKLib.js";
 import cleanupManager from "../utils/cleanup-manager.js";
+import { downloadAssets } from "../utils/instance-manager.js";
 
 const clientId = pkg.discord_client_id;
 const DiscordRPC = require("discord-rpc");
@@ -78,6 +79,8 @@ RPC.login({ clientId }).catch((err) => {
 });
 
 const { Launch } = require("minecraft-java-core");
+const { Client } = require("minecraft-launcher-core");
+const { vanilla, fabric, forge, quilt } = require("tomate-loaders");
 const { shell, ipcRenderer } = require("electron");
 class Home {
 	static id = "home";
@@ -874,7 +877,7 @@ class Home {
 		}
 
 		playInstanceBTN.style.display = "none";
-		infoStartingBOX.style.display = "block";
+		infoStartingBOX.style.display = "flex";
 		instanceSelectBTN.disabled = true;
 		instanceSelectBTN.classList.add("disabled");
 		progressBar.style.display = "none";
@@ -1032,10 +1035,101 @@ class Home {
 		}
 
 		console.log("Configurando opciones de lanzamiento...");
-		let launch = new Launch();
+		let launcher = new Client();
+		let launchConfig;
+		if (options.loadder.loadder_type == "forge") {
+			launchConfig = await forge.getMCLCLaunchConfig({
+				gameVersion: options.loadder.minecraft_version,
+				rootPath: `${await appdata()}/${
+					process.platform == "darwin"
+						? this.config.dataDirectory
+						: `.${this.config.dataDirectory}`
+				}`,
+			});
+		} else if (options.loadder.loadder_type == "fabric") {
+			launchConfig = await fabric.getMCLCLaunchConfig({
+				gameVersion: options.loadder.minecraft_version,
+				rootPath: `${await appdata()}/${
+					process.platform == "darwin"
+						? this.config.dataDirectory
+						: `.${this.config.dataDirectory}`
+				}`,
+			});
+		} else if (options.loadder.loadder_type == "quilt") {
+			launchConfig = await quilt.getMCLCLaunchConfig({
+				gameVersion: options.loadder.minecraft_version,
+				rootPath: `${await appdata()}/${
+					process.platform == "darwin"
+						? this.config.dataDirectory
+						: `.${this.config.dataDirectory}`
+				}`,
+			});
+		} else {
+			launchConfig = await vanilla.getMCLCLaunchConfig({
+				gameVersion: options.loadder.minecraft_version,
+				rootPath: `${await appdata()}/${
+					process.platform == "darwin"
+						? this.config.dataDirectory
+						: `.${this.config.dataDirectory}`
+				}`,
+			});
+		}
 
-		let opt = {
-			url: options.url,
+		let opt;
+		/* if (options.loadder.loadder_type == "forge") { */
+		opt = {
+			...launchConfig,
+			authorization: authenticator,
+			timeout: 10000,
+			root: `${await appdata()}/${
+				process.platform == "darwin"
+					? this.config.dataDirectory
+					: `.${this.config.dataDirectory}`
+			}`,
+			instance: options.name,
+			version: {
+				number: options.loadder.minecraft_version,
+				type: "release",
+				custom: options.loadder.custom_version
+			},
+			detached:
+				configClient.launcher_config.closeLauncher == "close-all"
+					? false
+					: true,
+
+			loader: {
+				type: options.loadder.loadder_type,
+				build: options.loadder.loadder_version,
+				enable: options.loadder_type == "none" ? false : true,
+			},
+
+			java: {
+				path: configClient.java_config.java_path,
+			},
+
+			customArgs: options.jvm_args ? options.jvm_args : [],
+			customLaunchArgs: options.game_args ? options.game_args : [],
+
+			screen: {
+				width: configClient.game_config.screen_size.width,
+				height: configClient.game_config.screen_size.height,
+			},
+
+			memory: {
+				min: `${configClient.java_config.java_memory.min * 1024}M`,
+				max: `${configClient.java_config.java_memory.max * 1024}M`,
+			},
+
+			overrides: {
+				gameDirectory: `${await appdata()}/${
+					process.platform == "darwin"
+						? this.config.dataDirectory
+						: `.${this.config.dataDirectory}`
+				}/instances/${options.name}`
+			}
+		};
+	/* } else {
+		opt = {
 			authenticator: authenticator,
 			timeout: 10000,
 			path: `${await appdata()}/${
@@ -1049,18 +1143,12 @@ class Home {
 				configClient.launcher_config.closeLauncher == "close-all"
 					? false
 					: true,
-			downloadFileMultiple: configClient.launcher_config.download_multi,
-			intelEnabledMac: configClient.launcher_config.intelEnabledMac,
 
 			loader: {
 				type: options.loadder.loadder_type,
 				build: options.loadder.loadder_version,
 				enable: options.loadder_type == "none" ? false : true,
 			},
-
-			verify: options.verify,
-
-			ignored: ignoredFiles,
 
 			java: {
 				path: configClient.java_config.java_path,
@@ -1073,12 +1161,12 @@ class Home {
 				width: configClient.game_config.screen_size.width,
 				height: configClient.game_config.screen_size.height,
 			},
-
 			memory: {
 				min: `${configClient.java_config.java_memory.min * 1024}M`,
 				max: `${configClient.java_config.java_memory.max * 1024}M`,
 			},
 		};
+	} */
 
 		let musicMuted = configClient.launcher_config.music_muted;
 		let musicPlaying = true;
@@ -1108,36 +1196,123 @@ class Home {
 			);
 		}
 
-		launch.Launch(opt);
+		/* if (options.loader.loadder_type == "forge") { */
+		try {
+			console.log(`Iniciando descarga de assets para la instancia: ${options.name}`);
+			infoStarting.innerHTML = `Descargando assets...`;
+			progressBar.style.display = "block";
+			progressBar.value = 0;
+			progressBar.max = 100;
+
+			// Carpeta de destino para los assets - directamente en la instancia
+			const instancePath = `${await appdata()}/${
+				process.platform == "darwin"
+					? this.config.dataDirectory
+					: `.${this.config.dataDirectory}`
+			}/instances/${options.name}`;
+			console.log(`Ruta de la instancia: ${instancePath}`);
+			
+			// URL de assets basada en la URL de la instancia con un endpoint fijo
+			const assetsUrl = options.url;
+			console.log(`URL de assets: ${assetsUrl}`);
+			
+			// Lista de archivos ignorados para la verificación de integridad
+			const ignoredAssets = ignoredFiles;
+			
+			// Callback para reportar progreso
+			const progressCallback = (progress, processed, total, downloadedSize, totalSize) => {
+				const sizeText = totalSize > 0 ? 
+					` (${(downloadedSize / 1024 / 1024).toFixed(1)}MB/${(totalSize / 1024 / 1024).toFixed(1)}MB)` : '';
+				
+				// Actualizar la barra de progreso local
+				progressBar.value = progress;
+				progressBar.max = 100;
+				progressBar.style.display = "block"; // Asegurar que la barra de progreso sea visible
+				
+				// Actualizar el progreso en la barra de tareas de Windows
+				ipcRenderer.send("main-window-progress", { progress, size: 100 });
+				
+				// Mostrar progreso visual en el texto del estado
+				if (progress <= 50) {
+					// Fase de verificación (0-50%)
+					infoStarting.innerHTML = `Verificando assets... ${progress}% (${processed}/${total})`;
+				} else {
+					// Fase de descarga (50-100%)
+					infoStarting.innerHTML = `Descargando assets... ${progress}% (${processed}/${total})${sizeText}`;
+				}
+			};
+
+			// Callback para actualizar el estado
+			const statusCallback = (status) => {
+				infoStarting.innerHTML = status;
+			};
+
+			// Descargar assets
+			await downloadAssets(
+				assetsUrl,
+				instancePath,
+				ignoredAssets,
+				configClient.launcher_config.download_multi,
+				progressCallback,
+				statusCallback
+			);
+
+			console.log(`Descarga de assets completada para la instancia: ${options.name}`);
+			infoStarting.innerHTML = `Assets descargados correctamente`;
+			await new Promise(resolve => setTimeout(resolve, 500));
+
+		} catch (error) {
+			console.error(`Error al descargar assets para ${options.name}:`, error);
+			
+			// Mostrar error al usuario
+			this.enablePlayButton();
+			playInstanceBTN.style.display = "flex";
+			infoStartingBOX.style.display = "none";
+			instanceSelectBTN.disabled = false;
+			instanceSelectBTN.classList.remove("disabled");
+			ipcRenderer.send("main-window-progress-reset");
+			
+			let popupError = new popup();
+			popupError.openPopup({
+				title: "Error de descarga de assets",
+				content: `No se pudieron descargar los assets necesarios: ${error.message}`,
+				color: "red",
+				options: true,
+			});
+			return;
+		}
+		console.log("Finalizada la descarga de assets.");
+	/* } */
+
+	launcher.launch(opt);
+		
+		
+		
 		infoStarting.innerHTML = `Verificando archivos...`;
 		progressBar.value = 0;
 
-		launch.on("extract", (extract) => {
+		launcher.on("extract", (extract) => {
 			ipcRenderer.send("main-window-progress-load");
 			console.log(extract);
 		});
 
-		launch.on("progress", (progress, size) => {
-			infoStarting.innerHTML = `Descargando... ${(
-				(progress / size) *
-				100
-			).toFixed(0)}%`;
+		launcher.on("progress", (progress, size) => {
+			const percentage = ((progress / size) * 100).toFixed(0);
+			infoStarting.innerHTML = `Descargando loader... ${percentage}%`;
 			ipcRenderer.send("main-window-progress", { progress, size });
 			progressBar.value = progress;
 			progressBar.max = size;
 		});
 
-		launch.on("check", (progress, size) => {
-			infoStarting.innerHTML = `Verificando... ${(
-				(progress / size) *
-				100
-			).toFixed(0)}%`;
+		launcher.on("check", (progress, size) => {
+			const percentage = ((progress / size) * 100).toFixed(0);
+			infoStarting.innerHTML = `Verificando... ${percentage}%`;
 			ipcRenderer.send("main-window-progress", { progress, size });
 			progressBar.value = progress;
 			progressBar.max = size;
 		});
 
-		launch.on("data", async (e) => {
+		launcher.on("data", async (e) => {
 			if (typeof e === "string") {
 				console.log(e);
 
@@ -1253,7 +1428,7 @@ class Home {
 			infoStarting.innerHTML = `Jugando...`;
 		});
 
-		launch.on("estimated", (time) => {
+		launcher.on("estimated", (time) => {
 			let hours = Math.floor(time / 3600);
 			let minutes = Math.floor((time - hours * 3600) / 60);
 			let seconds = Math.floor(time - hours * 3600 - minutes * 60);
@@ -1262,19 +1437,19 @@ class Home {
 			);
 		});
 
-		launch.on("speed", (speed) => {
+		launcher.on("speed", (speed) => {
 			console.log(
 				`Velocidad de descarga: ${(speed / 1067008).toFixed(2)} Mb/s`
 			);
 		});
 
-		launch.on("patch", (patch) => {
+		launcher.on("patch", (patch) => {
 			console.log(patch);
 			ipcRenderer.send("main-window-progress-load");
 			infoStarting.innerHTML = `Parcheando...`;
 		});
 
-		launch.on("close", async (code) => {
+		launcher.on("close", async (code) => {
 			if (configClient.launcher_config.closeLauncher == "close-launcher") {
 				ipcRenderer.send("main-window-show");
 			}
@@ -1327,7 +1502,7 @@ class Home {
 			}
 		});
 
-		launch.on("error", async (err) => {
+		launcher.on("error", async (err) => {
 			removeUserFromQueue(hwid);
 
 			if (typeof err.error === "undefined") {
