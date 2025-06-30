@@ -37,11 +37,13 @@
         "express": "^4.19.2",
         "html2canvas": "^1.4.1",
         "marked": "^14.1.2",
+        "minecraft-core-master": "^4.3.7",
         "minecraft-java-core": "^4.1.2",
         "minecraft-launcher-core": "^3.18.2",
         "msmc": "^5.0.5",
         "node-fetch": "^2.7.0",
         "node-machine-id": "^1.0.0",
+        "open": "^10.1.2",
         "systeminformation": "^5.25.11",
         "tomate-loaders": "^2.0.2",
         "xml-js": "^1.6.11"
