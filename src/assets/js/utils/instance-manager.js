@@ -47,7 +47,7 @@ async function downloadAssets(url, folder, ignoredList = [], progressCallback = 
         // Ensure totalSize is a valid number
         totalSize = isFinite(totalSize) ? totalSize : 0;
         let downloadedSize = 0;
-        let processedFiles = 0;
+        let totalProcessedFiles = 0; // Total files processed (verified + downloaded)
         let downloadedFiles = 0;
         let skippedFiles = 0;
         
@@ -71,12 +71,27 @@ async function downloadAssets(url, folder, ignoredList = [], progressCallback = 
         
         for (const asset of remoteAssets) {
             verificationCount++;
+            totalProcessedFiles++; // Increment for every asset we process
             const localPath = path.join(folder, asset.path);
             const shouldIgnoreChecksum = ignoredList.some(ignored => 
                 asset.path.includes(ignored) || asset.path.endsWith('.disabled')
             );
             
             validFiles.add(asset.path);
+            
+            // Update progress during verification phase (0-50%)
+            if (progressCallback) {
+                const verificationProgress = Math.min(50, (verificationCount / remoteAssets.length) * 50);
+                const safeProgress = isFinite(verificationProgress) ? Math.round(verificationProgress) : 0;
+                const safeProcessed = isFinite(verificationCount) ? verificationCount : 0;
+                const safeTotal = isFinite(remoteAssets.length) ? Math.max(1, remoteAssets.length) : 1;
+                
+                // Only call callback every 5 files or at the end to reduce UI spam
+                if (verificationCount % 5 === 0 || verificationCount === remoteAssets.length) {
+                    console.log(`🔍 Verification progress: ${safeProgress}% (${safeProcessed}/${safeTotal})`);
+                    progressCallback(safeProgress, safeProcessed, safeTotal, 0, totalSize);
+                }
+            }
             
             // Update status every 20 files
             if (verificationCount % 20 === 0 || verificationCount === remoteAssets.length) {
@@ -118,98 +133,102 @@ async function downloadAssets(url, folder, ignoredList = [], progressCallback = 
             }
         }
         
-        console.log(`Files to download: ${filesToDownload.length}, already valid: ${skippedFiles}`);
+        console.log(`🔍 Verification phase completed!`);
+        console.log(`📊 Verification results: Files to download: ${filesToDownload.length}, already valid: ${skippedFiles}`);
+        
+        // Update progress to 50% at end of verification
+        if (progressCallback) {
+            const safeTotal = isFinite(remoteAssets.length) ? Math.max(1, remoteAssets.length) : 1;
+            progressCallback(50, safeTotal, safeTotal, 0, totalSize);
+        }
         
         if (filesToDownload.length === 0) {
             if (statusCallback) statusCallback('Todos los assets están actualizados');
+            
+            // Report 100% completion since verification is done and no downloads needed
+            if (progressCallback) {
+                const safeTotal = isFinite(remoteAssets.length) ? Math.max(1, remoteAssets.length) : 1;
+                progressCallback(100, safeTotal, safeTotal, 0, totalSize);
+            }
+            
             // Still clean up obsolete files
             await cleanupObsoleteFiles(folder, localFiles, validFiles, ignoredList);
             return true;
         }
         
         // Download files with concurrency control
+        console.log(`📥 Starting download phase for ${filesToDownload.length} files...`);
         if (statusCallback) statusCallback(`Descargando ${filesToDownload.length} assets...`);
         
-        const downloadPromises = [];
-        let currentDownloads = 0;
-        let downloadQueue = [...filesToDownload];
-        
-        const downloadNext = async () => {
-            while (downloadQueue.length > 0 && currentDownloads < CONCURRENT_DOWNLOADS) {
-                const { asset, localPath } = downloadQueue.shift();
-                currentDownloads++;
+        // Create a simpler, more reliable download system
+        const downloadInBatches = async () => {
+            for (let i = 0; i < filesToDownload.length; i += CONCURRENT_DOWNLOADS) {
+                const batch = filesToDownload.slice(i, i + CONCURRENT_DOWNLOADS);
                 
-                const downloadPromise = downloadFileWithRetry(asset, localPath, MAX_RETRIES)
-                    .then(() => {
+                const batchPromises = batch.map(async ({ asset, localPath }) => {
+                    try {
+                        await downloadFileWithRetry(asset, localPath, MAX_RETRIES);
                         downloadedFiles++;
-                        processedFiles++;
                         downloadedSize += asset.size || 0;
                         
-                        // Report progress with validated values
+                        // Report progress with validated values (50-100% for download phase)
                         if (progressCallback) {
-                            const totalFiles = remoteAssets.length;
-                            const safeProcessed = (typeof processedFiles === 'number' && isFinite(processedFiles) && !isNaN(processedFiles)) ? processedFiles : 0;
-                            const safeTotal = (typeof totalFiles === 'number' && isFinite(totalFiles) && !isNaN(totalFiles)) ? Math.max(1, totalFiles) : 1;
-                            const safeDownloadedSize = (typeof downloadedSize === 'number' && isFinite(downloadedSize) && !isNaN(downloadedSize)) ? downloadedSize : 0;
-                            const safeTotalSize = (typeof totalSize === 'number' && isFinite(totalSize) && !isNaN(totalSize)) ? totalSize : 0;
+                            const safeDownloadedFiles = Math.max(0, downloadedFiles);
+                            const safeTotalDownloads = Math.max(1, filesToDownload.length);
+                            const safeDownloadedSize = Math.max(0, downloadedSize);
+                            const safeTotalSize = Math.max(0, totalSize);
                             
-                            // Calculate safe progress percentage with extra validation
-                            let currentProgress = safeTotal > 0 ? (safeProcessed / safeTotal) * 100 : 0;
-                            currentProgress = (typeof currentProgress === 'number' && isFinite(currentProgress) && !isNaN(currentProgress)) ? 
-                                Math.max(0, Math.min(100, Math.round(currentProgress))) : 0;
+                            // Calculate download progress (50% to 100%)
+                            const downloadProgress = safeDownloadedFiles / safeTotalDownloads;
+                            const currentProgress = 50 + (downloadProgress * 50); // 50-100%
+                            const safeCurrentProgress = Math.max(50, Math.min(100, Math.round(currentProgress)));
                             
-                            console.log('Instance manager calling progressCallback with:', {
-                                currentProgress, safeProcessed, safeTotal, safeDownloadedSize, safeTotalSize
-                            });
+                            // For UI display: show total files processed (verification + downloads)
+                            const totalFilesForUI = remoteAssets.length;
+                            const processedForUI = skippedFiles + safeDownloadedFiles; // Files that are complete
                             
-                            progressCallback(currentProgress, safeProcessed, safeTotal, safeDownloadedSize, safeTotalSize);
+                            // Update progress every few downloads or at important milestones
+                            const shouldUpdateProgress = (safeDownloadedFiles % Math.max(1, Math.floor(safeTotalDownloads / 10)) === 0) || 
+                                                       (safeDownloadedFiles === safeTotalDownloads) ||
+                                                       (safeCurrentProgress >= 95);
+                            
+                            if (shouldUpdateProgress) {
+                                console.log('Instance manager calling progressCallback with:', {
+                                    safeCurrentProgress, processedForUI, totalFilesForUI, safeDownloadedSize, safeTotalSize
+                                });
+                                
+                                progressCallback(safeCurrentProgress, processedForUI, totalFilesForUI, safeDownloadedSize, safeTotalSize);
+                                
+                                // Update status for major milestones
+                                if (statusCallback && (safeDownloadedFiles % Math.max(5, Math.floor(safeTotalDownloads / 5)) === 0 || safeDownloadedFiles === safeTotalDownloads)) {
+                                    statusCallback(`Descargando assets... ${safeCurrentProgress}% (${safeDownloadedFiles}/${safeTotalDownloads})`);
+                                }
+                            }
                         }
                         
-                        if (statusCallback) {
-                            const safeProcessed = isFinite(processedFiles) ? processedFiles : 0;
-                            const safeTotal = isFinite(remoteAssets.length) ? Math.max(1, remoteAssets.length) : 1;
-                            const percentage = safeTotal > 0 ? Math.round((safeProcessed / safeTotal) * 100) : 0;
-                            const safePercentage = isFinite(percentage) ? Math.max(0, Math.min(100, percentage)) : 0;
-                            
-                            statusCallback(`Descargando assets... ${safePercentage}% (${safeProcessed}/${safeTotal})`);
-                        }
+                        console.log(`Downloaded: ${asset.path} (${downloadedFiles}/${filesToDownload.length})`);
+                        return true;
                         
-                        console.log(`Downloaded: ${asset.path} (${processedFiles}/${remoteAssets.length})`);
-                    })
-                    .catch((error) => {
+                    } catch (error) {
                         console.error(`Failed to download ${asset.path}:`, error);
                         throw new Error(`Asset download failed: ${asset.path} - ${error.message}`);
-                    })
-                    .finally(() => {
-                        currentDownloads--;
-                        return downloadNext(); // Continue with next download
-                    });
+                    }
+                });
                 
-                downloadPromises.push(downloadPromise);
+                // Wait for this batch to complete before starting the next
+                await Promise.all(batchPromises);
             }
         };
         
-        // Start initial downloads
-        await downloadNext();
+        // Execute downloads sequentially by batches
+        await downloadInBatches();
         
-        // Wait for all downloads to complete
-        await Promise.all(downloadPromises);
+        console.log(`📥 All downloads completed. Downloaded ${downloadedFiles} files.`);
         
-        // Update progress for skipped files
-        processedFiles += skippedFiles;
+        // Ensure we end at 100% progress
         if (progressCallback) {
-            // Ensure we pass valid finite numbers
-            const safeProgress = 100; // Final progress is always 100%
-            const safeProcessed = (typeof processedFiles === 'number' && isFinite(processedFiles) && !isNaN(processedFiles)) ? processedFiles : 0;
-            const safeTotal = (typeof remoteAssets.length === 'number' && isFinite(remoteAssets.length) && !isNaN(remoteAssets.length)) ? Math.max(1, remoteAssets.length) : 1;
-            const safeDownloadedSize = (typeof downloadedSize === 'number' && isFinite(downloadedSize) && !isNaN(downloadedSize)) ? downloadedSize : 0;
-            const safeTotalSize = (typeof totalSize === 'number' && isFinite(totalSize) && !isNaN(totalSize)) ? totalSize : 0;
-            
-            console.log('Final progressCallback with:', {
-                safeProgress, safeProcessed, safeTotal, safeDownloadedSize, safeTotalSize
-            });
-            
-            progressCallback(safeProgress, safeProcessed, safeTotal, safeDownloadedSize, safeTotalSize);
+            const safeTotal = isFinite(remoteAssets.length) ? Math.max(1, remoteAssets.length) : 1;
+            progressCallback(100, safeTotal, safeTotal, downloadedSize, totalSize);
         }
         
         // Clean up files that are not in the remote list and not ignored
@@ -218,7 +237,10 @@ async function downloadAssets(url, folder, ignoredList = [], progressCallback = 
         
         if (statusCallback) statusCallback('Descarga de assets completada');
         
-        console.log(`Asset download completed successfully. Downloaded: ${downloadedFiles}, Skipped: ${skippedFiles}, Cleaned: ${cleanedFiles}`);
+        console.log(`🎉 Asset download completed successfully!`);
+        console.log(`📊 Summary: Downloaded: ${downloadedFiles}, Skipped: ${skippedFiles}, Cleaned: ${cleanedFiles}`);
+        console.log(`📁 Target folder: ${folder}`);
+        console.log(`🔍 Total assets processed: ${remoteAssets.length}`);
         return true;
         
     } catch (error) {

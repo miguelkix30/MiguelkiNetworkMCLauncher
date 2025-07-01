@@ -211,6 +211,15 @@ ipcMain.handle('get-launcher-config', async (event, options) => {
                         gameVersion: gameVersion,
                         rootPath: rootPath,
                     });
+                    // Asegurar que Forge tenga la configuración correcta para mods
+                    if (!launchConfig.gameDirectory) {
+                        launchConfig.gameDirectory = rootPath;
+                    }
+                    // Crear directorio de mods si no existe para Forge
+                    const forgeModsPath = path.join(rootPath, 'mods');
+                    if (!fs.existsSync(forgeModsPath)) {
+                        fs.mkdirSync(forgeModsPath, { recursive: true });
+                    }
                     break;
                 case 'fabric':
                     console.log('Using Fabric loader configuration');
@@ -218,6 +227,15 @@ ipcMain.handle('get-launcher-config', async (event, options) => {
                         gameVersion: gameVersion,
                         rootPath: rootPath,
                     });
+                    // Asegurar que Fabric tenga la configuración correcta para mods
+                    if (!launchConfig.gameDirectory) {
+                        launchConfig.gameDirectory = rootPath;
+                    }
+                    // Crear directorio de mods si no existe para Fabric
+                    const fabricModsPath = path.join(rootPath, 'mods');
+                    if (!fs.existsSync(fabricModsPath)) {
+                        fs.mkdirSync(fabricModsPath, { recursive: true });
+                    }
                     break;
                 case 'quilt':
                     console.log('Using Quilt loader configuration');
@@ -225,6 +243,15 @@ ipcMain.handle('get-launcher-config', async (event, options) => {
                         gameVersion: gameVersion,
                         rootPath: rootPath,
                     });
+                    // Asegurar que Quilt tenga la configuración correcta para mods
+                    if (!launchConfig.gameDirectory) {
+                        launchConfig.gameDirectory = rootPath;
+                    }
+                    // Crear directorio de mods si no existe para Quilt
+                    const quiltModsPath = path.join(rootPath, 'mods');
+                    if (!fs.existsSync(quiltModsPath)) {
+                        fs.mkdirSync(quiltModsPath, { recursive: true });
+                    }
                     break;
                 case 'vanilla':
                 case 'none':

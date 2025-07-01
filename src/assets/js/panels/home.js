@@ -38,11 +38,12 @@ import {
 import cleanupManager from "../utils/cleanup-manager.js";
 import { downloadAssets } from "../utils/instance-manager.js";
 
+const path = require("path");
+const fs = require("fs");
+
 const clientId = pkg.discord_client_id;
 const DiscordRPC = require("discord-rpc");
 const RPC = new DiscordRPC.Client({ transport: "ipc" });
-const fs = require("fs");
-const path = require("path");
 const startingTime = Date.now();
 let dev = process.env.NODE_ENV === "dev";
 let rpcActive = true;
@@ -1088,9 +1089,15 @@ Posibles causas:
 			// Lista de archivos ignorados para la verificación de integridad
 			const ignoredAssets = ignoredFiles;
 			
+			// Variable para controlar cuándo mostrar progreso vs. estado
+			let showingProgress = false;
+			
 			// Callback para reportar progreso
 			const progressCallback = (progress, processed, total, downloadedSize, totalSize) => {
 				console.log('Progress callback called with:', { progress, processed, total, downloadedSize, totalSize });
+				
+				// Activar modo de progreso
+				showingProgress = true;
 				
 				// Validar que los valores sean números finitos válidos
 				const safeProgress = (typeof progress === 'number' && isFinite(progress) && !isNaN(progress)) ? Math.max(0, Math.min(100, progress)) : 0;
@@ -1106,19 +1113,13 @@ Posibles causas:
 				
 				// Actualizar la barra de progreso local con valores validados
 				if (progressBar) {
-					// Doble verificación antes de asignar
-					let finalProgress = (isFinite(safeProgress) && !isNaN(safeProgress)) ? safeProgress : 0;
-					// HTMLProgressElement solo acepta números entre 0 y max
-					finalProgress = Math.max(0, Math.min(100, finalProgress));
-					
-					console.log('Setting progress bar value to:', finalProgress, typeof finalProgress);
 					try {
-						progressBar.value = finalProgress;
+						progressBar.value = safeProgress;
 						progressBar.max = 100;
 						progressBar.style.display = "block";
 					} catch (error) {
 						console.error('Error setting progress bar:', error);
-						console.error('Final progress value:', finalProgress, typeof finalProgress);
+						console.error('Progress value:', safeProgress, typeof safeProgress);
 						// Fallback: set to 0 if there's still an error
 						try {
 							progressBar.value = 0;
@@ -1131,7 +1132,7 @@ Posibles causas:
 				// Actualizar el progreso en la barra de tareas de Windows
 				ipcRenderer.send("main-window-progress", { progress: safeProgress, size: 100 });
 				
-				// Mostrar progreso visual en el texto del estado
+				// Actualizar el texto del estado con el progreso
 				if (infoStarting) {
 					if (safeProgress <= 50) {
 						// Fase de verificación (0-50%)
@@ -1143,16 +1144,23 @@ Posibles causas:
 				}
 			};
 
-			// Callback para actualizar el estado
+			// Callback para actualizar el estado - SOLO para mensajes de estado sin progreso
 			const statusCallback = (status) => {
 				// Validar que el status sea una cadena válida
 				const safeStatus = (typeof status === 'string' && status.trim()) ? status.trim() : 'Procesando...';
-				if (infoStarting) {
+				
+				// SOLO actualizar si NO estamos mostrando progreso o si es un mensaje de finalización
+				if (infoStarting && (!showingProgress || safeStatus.includes('completada') || safeStatus.includes('Limpiando'))) {
 					infoStarting.innerHTML = safeStatus;
+					// Si es un mensaje de finalización, desactivar el modo progreso
+					if (safeStatus.includes('completada')) {
+						showingProgress = false;
+					}
 				}
 			};
 
 			// Descargar assets
+			console.log('🚀 Starting downloadAssets function...');
 			await downloadAssets(
 				assetsUrl,
 				instancePath,
@@ -1160,10 +1168,22 @@ Posibles causas:
 				progressCallback,
 				statusCallback
 			);
+			console.log('✅ downloadAssets function completed successfully');
 
 			console.log(`Descarga de assets completada para la instancia: ${options.name}`);
 			infoStarting.innerHTML = `Assets descargados correctamente`;
-			await new Promise(resolve => setTimeout(resolve, 500));
+			
+			// Mostrar progreso completo por un momento
+			if (progressBar) {
+				progressBar.value = 100;
+				progressBar.max = 100;
+			}
+			
+			// Dar tiempo adicional para que todos los procesos asíncronos terminen
+			await new Promise(resolve => setTimeout(resolve, 1500));
+			
+			// Desactivar el modo progreso
+			showingProgress = false;
 
 		} catch (error) {
 			console.error(`Error al descargar assets para ${options.name}:`, error);
@@ -1227,7 +1247,7 @@ Posibles causas:
 			});
 			return;
 		}
-		console.log("Finalizada la descarga de assets.");
+		console.log("🎯 Finalizada completamente la descarga de assets. Continuando con configuración del loader...");
 		
 		try {
 			console.log(`Obteniendo configuración para loader: ${options.loadder.loadder_type}`);
@@ -1373,62 +1393,131 @@ Posibles causas:
 			fs.mkdirSync(instanceGameDirectory, { recursive: true });
 		}
 		
+		// Crear estructura de directorios necesaria para Minecraft
+		const requiredDirs = [
+			path.join(instanceGameDirectory, 'mods'),
+			path.join(instanceGameDirectory, 'config'),
+			path.join(instanceGameDirectory, 'saves'),
+			path.join(instanceGameDirectory, 'resourcepacks'),
+			path.join(instanceGameDirectory, 'screenshots'),
+			path.join(instanceGameDirectory, 'logs'),
+			path.join(instanceGameDirectory, 'crash-reports'),
+			path.join(instanceGameDirectory, 'assets'),
+			path.join(instanceGameDirectory, 'libraries'),
+			path.join(instanceGameDirectory, 'versions'),
+			path.join(instanceGameDirectory, 'bin', 'natives')
+		];
+		
+		for (const dir of requiredDirs) {
+			if (!fs.existsSync(dir)) {
+				console.log(`Creando directorio: ${dir}`);
+				fs.mkdirSync(dir, { recursive: true });
+			}
+		}
+		
+		// Configuración específica para minecraft-launcher-core
 		opt = {
+			// Configuración base de tomate-loaders
 			...launchConfig,
+			
+			// Autenticación
 			authorization: authenticator,
+			
+			// Timeout para conexiones
 			timeout: 10000,
-			root: `${await appdata()}/${
-				process.platform == "darwin"
-					? this.config.dataDirectory
-					: `.${this.config.dataDirectory}`
-			}`,
+			
+			// Directorio raíz donde se almacenan los archivos del launcher
+			root: instanceGameDirectory,
+			
+			// Nombre de la instancia
 			instance: options.name,
+			
+			// Configuración de versión
 			version: {
 				number: options.loadder.minecraft_version,
 				type: "release",
 				custom: options.loadder.custom_version
 			},
-			detached:
-				configClient.launcher_config.closeLauncher == "close-all"
-					? false
-					: true,
+			
+			// Configuración de proceso separado
+			detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
 
+			// Configuración del loader (Forge/Fabric/Quilt)
 			loader: {
 				type: options.loadder.loadder_type,
 				build: options.loadder.loadder_version,
-				enable: options.loadder_type == "none" ? false : true,
+				enable: options.loadder.loadder_type !== "none" && options.loadder.loadder_type !== "vanilla"
 			},
+			
+			// Para Forge específicamente, usar el campo forge si está disponible
+			...(options.loadder.loadder_type === "forge" && launchConfig.forge ? { forge: launchConfig.forge } : {}),
 
+			// Configuración de Java
 			java: {
 				path: configClient.java_config.java_path,
 			},
 
+			// Argumentos personalizados de JVM
 			customArgs: options.jvm_args ? options.jvm_args : [],
+			
+			// Argumentos personalizados del juego
 			customLaunchArgs: options.game_args ? options.game_args : [],
 
+			// Configuración de pantalla
 			screen: {
 				width: configClient.game_config.screen_size.width,
 				height: configClient.game_config.screen_size.height,
 			},
 
+			// Configuración de memoria
 			memory: {
 				min: `${configClient.java_config.java_memory.min * 1024}M`,
 				max: `${configClient.java_config.java_memory.max * 1024}M`,
 			},
 
+			// Overrides específicos para directorios personalizados
 			overrides: {
-				gameDirectory: instanceGameDirectory
+				// Directorio donde el juego genera saves, resource packs, etc.
+				gameDirectory: instanceGameDirectory,
+				// Directorio donde están los archivos del Minecraft jar y version json
+				directory: launchConfig.directory || path.join(instanceGameDirectory, 'versions', options.loadder.minecraft_version),
+				// Directorio de nativos
+				natives: path.join(instanceGameDirectory, 'bin', 'natives'),
+				// Directorio de assets
+				assetRoot: path.join(instanceGameDirectory, 'assets'),
+				// Directorio de librerías
+				libraryRoot: path.join(instanceGameDirectory, 'libraries'),
+				// Directorio de trabajo para el proceso Java
+				cwd: instanceGameDirectory
 			}
 		};
 		
 		// Log final de configuración para debug
-		console.log(`Configuración final del launcher:`, {
+		console.log(`🎯 Configuración final del launcher:`, {
+			root: opt.root,
+			gameDirectory: opt.overrides?.gameDirectory,
+			loaderType: opt.loader?.type,
+			loaderEnabled: opt.loader?.enable,
 			hasGameDirectory: !!launchConfig.gameDirectory,
-			gameDirectory: launchConfig.gameDirectory,
+			hasForgeConfig: !!launchConfig.forge,
 			instanceDirectory: instanceGameDirectory,
-			rootPath: opt.root,
-			overridesGameDirectory: instanceGameDirectory
+			overridesKeys: Object.keys(opt.overrides || {}),
+			modsDirectory: path.join(instanceGameDirectory, 'mods'),
+			modsDirectoryExists: fs.existsSync(path.join(instanceGameDirectory, 'mods'))
 		});
+		
+		// Verificar que el directorio de mods existe y tiene permisos de escritura
+		const modsDir = path.join(instanceGameDirectory, 'mods');
+		if (fs.existsSync(modsDir)) {
+			try {
+				fs.accessSync(modsDir, fs.constants.W_OK);
+				console.log(`✅ Directorio de mods accesible: ${modsDir}`);
+			} catch (error) {
+				console.error(`❌ Error de permisos en directorio de mods: ${error.message}`);
+			}
+		} else {
+			console.error(`❌ Directorio de mods no existe: ${modsDir}`);
+		}
 	/* } else {
 		opt = {
 			authenticator: authenticator,
