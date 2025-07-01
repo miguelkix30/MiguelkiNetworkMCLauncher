@@ -37,8 +37,15 @@ async function downloadAssets(url, folder, ignoredList = [], progressCallback = 
         
         console.log(`Found ${remoteAssets.length} assets to process`);
         
-        // Calculate total size for progress tracking
-        const totalSize = remoteAssets.reduce((sum, asset) => sum + (asset.size || 0), 0);
+        // Calculate total size for progress tracking with validation
+        let totalSize = 0;
+        for (const asset of remoteAssets) {
+            const assetSize = (typeof asset.size === 'number' && isFinite(asset.size)) ? asset.size : 0;
+            totalSize += assetSize;
+        }
+        
+        // Ensure totalSize is a valid number
+        totalSize = isFinite(totalSize) ? totalSize : 0;
         let downloadedSize = 0;
         let processedFiles = 0;
         let downloadedFiles = 0;
@@ -73,7 +80,11 @@ async function downloadAssets(url, folder, ignoredList = [], progressCallback = 
             
             // Update status every 20 files
             if (verificationCount % 20 === 0 || verificationCount === remoteAssets.length) {
-                if (statusCallback) statusCallback(`Verificando assets... ${verificationCount}/${remoteAssets.length}`);
+                if (statusCallback) {
+                    const safeVerified = isFinite(verificationCount) ? verificationCount : 0;
+                    const safeTotal = isFinite(remoteAssets.length) ? Math.max(1, remoteAssets.length) : 1;
+                    statusCallback(`Verificando assets... ${safeVerified}/${safeTotal}`);
+                }
             }
             
             // Log detailed info for first few files
@@ -134,16 +145,33 @@ async function downloadAssets(url, folder, ignoredList = [], progressCallback = 
                         processedFiles++;
                         downloadedSize += asset.size || 0;
                         
-                        // Report progress
+                        // Report progress with validated values
                         if (progressCallback) {
                             const totalFiles = remoteAssets.length;
-                            const currentProgress = Math.round((processedFiles / totalFiles) * 100);
-                            progressCallback(currentProgress, processedFiles, totalFiles, downloadedSize, totalSize);
+                            const safeProcessed = (typeof processedFiles === 'number' && isFinite(processedFiles) && !isNaN(processedFiles)) ? processedFiles : 0;
+                            const safeTotal = (typeof totalFiles === 'number' && isFinite(totalFiles) && !isNaN(totalFiles)) ? Math.max(1, totalFiles) : 1;
+                            const safeDownloadedSize = (typeof downloadedSize === 'number' && isFinite(downloadedSize) && !isNaN(downloadedSize)) ? downloadedSize : 0;
+                            const safeTotalSize = (typeof totalSize === 'number' && isFinite(totalSize) && !isNaN(totalSize)) ? totalSize : 0;
+                            
+                            // Calculate safe progress percentage with extra validation
+                            let currentProgress = safeTotal > 0 ? (safeProcessed / safeTotal) * 100 : 0;
+                            currentProgress = (typeof currentProgress === 'number' && isFinite(currentProgress) && !isNaN(currentProgress)) ? 
+                                Math.max(0, Math.min(100, Math.round(currentProgress))) : 0;
+                            
+                            console.log('Instance manager calling progressCallback with:', {
+                                currentProgress, safeProcessed, safeTotal, safeDownloadedSize, safeTotalSize
+                            });
+                            
+                            progressCallback(currentProgress, safeProcessed, safeTotal, safeDownloadedSize, safeTotalSize);
                         }
                         
                         if (statusCallback) {
-                            const percentage = Math.round((processedFiles / remoteAssets.length) * 100);
-                            statusCallback(`Descargando assets... ${percentage}% (${processedFiles}/${remoteAssets.length})`);
+                            const safeProcessed = isFinite(processedFiles) ? processedFiles : 0;
+                            const safeTotal = isFinite(remoteAssets.length) ? Math.max(1, remoteAssets.length) : 1;
+                            const percentage = safeTotal > 0 ? Math.round((safeProcessed / safeTotal) * 100) : 0;
+                            const safePercentage = isFinite(percentage) ? Math.max(0, Math.min(100, percentage)) : 0;
+                            
+                            statusCallback(`Descargando assets... ${safePercentage}% (${safeProcessed}/${safeTotal})`);
                         }
                         
                         console.log(`Downloaded: ${asset.path} (${processedFiles}/${remoteAssets.length})`);
@@ -170,7 +198,18 @@ async function downloadAssets(url, folder, ignoredList = [], progressCallback = 
         // Update progress for skipped files
         processedFiles += skippedFiles;
         if (progressCallback) {
-            progressCallback(100, processedFiles, remoteAssets.length, downloadedSize, totalSize);
+            // Ensure we pass valid finite numbers
+            const safeProgress = 100; // Final progress is always 100%
+            const safeProcessed = (typeof processedFiles === 'number' && isFinite(processedFiles) && !isNaN(processedFiles)) ? processedFiles : 0;
+            const safeTotal = (typeof remoteAssets.length === 'number' && isFinite(remoteAssets.length) && !isNaN(remoteAssets.length)) ? Math.max(1, remoteAssets.length) : 1;
+            const safeDownloadedSize = (typeof downloadedSize === 'number' && isFinite(downloadedSize) && !isNaN(downloadedSize)) ? downloadedSize : 0;
+            const safeTotalSize = (typeof totalSize === 'number' && isFinite(totalSize) && !isNaN(totalSize)) ? totalSize : 0;
+            
+            console.log('Final progressCallback with:', {
+                safeProgress, safeProcessed, safeTotal, safeDownloadedSize, safeTotalSize
+            });
+            
+            progressCallback(safeProgress, safeProcessed, safeTotal, safeDownloadedSize, safeTotalSize);
         }
         
         // Clean up files that are not in the remote list and not ignored
