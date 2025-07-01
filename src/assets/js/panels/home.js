@@ -1065,6 +1065,169 @@ Posibles causas:
 		console.log("Configurando opciones de lanzamiento...");
 		let launcher = new Client();
 		let launchConfig;
+
+		try {
+			console.log(`Iniciando descarga de assets para la instancia: ${options.name}`);
+			infoStarting.innerHTML = `Descargando assets...`;
+			progressBar.style.display = "block";
+			progressBar.value = 0;
+			progressBar.max = 100;
+
+			// Carpeta de destino para los assets - directamente en la instancia
+			const instancePath = `${await appdata()}/${
+				process.platform == "darwin"
+					? this.config.dataDirectory
+					: `.${this.config.dataDirectory}`
+			}/instances/${options.name}`;
+			console.log(`Ruta de la instancia: ${instancePath}`);
+			
+			// URL de assets basada en la URL de la instancia con un endpoint fijo
+			const assetsUrl = options.url;
+			console.log(`URL de assets: ${assetsUrl}`);
+			
+			// Lista de archivos ignorados para la verificación de integridad
+			const ignoredAssets = ignoredFiles;
+			
+			// Callback para reportar progreso
+			const progressCallback = (progress, processed, total, downloadedSize, totalSize) => {
+				console.log('Progress callback called with:', { progress, processed, total, downloadedSize, totalSize });
+				
+				// Validar que los valores sean números finitos válidos
+				const safeProgress = (typeof progress === 'number' && isFinite(progress) && !isNaN(progress)) ? Math.max(0, Math.min(100, progress)) : 0;
+				const safeProcessed = (typeof processed === 'number' && isFinite(processed) && !isNaN(processed)) ? processed : 0;
+				const safeTotal = (typeof total === 'number' && isFinite(total) && !isNaN(total)) ? Math.max(1, total) : 1;
+				const safeDownloadedSize = (typeof downloadedSize === 'number' && isFinite(downloadedSize) && !isNaN(downloadedSize)) ? downloadedSize : 0;
+				const safeTotalSize = (typeof totalSize === 'number' && isFinite(totalSize) && !isNaN(totalSize)) ? totalSize : 0;
+				
+				console.log('Safe values:', { safeProgress, safeProcessed, safeTotal, safeDownloadedSize, safeTotalSize });
+				
+				const sizeText = safeTotalSize > 0 ? 
+					` (${(safeDownloadedSize / 1024 / 1024).toFixed(1)}MB/${(safeTotalSize / 1024 / 1024).toFixed(1)}MB)` : '';
+				
+				// Actualizar la barra de progreso local con valores validados
+				if (progressBar) {
+					// Doble verificación antes de asignar
+					let finalProgress = (isFinite(safeProgress) && !isNaN(safeProgress)) ? safeProgress : 0;
+					// HTMLProgressElement solo acepta números entre 0 y max
+					finalProgress = Math.max(0, Math.min(100, finalProgress));
+					
+					console.log('Setting progress bar value to:', finalProgress, typeof finalProgress);
+					try {
+						progressBar.value = finalProgress;
+						progressBar.max = 100;
+						progressBar.style.display = "block";
+					} catch (error) {
+						console.error('Error setting progress bar:', error);
+						console.error('Final progress value:', finalProgress, typeof finalProgress);
+						// Fallback: set to 0 if there's still an error
+						try {
+							progressBar.value = 0;
+						} catch (fallbackError) {
+							console.error('Even fallback failed:', fallbackError);
+						}
+					}
+				}
+				
+				// Actualizar el progreso en la barra de tareas de Windows
+				ipcRenderer.send("main-window-progress", { progress: safeProgress, size: 100 });
+				
+				// Mostrar progreso visual en el texto del estado
+				if (infoStarting) {
+					if (safeProgress <= 50) {
+						// Fase de verificación (0-50%)
+						infoStarting.innerHTML = `Verificando assets... ${Math.round(safeProgress)}% (${safeProcessed}/${safeTotal})`;
+					} else {
+						// Fase de descarga (50-100%)
+						infoStarting.innerHTML = `Descargando assets... ${Math.round(safeProgress)}% (${safeProcessed}/${safeTotal})${sizeText}`;
+					}
+				}
+			};
+
+			// Callback para actualizar el estado
+			const statusCallback = (status) => {
+				// Validar que el status sea una cadena válida
+				const safeStatus = (typeof status === 'string' && status.trim()) ? status.trim() : 'Procesando...';
+				if (infoStarting) {
+					infoStarting.innerHTML = safeStatus;
+				}
+			};
+
+			// Descargar assets
+			await downloadAssets(
+				assetsUrl,
+				instancePath,
+				ignoredAssets,
+				progressCallback,
+				statusCallback
+			);
+
+			console.log(`Descarga de assets completada para la instancia: ${options.name}`);
+			infoStarting.innerHTML = `Assets descargados correctamente`;
+			await new Promise(resolve => setTimeout(resolve, 500));
+
+		} catch (error) {
+			console.error(`Error al descargar assets para ${options.name}:`, error);
+			
+			// Mostrar error al usuario con detalles específicos
+			this.enablePlayButton();
+			if (playInstanceBTN) playInstanceBTN.style.display = "flex";
+			if (infoStartingBOX) infoStartingBOX.style.display = "none";
+			if (instanceSelectBTN) {
+				instanceSelectBTN.disabled = false;
+				instanceSelectBTN.classList.remove("disabled");
+			}
+			if (closeGameButton) closeGameButton.style.display = "none";
+			
+			ipcRenderer.send("main-window-progress-reset");
+			
+			// Categorizar el error para mostrar mensaje más útil
+			let errorTitle = "Error de Descarga de Assets";
+			let errorMessage = error.message;
+			let suggestions = [];
+			
+			if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('ECONNREFUSED')) {
+				errorTitle = "Error de Conexión";
+				errorMessage = "No se pudo conectar al servidor de assets.";
+				suggestions.push("• Verifica tu conexión a internet");
+				suggestions.push("• El servidor puede estar temporalmente no disponible");
+				suggestions.push("• Inténtalo de nuevo en unos minutos");
+			} else if (errorMessage.includes('ENOSPC')) {
+				errorTitle = "Espacio Insuficiente";
+				errorMessage = "No hay suficiente espacio en disco para descargar los assets.";
+				suggestions.push("• Libera espacio en tu disco duro");
+				suggestions.push("• Verifica que tienes al menos 2GB libres");
+			} else if (errorMessage.includes('EPERM') || errorMessage.includes('EACCES')) {
+				errorTitle = "Error de Permisos";
+				errorMessage = "No se tienen permisos para escribir en la carpeta de destino.";
+				suggestions.push("• Ejecuta el launcher como administrador");
+				suggestions.push("• Verifica permisos de la carpeta del launcher");
+			} else if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
+				errorTitle = "Timeout de Descarga";
+				errorMessage = "La descarga tardó demasiado tiempo.";
+				suggestions.push("• Tu conexión puede ser lenta");
+				suggestions.push("• Inténtalo de nuevo");
+				suggestions.push("• Considera usar una conexión más estable");
+			} else if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+				errorTitle = "Assets No Encontrados";
+				errorMessage = "Los assets para esta instancia no están disponibles.";
+				suggestions.push("• Contacta al administrador del servidor");
+				suggestions.push("• Verifica que la instancia esté configurada correctamente");
+			}
+			
+			const fullMessage = suggestions.length > 0 
+				? `${errorMessage}\n\nSugerencias:\n${suggestions.join('\n')}`
+				: errorMessage;
+			
+			let popupError = new popup();
+			popupError.openPopup({
+				title: errorTitle,
+				content: fullMessage,
+				color: "red",
+				options: true,
+			});
+			return;
+		}
+		console.log("Finalizada la descarga de assets.");
 		
 		try {
 			console.log(`Obteniendo configuración para loader: ${options.loadder.loadder_type}`);
@@ -1342,168 +1505,7 @@ Posibles causas:
 		}
 
 		/* if (options.loader.loadder_type == "forge") { */
-		try {
-			console.log(`Iniciando descarga de assets para la instancia: ${options.name}`);
-			infoStarting.innerHTML = `Descargando assets...`;
-			progressBar.style.display = "block";
-			progressBar.value = 0;
-			progressBar.max = 100;
 
-			// Carpeta de destino para los assets - directamente en la instancia
-			const instancePath = `${await appdata()}/${
-				process.platform == "darwin"
-					? this.config.dataDirectory
-					: `.${this.config.dataDirectory}`
-			}/instances/${options.name}`;
-			console.log(`Ruta de la instancia: ${instancePath}`);
-			
-			// URL de assets basada en la URL de la instancia con un endpoint fijo
-			const assetsUrl = options.url;
-			console.log(`URL de assets: ${assetsUrl}`);
-			
-			// Lista de archivos ignorados para la verificación de integridad
-			const ignoredAssets = ignoredFiles;
-			
-			// Callback para reportar progreso
-			const progressCallback = (progress, processed, total, downloadedSize, totalSize) => {
-				console.log('Progress callback called with:', { progress, processed, total, downloadedSize, totalSize });
-				
-				// Validar que los valores sean números finitos válidos
-				const safeProgress = (typeof progress === 'number' && isFinite(progress) && !isNaN(progress)) ? Math.max(0, Math.min(100, progress)) : 0;
-				const safeProcessed = (typeof processed === 'number' && isFinite(processed) && !isNaN(processed)) ? processed : 0;
-				const safeTotal = (typeof total === 'number' && isFinite(total) && !isNaN(total)) ? Math.max(1, total) : 1;
-				const safeDownloadedSize = (typeof downloadedSize === 'number' && isFinite(downloadedSize) && !isNaN(downloadedSize)) ? downloadedSize : 0;
-				const safeTotalSize = (typeof totalSize === 'number' && isFinite(totalSize) && !isNaN(totalSize)) ? totalSize : 0;
-				
-				console.log('Safe values:', { safeProgress, safeProcessed, safeTotal, safeDownloadedSize, safeTotalSize });
-				
-				const sizeText = safeTotalSize > 0 ? 
-					` (${(safeDownloadedSize / 1024 / 1024).toFixed(1)}MB/${(safeTotalSize / 1024 / 1024).toFixed(1)}MB)` : '';
-				
-				// Actualizar la barra de progreso local con valores validados
-				if (progressBar) {
-					// Doble verificación antes de asignar
-					let finalProgress = (isFinite(safeProgress) && !isNaN(safeProgress)) ? safeProgress : 0;
-					// HTMLProgressElement solo acepta números entre 0 y max
-					finalProgress = Math.max(0, Math.min(100, finalProgress));
-					
-					console.log('Setting progress bar value to:', finalProgress, typeof finalProgress);
-					try {
-						progressBar.value = finalProgress;
-						progressBar.max = 100;
-						progressBar.style.display = "block";
-					} catch (error) {
-						console.error('Error setting progress bar:', error);
-						console.error('Final progress value:', finalProgress, typeof finalProgress);
-						// Fallback: set to 0 if there's still an error
-						try {
-							progressBar.value = 0;
-						} catch (fallbackError) {
-							console.error('Even fallback failed:', fallbackError);
-						}
-					}
-				}
-				
-				// Actualizar el progreso en la barra de tareas de Windows
-				ipcRenderer.send("main-window-progress", { progress: safeProgress, size: 100 });
-				
-				// Mostrar progreso visual en el texto del estado
-				if (infoStarting) {
-					if (safeProgress <= 50) {
-						// Fase de verificación (0-50%)
-						infoStarting.innerHTML = `Verificando assets... ${Math.round(safeProgress)}% (${safeProcessed}/${safeTotal})`;
-					} else {
-						// Fase de descarga (50-100%)
-						infoStarting.innerHTML = `Descargando assets... ${Math.round(safeProgress)}% (${safeProcessed}/${safeTotal})${sizeText}`;
-					}
-				}
-			};
-
-			// Callback para actualizar el estado
-			const statusCallback = (status) => {
-				// Validar que el status sea una cadena válida
-				const safeStatus = (typeof status === 'string' && status.trim()) ? status.trim() : 'Procesando...';
-				if (infoStarting) {
-					infoStarting.innerHTML = safeStatus;
-				}
-			};
-
-			// Descargar assets
-			await downloadAssets(
-				assetsUrl,
-				instancePath,
-				ignoredAssets,
-				progressCallback,
-				statusCallback
-			);
-
-			console.log(`Descarga de assets completada para la instancia: ${options.name}`);
-			infoStarting.innerHTML = `Assets descargados correctamente`;
-			await new Promise(resolve => setTimeout(resolve, 500));
-
-		} catch (error) {
-			console.error(`Error al descargar assets para ${options.name}:`, error);
-			
-			// Mostrar error al usuario con detalles específicos
-			this.enablePlayButton();
-			if (playInstanceBTN) playInstanceBTN.style.display = "flex";
-			if (infoStartingBOX) infoStartingBOX.style.display = "none";
-			if (instanceSelectBTN) {
-				instanceSelectBTN.disabled = false;
-				instanceSelectBTN.classList.remove("disabled");
-			}
-			if (closeGameButton) closeGameButton.style.display = "none";
-			
-			ipcRenderer.send("main-window-progress-reset");
-			
-			// Categorizar el error para mostrar mensaje más útil
-			let errorTitle = "Error de Descarga de Assets";
-			let errorMessage = error.message;
-			let suggestions = [];
-			
-			if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('ECONNREFUSED')) {
-				errorTitle = "Error de Conexión";
-				errorMessage = "No se pudo conectar al servidor de assets.";
-				suggestions.push("• Verifica tu conexión a internet");
-				suggestions.push("• El servidor puede estar temporalmente no disponible");
-				suggestions.push("• Inténtalo de nuevo en unos minutos");
-			} else if (errorMessage.includes('ENOSPC')) {
-				errorTitle = "Espacio Insuficiente";
-				errorMessage = "No hay suficiente espacio en disco para descargar los assets.";
-				suggestions.push("• Libera espacio en tu disco duro");
-				suggestions.push("• Verifica que tienes al menos 2GB libres");
-			} else if (errorMessage.includes('EPERM') || errorMessage.includes('EACCES')) {
-				errorTitle = "Error de Permisos";
-				errorMessage = "No se tienen permisos para escribir en la carpeta de destino.";
-				suggestions.push("• Ejecuta el launcher como administrador");
-				suggestions.push("• Verifica permisos de la carpeta del launcher");
-			} else if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
-				errorTitle = "Timeout de Descarga";
-				errorMessage = "La descarga tardó demasiado tiempo.";
-				suggestions.push("• Tu conexión puede ser lenta");
-				suggestions.push("• Inténtalo de nuevo");
-				suggestions.push("• Considera usar una conexión más estable");
-			} else if (errorMessage.includes('404') || errorMessage.includes('not found')) {
-				errorTitle = "Assets No Encontrados";
-				errorMessage = "Los assets para esta instancia no están disponibles.";
-				suggestions.push("• Contacta al administrador del servidor");
-				suggestions.push("• Verifica que la instancia esté configurada correctamente");
-			}
-			
-			const fullMessage = suggestions.length > 0 
-				? `${errorMessage}\n\nSugerencias:\n${suggestions.join('\n')}`
-				: errorMessage;
-			
-			let popupError = new popup();
-			popupError.openPopup({
-				title: errorTitle,
-				content: fullMessage,
-				color: "red",
-				options: true,
-			});
-			return;
-		}
-		console.log("Finalizada la descarga de assets.");
 	/* } */
 
 	launcher.launch(opt);
@@ -2091,7 +2093,7 @@ Si el problema persiste, contacta al soporte técnico.`;
 					} else {
 						throw new Error(`Estado de cola desconocido: ${data.status}`);
 					}
-				} catch (error) {
+							} catch (error) {
 					if (
 						document.querySelector(".info-starting-game").contains(cancelButton)
 					) {
