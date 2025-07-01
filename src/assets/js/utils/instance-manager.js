@@ -646,6 +646,71 @@ window.debugSingleAsset = async function(instancePath, relativePath, expectedHas
     });
 };
 
+async function verifyAssetIntegrity(folder, assets, ignoredList = []) {
+    console.log(`Verifying integrity of ${assets.length} assets...`);
+    
+    const results = {
+        valid: 0,
+        invalid: []
+    };
+    
+    for (const asset of assets) {
+        try {
+            const localPath = path.join(folder, asset.path);
+            const shouldIgnoreChecksum = ignoredList.some(ignored => 
+                asset.path.includes(ignored) || asset.path.endsWith('.disabled')
+            );
+            
+            if (shouldIgnoreChecksum) {
+                results.valid++;
+                continue;
+            }
+            
+            // Check if file exists
+            if (!fs.existsSync(localPath)) {
+                results.invalid.push({
+                    path: asset.path,
+                    error: 'File not found'
+                });
+                continue;
+            }
+            
+            // Check file size
+            const stats = fs.statSync(localPath);
+            if (asset.size && stats.size !== asset.size) {
+                results.invalid.push({
+                    path: asset.path,
+                    error: `Size mismatch: expected ${asset.size}, got ${stats.size}`
+                });
+                continue;
+            }
+            
+            // Check file hash if provided
+            if (asset.hash) {
+                const fileHash = await calculateFileHash(localPath);
+                if (fileHash !== asset.hash.toLowerCase()) {
+                    results.invalid.push({
+                        path: asset.path,
+                        error: `Hash mismatch: expected ${asset.hash}, got ${fileHash}`
+                    });
+                    continue;
+                }
+            }
+            
+            results.valid++;
+            
+        } catch (error) {
+            results.invalid.push({
+                path: asset.path,
+                error: error.message
+            });
+        }
+    }
+    
+    console.log(`Integrity verification complete: ${results.valid} valid, ${results.invalid.length} invalid`);
+    return results;
+}
+
 export {
     downloadAssets,
     verifyAssetIntegrity
