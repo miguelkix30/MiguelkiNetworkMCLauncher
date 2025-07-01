@@ -1,5 +1,5 @@
 const { app, ipcMain, BrowserWindow } = require('electron');
-const { MinecraftDownloader, MinecraftExecutor } = require('minecraft-core-master');
+const { Authenticator } = require('minecraft-launcher-core');
 const { autoUpdater } = require('electron-updater');
 const pkg = require('../package.json');
 const path = require('path');

@@ -47,7 +47,7 @@ import {
 } from "./MKLib.js";
 const { AZauth } = require("minecraft-java-core");
 const { Auth } = require("msmc");
-const { MinecraftDownloader, MinecraftExecutor } = require("minecraft-core-master");
+const { Authenticator } = require("minecraft-launcher-core");
 
 const { ipcRenderer } = require("electron");
 const fs = require("fs");

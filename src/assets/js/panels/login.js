@@ -3,7 +3,7 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 const { AZauth } = require("minecraft-java-core");
-const { MinecraftDownloader, MinecraftExecutor } = require("minecraft-core-master");
+const { Authenticator } = require("minecraft-launcher-core");
 const { ipcRenderer } = require("electron");
 
 import {
