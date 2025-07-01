@@ -5,6 +5,7 @@
 
 import encryptedStorage from "./encrypted-storage.js";
 const { ipcRenderer } = require("electron");
+const fs = require("fs");
 
 class database {
 	constructor() {
