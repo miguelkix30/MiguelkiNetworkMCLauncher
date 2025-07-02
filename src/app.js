@@ -26,12 +26,12 @@ async function setupLogsDirectory() {
         // Intentar obtener la configuración del servidor
         const config = require('./assets/js/utils/config.js');
         const res = await config.GetConfig();
+        const dataDir = res.dataDirectory || 'MiguelkiNetwork';
         
         if (dev) {
-            logsDirectory = path.resolve('./data/logs');
+            logsDirectory = path.resolve(`./data/.${dataDir}/logs`);
         } else {
             const appData = app.getPath('appData');
-            const dataDir = res.dataDirectory || 'MiguelkiNetwork';
             const dirName = process.platform === 'darwin' ? dataDir : `.${dataDir}`;
             logsDirectory = path.join(appData, dirName, 'logs');
         }
