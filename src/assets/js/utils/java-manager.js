@@ -1,5 +1,5 @@
 /**
- * @author AI Assistant
+ * @author MiguelkiNetwork
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  * Sistema de descarga automática de Java para MiguelkiNetwork MCLauncher
  */
@@ -127,9 +127,15 @@ const MINECRAFT_JAVA_COMPATIBILITY = {
     '1.21': 'java21'
 };
 
-// Variables globales para paths
+// Variables globales para paths y estado del juego
 let appDataPath = null;
 let runtimePath = null;
+let gameStatus = {
+    inProgress: false,
+    javaInUse: null,
+    startTime: null,
+    instanceName: null
+};
 
 /**
  * Inicializa los paths necesarios para Java
@@ -162,6 +168,48 @@ async function initJavaPaths() {
         console.error('❌ Error inicializando paths de Java:', error);
         throw error;
     }
+}
+
+/**
+ * Marca que un juego está en progreso usando una versión específica de Java
+ */
+function setGameInProgress(javaPath, instanceName = null) {
+    gameStatus.inProgress = true;
+    gameStatus.javaInUse = javaPath;
+    gameStatus.startTime = Date.now();
+    gameStatus.instanceName = instanceName;
+    console.log(`🎮 Juego iniciado usando Java: ${javaPath}`);
+}
+
+/**
+ * Marca que el juego ha terminado
+ */
+function setGameFinished() {
+    console.log(`🎮 Juego terminado. Java liberado: ${gameStatus.javaInUse}`);
+    gameStatus.inProgress = false;
+    gameStatus.javaInUse = null;
+    gameStatus.startTime = null;
+    gameStatus.instanceName = null;
+}
+
+/**
+ * Obtiene el estado actual del juego
+ */
+function getGameStatus() {
+    return { ...gameStatus };
+}
+
+/**
+ * Verifica si una instalación específica de Java está siendo usada
+ */
+function isJavaInUse(javaPathOrDirectory) {
+    if (!gameStatus.inProgress || !gameStatus.javaInUse) {
+        return false;
+    }
+    
+    // Verificar si es la misma ruta exacta o si está dentro del directorio
+    return gameStatus.javaInUse === javaPathOrDirectory || 
+           gameStatus.javaInUse.startsWith(javaPathOrDirectory);
 }
 
 /**
@@ -293,9 +341,9 @@ async function downloadAndInstallJava(minecraftVersion, progressCallback = null,
         const platform = process.platform;
         const arch = process.arch;
         
-        console.log(`☕ Descargando Java ${requiredJava} para ${platform}-${arch}...`);
+        console.log(`☕ Descargando ${requiredJava} para ${platform}-${arch}...`);
         
-        if (statusCallback) statusCallback(`Descargando Java ${requiredJava}...`);
+        if (statusCallback) statusCallback(`Descargando ${requiredJava}...`);
         
         // Obtener URL de descarga
         const downloadInfo = await getDownloadInfo(requiredJava, platform, arch);
@@ -339,7 +387,7 @@ async function downloadAndInstallJava(minecraftVersion, progressCallback = null,
         
         // Si es descarga dinámica y no tenemos hash, intentar obtenerlo desde la API
         if (downloadInfo.dynamic && !expectedHash) {
-            if (statusCallback) statusCallback(`Obteniendo checksum para Java ${requiredJava}...`);
+            if (statusCallback) statusCallback(`Obteniendo checksum para ${requiredJava}...`);
             expectedHash = await getChecksumFromAPI(requiredJava, platform, arch);
         }
         
@@ -365,11 +413,12 @@ async function downloadAndInstallJava(minecraftVersion, progressCallback = null,
         if (statusCallback) statusCallback(`Extrayendo Java ${requiredJava}...`);
         const extractedPath = await extractJavaArchive(downloadPath, javaVersionPath);
         
-        // Limpiar archivo descargado
+        // Limpiar archivo descargado para ahorrar espacio
         try {
             fs.unlinkSync(downloadPath);
+            console.log(`🗑️ Archivo comprimido eliminado: ${path.basename(downloadPath)}`);
         } catch (error) {
-            console.warn('⚠️ No se pudo eliminar el archivo descargado:', error);
+            console.warn('⚠️ No se pudo eliminar el archivo descargado:', downloadPath, error);
         }
         
         // Encontrar el ejecutable de Java
@@ -377,13 +426,12 @@ async function downloadAndInstallJava(minecraftVersion, progressCallback = null,
         if (!javaExecutable) {
             throw new Error('No se pudo encontrar el ejecutable de Java después de la extracción');
         }
-        
-        // Verificar la instalación
+          // Verificar la instalación
         const compatibility = await isJavaCompatible(javaExecutable, minecraftVersion);
         if (!compatibility.compatible) {
             throw new Error(`Java descargado no es compatible: ${compatibility.reason}`);
         }
-        
+
         console.log(`✅ Java ${requiredJava} descargado e instalado correctamente`);
         if (statusCallback) statusCallback(`Java ${requiredJava} instalado correctamente`);
         
@@ -565,27 +613,57 @@ async function extractJavaArchive(archivePath, extractPath) {
  */
 async function findJavaExecutable(extractPath) {
     const javaExecutableName = process.platform === 'win32' ? 'java.exe' : 'java';
+    console.log(`🔍 Buscando ${javaExecutableName} en: ${extractPath}`);
     
-    // Buscar usando las utilidades
-    const javaFiles = findFilesRecursive(extractPath, new RegExp(`^${javaExecutableName}$`));
-    
-    // Filtrar para encontrar el ejecutable en un directorio bin
-    for (const javaFile of javaFiles) {
-        const parentDir = path.basename(path.dirname(javaFile));
-        if (parentDir === 'bin') {
-            // Hacer ejecutable en sistemas Unix
-            makeExecutable(javaFile);
-            return javaFile;
+    // Buscar recursivamente en toda la estructura de directorios
+    try {
+        console.log(`� Realizando búsqueda recursiva de ${javaExecutableName}...`);
+        const javaFiles = findFilesRecursive(extractPath, new RegExp(`^${javaExecutableName}$`), 10); // Aumentar maxDepth
+        console.log(`📋 Archivos java encontrados: ${javaFiles.length}`);
+        
+        if (javaFiles.length === 0) {
+            console.log(`❌ No se encontró ningún ejecutable de Java en: ${extractPath}`);
+            return null;
         }
+        
+        console.log(`📄 Archivos Java encontrados:`, javaFiles);
+        
+        // Priorizar ejecutables en directorios 'bin'
+        for (const javaFile of javaFiles) {
+            const parentDir = path.basename(path.dirname(javaFile));
+            console.log(`📂 Verificando ${javaFile} en directorio: ${parentDir}`);
+            
+            if (parentDir === 'bin') {
+                console.log(`✅ Ejecutable de Java encontrado en directorio bin: ${javaFile}`);
+                // Verificar que el archivo realmente existe
+                if (fs.existsSync(javaFile)) {
+                    // Hacer ejecutable en sistemas Unix
+                    makeExecutable(javaFile);
+                    return javaFile;
+                } else {
+                    console.warn(`⚠️ El archivo encontrado no existe realmente: ${javaFile}`);
+                }
+            }
+        }
+        
+        // Si no se encuentra en bin, usar el primer resultado válido
+        for (const javaFile of javaFiles) {
+            if (fs.existsSync(javaFile)) {
+                console.log(`⚠️ No se encontró en directorio 'bin', usando: ${javaFile}`);
+                makeExecutable(javaFile);
+                return javaFile;
+            } else {
+                console.warn(`⚠️ Archivo encontrado no existe: ${javaFile}`);
+            }
+        }
+        
+        console.log(`❌ Ningún archivo Java encontrado es válido en: ${extractPath}`);
+        return null;
+        
+    } catch (error) {
+        console.error(`❌ Error buscando ejecutable de Java en ${extractPath}:`, error);
+        return null;
     }
-    
-    // Si no se encuentra en bin, tomar el primer resultado
-    if (javaFiles.length > 0) {
-        makeExecutable(javaFiles[0]);
-        return javaFiles[0];
-    }
-    
-    return null;
 }
 
 /**
@@ -593,10 +671,20 @@ async function findJavaExecutable(extractPath) {
  */
 async function findExistingJava(javaVersionPath) {
     if (!fs.existsSync(javaVersionPath)) {
+        console.log(`📁 Directorio no existe: ${javaVersionPath}`);
         return null;
     }
     
-    return findJavaExecutable(javaVersionPath);
+    console.log(`🔍 Buscando ejecutable de Java en: ${javaVersionPath}`);
+    const executable = await findJavaExecutable(javaVersionPath);
+    
+    if (executable) {
+        console.log(`✅ Ejecutable encontrado: ${executable}`);
+    } else {
+        console.log(`❌ No se encontró ejecutable de Java en: ${javaVersionPath}`);
+    }
+    
+    return executable;
 }
 
 /**
@@ -639,7 +727,9 @@ async function getJavaForMinecraft(minecraftVersion, currentJavaPath = null, pro
         
         // Descargar Java automáticamente
         console.log(`📥 Descargando Java ${requiredJava} automáticamente...`);
-        return await downloadAndInstallJava(minecraftVersion, progressCallback, statusCallback);
+        const javaPath = await downloadAndInstallJava(minecraftVersion, progressCallback, statusCallback);
+        
+        return javaPath;
         
     } catch (error) {
         console.error('❌ Error obteniendo Java para Minecraft:', error);
@@ -656,71 +746,178 @@ async function listAvailableJavaInstallations() {
         await initJavaPaths();
     }
     
+    console.log(`🔍 Listando instalaciones de Java en: ${runtimePath}`);
+    
     const installations = [];
     
     try {
         if (!fs.existsSync(runtimePath)) {
+            console.log(`📁 Directorio runtime no existe: ${runtimePath}`);
             return installations;
         }
         
         const javaVersions = fs.readdirSync(runtimePath);
+        console.log(`📦 Directorios encontrados en runtime: ${javaVersions.join(', ')}`);
         
         for (const version of javaVersions) {
             const versionPath = path.join(runtimePath, version);
-            const stat = fs.statSync(versionPath);
             
-            if (stat.isDirectory()) {
-                const javaExecutable = await findExistingJava(versionPath);
-                if (javaExecutable) {
-                    try {
-                        const javaVersion = await getJavaVersion(javaExecutable);
-                        installations.push({
-                            version: version,
-                            path: javaExecutable,
-                            javaVersion: javaVersion,
-                            directory: versionPath
-                        });
-                    } catch (error) {
-                        console.warn(`⚠️ Error verificando Java en ${versionPath}:`, error);
+            try {
+                const stat = fs.statSync(versionPath);
+                
+                if (stat.isDirectory()) {
+                    console.log(`📂 Verificando directorio: ${version}`);
+                    const javaExecutable = await findExistingJava(versionPath);
+                    
+                    if (javaExecutable) {
+                        console.log(`☕ Ejecutable de Java encontrado: ${javaExecutable}`);
+                        try {
+                            const javaVersion = await getJavaVersion(javaExecutable);
+                            console.log(`✅ Versión de Java detectada: Java ${javaVersion.major}.${javaVersion.minor}`);
+                            
+                            installations.push({
+                                version: version,
+                                path: javaExecutable,
+                                javaVersion: javaVersion,
+                                directory: versionPath,
+                                size: await getDirectorySize(versionPath)
+                            });
+                        } catch (javaVersionError) {
+                            console.warn(`⚠️ Error verificando versión de Java en ${javaExecutable}:`, javaVersionError.message);
+                            
+                            // Instalación corrupta - agregar a lista para posible limpieza
+                            console.log(`🧹 Marcando instalación corrupta para limpieza: ${version}`);
+                            installations.push({
+                                version: version,
+                                path: javaExecutable,
+                                javaVersion: null,
+                                directory: versionPath,
+                                corrupted: true,
+                                error: javaVersionError.message
+                            });
+                        }
+                    } else {
+                        console.warn(`⚠️ No se encontró ejecutable de Java en ${versionPath}`);
+                        
+                        // Verificar si es un directorio vacío o corrupto
+                        try {
+                            const dirContents = fs.readdirSync(versionPath);
+                            if (dirContents.length === 0) {
+                                console.log(`🗑️ Directorio vacío detectado: ${version}`);
+                                
+                                // Eliminar directorio vacío automáticamente
+                                fs.rmSync(versionPath, { recursive: true, force: true });
+                                console.log(`✅ Directorio vacío eliminado: ${version}`);
+                            } else {
+                                console.log(`� Directorio con contenido pero sin ejecutable: ${version} (${dirContents.length} elementos)`);
+                                console.log(`📁 Contenido: ${dirContents.join(', ')}`);
+                                
+                                // Agregar como instalación corrupta
+                                installations.push({
+                                    version: version,
+                                    path: null,
+                                    javaVersion: null,
+                                    directory: versionPath,
+                                    corrupted: true,
+                                    error: 'Ejecutable de Java no encontrado',
+                                    size: await getDirectorySize(versionPath)
+                                });
+                            }
+                        } catch (dirError) {
+                            console.error(`❌ Error accediendo al directorio ${versionPath}:`, dirError);
+                        }
                     }
+                } else {
+                    console.log(`�📄 Omitiendo archivo (no es directorio): ${version}`);
                 }
+            } catch (statError) {
+                console.error(`❌ Error verificando ${versionPath}:`, statError);
             }
         }
     } catch (error) {
         console.error('❌ Error listando instalaciones de Java:', error);
     }
     
+    console.log(`📊 Total de instalaciones encontradas: ${installations.length}`);
     return installations;
 }
 
 /**
  * Limpia instalaciones de Java no utilizadas
  */
-async function cleanupUnusedJava() {
+async function cleanupUnusedJava(forceClean = false) {
     try {
         const installations = await listAvailableJavaInstallations();
         const results = {
             cleaned: [],
+            skipped: [],
             errors: [],
-            totalSize: 0
+            totalSize: 0,
+            freedSpace: 0
         };
         
         // Obtener información del sistema para logs
         const systemInfo = getSystemInfo();
         console.log('🔧 Sistema detectado:', systemInfo);
         
-        // Por ahora, solo calculamos el tamaño total sin eliminar
+        // Verificar estado del juego
+        const gameStatus = getGameStatus();
+        if (gameStatus.inProgress && !forceClean) {
+            console.log(`🎮 Juego en progreso usando Java: ${gameStatus.javaInUse}`);
+            console.log(`⚠️ No se puede limpiar Java mientras el juego está ejecutándose`);
+        }
+        
         for (const installation of installations) {
             try {
                 const size = await getDirectorySize(installation.directory);
-                results.cleaned.push({
-                    version: installation.version,
-                    path: installation.directory,
-                    size: size,
-                    javaVersion: installation.javaVersion
-                });
                 results.totalSize += size;
+                
+                // Verificar si esta instalación está siendo usada
+                const isInUse = isJavaInUse(installation.directory);
+                
+                if (isInUse && !forceClean) {
+                    console.log(`🔒 Saltando Java en uso: ${installation.version} (${installation.directory})`);
+                    results.skipped.push({
+                        version: installation.version,
+                        path: installation.directory,
+                        size: size,
+                        reason: 'En uso por el juego'
+                    });
+                    continue;
+                }
+                
+                // Verificar si es una instalación corrupta
+                if (installation.corrupted) {
+                    console.log(`🧹 Eliminando instalación corrupta: ${installation.version}`);
+                } else {
+                    console.log(`🗑️ Eliminando instalación de Java: ${installation.version}`);
+                }
+                
+                // Intentar eliminar la instalación usando fs.rmSync
+                fs.rmSync(installation.directory, { recursive: true, force: true });
+                
+                // Verificar que se eliminó correctamente
+                if (!fs.existsSync(installation.directory)) {
+                    console.log(`✅ Eliminado correctamente: ${installation.directory}`);
+                    results.cleaned.push({
+                        version: installation.version,
+                        path: installation.directory,
+                        size: size,
+                        javaVersion: installation.javaVersion,
+                        corrupted: installation.corrupted || false
+                    });
+                    results.freedSpace += size;
+                } else {
+                    console.warn(`⚠️ No se pudo eliminar completamente: ${installation.directory}`);
+                    results.errors.push({
+                        version: installation.version,
+                        path: installation.directory,
+                        error: 'Directorio no eliminado completamente'
+                    });
+                }
+                
             } catch (error) {
+                console.error(`❌ Error eliminando ${installation.version}:`, error);
                 results.errors.push({
                     version: installation.version,
                     path: installation.directory,
@@ -729,8 +926,13 @@ async function cleanupUnusedJava() {
             }
         }
         
-        console.log(`📊 Encontradas ${installations.length} instalaciones de Java`);
-        console.log(`💾 Tamaño total: ${Math.round(results.totalSize / (1024 * 1024))} MB`);
+        console.log(`📊 Resumen de limpieza:`);
+        console.log(`  - Instalaciones encontradas: ${installations.length}`);
+        console.log(`  - Eliminadas: ${results.cleaned.length}`);
+        console.log(`  - Saltadas: ${results.skipped.length}`);
+        console.log(`  - Errores: ${results.errors.length}`);
+        console.log(`  - Tamaño total: ${Math.round(results.totalSize / (1024 * 1024))} MB`);
+        console.log(`  - Espacio liberado: ${Math.round(results.freedSpace / (1024 * 1024))} MB`);
         
         return { success: true, results };
     } catch (error) {
@@ -794,6 +996,10 @@ export {
     findExistingJava,
     getJavaForMinecraft,
     listAvailableJavaInstallations,
-    cleanupUnusedJava
+    cleanupUnusedJava,
+    setGameInProgress,
+    setGameFinished,
+    isJavaInUse,
+    getGameStatus
 };
 

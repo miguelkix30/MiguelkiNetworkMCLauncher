@@ -1,5 +1,5 @@
 /**
- * @author AI Assistant  
+ * @author MiguelkiNetwork  
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  * Utilidades para descarga y extracción de Java
  */

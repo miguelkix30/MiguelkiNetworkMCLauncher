@@ -37,7 +37,7 @@ import {
 } from "../MKLib.js";
 import cleanupManager from "../utils/cleanup-manager.js";
 import { downloadAssets } from "../utils/instance-manager.js";
-import { getJavaForMinecraft } from "../utils/java-manager.js";
+import { getJavaForMinecraft, setGameInProgress, setGameFinished } from "../utils/java-manager.js";
 
 const path = require("path");
 const fs = require("fs");
@@ -1188,30 +1188,30 @@ class Home {
 			if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('ECONNREFUSED')) {
 				errorTitle = "Error de Conexión";
 				errorMessage = "No se pudo conectar al servidor de assets.";
-				suggestions.push("• Verifica tu conexión a internet");
-				suggestions.push("• El servidor puede estar temporalmente no disponible");
-				suggestions.push("• Inténtalo de nuevo en unos minutos");
+				suggestions.push("- Verifica tu conexión a internet");
+				suggestions.push("- El servidor puede estar temporalmente no disponible");
+				suggestions.push("- Inténtalo de nuevo en unos minutos");
 			} else if (errorMessage.includes('ENOSPC')) {
 				errorTitle = "Espacio Insuficiente";
 				errorMessage = "No hay suficiente espacio en disco para descargar los assets.";
-				suggestions.push("• Libera espacio en tu disco duro");
-				suggestions.push("• Verifica que tienes al menos 2GB libres");
+				suggestions.push("- Libera espacio en tu disco duro");
+				suggestions.push("- Verifica que tienes al menos 2GB libres");
 			} else if (errorMessage.includes('EPERM') || errorMessage.includes('EACCES')) {
 				errorTitle = "Error de Permisos";
 				errorMessage = "No se tienen permisos para escribir en la carpeta de destino.";
-				suggestions.push("• Ejecuta el launcher como administrador");
-				suggestions.push("• Verifica permisos de la carpeta del launcher");
+				suggestions.push("- Ejecuta el launcher como administrador");
+				suggestions.push("- Verifica permisos de la carpeta del launcher");
 			} else if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
 				errorTitle = "Timeout de Descarga";
 				errorMessage = "La descarga tardó demasiado tiempo.";
-				suggestions.push("• Tu conexión puede ser lenta");
-				suggestions.push("• Inténtalo de nuevo");
-				suggestions.push("• Considera usar una conexión más estable");
+				suggestions.push("- Tu conexión puede ser lenta");
+				suggestions.push("- Inténtalo de nuevo");
+				suggestions.push("- Considera usar una conexión más estable");
 			} else if (errorMessage.includes('404') || errorMessage.includes('not found')) {
 				errorTitle = "Assets No Encontrados";
 				errorMessage = "Los assets para esta instancia no están disponibles.";
-				suggestions.push("• Contacta al administrador del servidor");
-				suggestions.push("• Verifica que la instancia esté configurada correctamente");
+				suggestions.push("- Contacta al administrador del servidor");
+				suggestions.push("- Verifica que la instancia esté configurada correctamente");
 			}
 			
 			const fullMessage = suggestions.length > 0 
@@ -1259,27 +1259,27 @@ class Home {
 				switch (loaderResult.category) {
 					case 'network':
 						errorTitle = "Error de Conexión";
-						suggestions.push("• Verifica tu conexión a internet");
-						suggestions.push("• Inténtalo de nuevo en unos minutos");
+						suggestions.push("- Verifica tu conexión a internet");
+						suggestions.push("- Inténtalo de nuevo en unos minutos");
 						break;
 					case 'filesystem':
 						errorTitle = "Error de Permisos";
-						suggestions.push("• Ejecuta el launcher como administrador");
-						suggestions.push("• Verifica que tienes permisos de escritura");
+						suggestions.push("- Ejecuta el launcher como administrador");
+						suggestions.push("- Verifica que tienes permisos de escritura");
 						break;
 					case 'timeout':
 						errorTitle = "Timeout de Descarga";
-						suggestions.push("• Tu conexión puede ser lenta");
-						suggestions.push("• Inténtalo de nuevo");
+						suggestions.push("- Tu conexión puede ser lenta");
+						suggestions.push("- Inténtalo de nuevo");
 						break;
 					case 'version':
 						errorTitle = "Versión No Disponible";
-						suggestions.push(`• Verifica que ${options.loadder.loadder_type} soporta Minecraft ${options.loadder.minecraft_version}`);
-						suggestions.push("• Contacta al administrador del servidor");
+						suggestions.push(`- Verifica que ${options.loadder.loadder_type} soporta Minecraft ${options.loadder.minecraft_version}`);
+						suggestions.push("- Contacta al administrador del servidor");
 						break;
 					default:
-						suggestions.push("• Inténtalo de nuevo");
-						suggestions.push("• Si el problema persiste, contacta al soporte");
+						suggestions.push("- Inténtalo de nuevo");
+						suggestions.push("- Si el problema persiste, contacta al soporte");
 						break;
 				}
 				
@@ -1421,6 +1421,9 @@ class Home {
 			javaPath = compatibleJavaPath;
 			console.log(`✅ Java verificado/descargado: ${javaPath}`);
 			
+			// Marcar que el juego va a usar este Java
+			setGameInProgress(javaPath, options.name);
+			
 			// Validar que el ejecutable de Java existe y es accesible
 			if (!javaPath || !fs.existsSync(javaPath)) {
 				throw new Error(`Ruta de Java no válida o no existe: ${javaPath}`);
@@ -1453,14 +1456,12 @@ class Home {
 			let popupError = new popup();
 			popupError.openPopup({
 				title: "Error de Java",
-				content: `No se pudo configurar Java para Minecraft ${options.loadder.minecraft_version}:
-
-${javaError.message}
-
-Por favor:
-• Verifica tu conexión a internet
-• Asegúrate de tener suficiente espacio en disco
-• Si el problema persiste, contacta al soporte`,
+				content: `No se pudo configurar Java para Minecraft ${options.loadder.minecraft_version}:<br>
+				${javaError.message}<br><br>
+				Por favor:<br>
+				- Verifica tu conexión a internet<br>
+				- Asegúrate de tener suficiente espacio en disco<br>
+				- Si el problema persiste, contacta al soporte`,
 				color: "red",
 				options: true,
 			});
@@ -1831,6 +1832,10 @@ Por favor:
 				ipcRenderer.send("main-window-show");
 			}
 
+			// Marcar que el juego ha terminado y liberar Java
+			setGameFinished();
+			console.log("🛑 Juego cerrado, Java liberado para limpieza");
+
 			this.notification();
 			if (!musicMuted && !musicPlaying) {
 				musicPlaying = true;
@@ -1883,6 +1888,10 @@ Por favor:
 			console.error("Error del launcher:", err);
 			removeUserFromQueue(hwid);
 
+			// Marcar que el juego ha terminado debido a error
+			setGameStopped();
+			console.log("❌ Error en el launcher, Java liberado");
+
 			// Restablecer estado de UI
 			this.enablePlayButton();
 			if (playInstanceBTN) playInstanceBTN.style.display = "flex";
@@ -1914,21 +1923,11 @@ Por favor:
 			// Determinar tipo de error y mensaje apropiado
 			let errorTitle = "Error al Iniciar el Juego";
 			let errorContent = "Ha ocurrido un error inesperado al iniciar el juego.";
-			let showTroubleshooting = false;
 			
 			if (typeof err.error === "undefined") {
 				// Error sin mensaje específico - posiblemente problema de configuración
 				errorTitle = "Error de Configuración";
-				errorContent = `El juego no pudo iniciarse debido a un problema de configuración.
-				
-Posibles causas:
-• Archivos del juego corruptos o faltantes
-• Configuración de Java incorrecta
-• Problemas con ${options.loadder.loadder_type}
-• Falta de memoria RAM
-
-¿Quieres ejecutar herramientas de diagnóstico?`;
-				showTroubleshooting = true;
+				errorContent = `El juego no pudo iniciarse debido a un problema de configuración.<br><br>Posibles causas:<br>- Archivos del juego corruptos o faltantes<br>- Configuración de Java incorrecta<br>- Problemas con ${options.loadder.loadder_type}<br>- Falta de memoria RAM<br>Si el problema persiste, contacta al soporte técnico.`;
 			} else {
 				// Error con mensaje específico
 				let originalError = err.error;
@@ -1936,59 +1935,21 @@ Posibles causas:
 				// Categorizar errores comunes
 				if (originalError.includes('OutOfMemoryError') || originalError.includes('heap')) {
 					errorTitle = "Error de Memoria";
-					errorContent = `El juego se quedó sin memoria RAM.
-
-Soluciones:
-• Incrementa la memoria máxima de Java en Configuración
-• Cierra otros programas que consuman memoria
-• Usa menos mods o un modpack más ligero
-
-Error técnico: ${originalError}`;
+					errorContent = `El juego se quedó sin memoria RAM.<br><br>Soluciones:<br>- Incrementa la memoria máxima de Java en Configuración<br>- Cierra otros programas que consuman memoria<br>- Usa menos mods o un modpack más ligero<br>Error técnico: ${originalError}`;
 				} else if (originalError.includes('java') || originalError.includes('JVM')) {
 					errorTitle = "Error de Java";
-					errorContent = `Problema con la instalación de Java.
-
-Soluciones:
-• Verifica que Java esté instalado correctamente
-• Reinstala Java desde el sitio oficial
-• Verifica la ruta de Java en Configuración
-
-Error técnico: ${originalError}`;
+					errorContent = `Problema con la instalación de Java.<br><br>Soluciones:<br>- Verifica que Java esté instalado correctamente<br>- Reinstala Java desde el sitio oficial<br>- Verifica la ruta de Java en Configuración<br>Error técnico: ${originalError}`;
 				} else if (originalError.includes('connection') || originalError.includes('network')) {
 					errorTitle = "Error de Conexión";
-					errorContent = `No se pudo conectar al servidor.
-
-Soluciones:
-• Verifica tu conexión a internet
-• El servidor puede estar temporalmente no disponible
-• Verifica que no tengas firewall bloqueando el juego
-
-Error técnico: ${originalError}`;
+					errorContent = `No se pudo conectar al servidor.<br><br>Soluciones:<br>- Verifica tu conexión a internet<br>- El servidor puede estar temporalmente no disponible<br>- Verifica que no tengas firewall bloqueando el juego<br>Error técnico: ${originalError}`;
 				} else if (originalError.includes('mod') || originalError.includes('forge') || originalError.includes('fabric')) {
 					errorTitle = "Error de Mods";
-					errorContent = `Problema con mods o el mod loader.
-
-Soluciones:
-• Verifica que todos los mods sean compatibles
-• Verifica que ${options.loadder.loadder_type} sea la versión correcta
-• Intenta desactivar mods opcionales
-
-Error técnico: ${originalError}`;
+					errorContent = `Problema con mods o el mod loader.<br><br>Soluciones:<br>- Verifica que todos los mods sean compatibles<br>- Verifica que ${options.loadder.loadder_type} sea la versión correcta<br>- Intenta desactivar mods opcionales<br>Error técnico: ${originalError}`;
 				} else if (originalError.includes('file') || originalError.includes('path')) {
 					errorTitle = "Error de Archivos";
-					errorContent = `Problema con archivos del juego.
-
-Soluciones:
-• Ejecuta el launcher como administrador
-• Verifica permisos de la carpeta del juego
-• Verifica que hay suficiente espacio en disco
-
-Error técnico: ${originalError}`;
+					errorContent = `Problema con archivos del juego.<br><br>Soluciones:<br>- Ejecuta el launcher como administrador<br>- Verifica permisos de la carpeta del juego<br>- Verifica que hay suficiente espacio en disco<br>Error técnico: ${originalError}`;
 				} else {
-					// Error genérico
-					errorContent = `${originalError}
-
-Si el problema persiste, contacta al soporte técnico.`;
+					errorContent = `${originalError}<br><br>Si el problema persiste, contacta al soporte técnico.`;
 				}
 			}
 
@@ -2009,38 +1970,12 @@ Si el problema persiste, contacta al soporte técnico.`;
 
 			// Mostrar popup de error
 			let popupError = new popup();
-			
-			if (showTroubleshooting) {
-				// Mostrar diálogo con opciones de solución de problemas
-				popupError.openDialog({
-					title: errorTitle,
-					content: errorContent,
-					options: true,
-					acceptText: "Ejecutar Diagnósticos",
-					cancelText: "Cerrar",
-					callback: async (result) => {
-						if (result === 'accept') {
-							// Ejecutar herramientas de diagnóstico
-							console.log("Ejecutando herramientas de diagnóstico...");
-							await this.runSystemDiagnostics();
-						}
-					}
-				});
-			} else {
-				// Mostrar popup simple de error con opción de diagnósticos
-				popupError.openDialog({
-					title: errorTitle,
-					content: `${errorContent}\n\n¿Quieres ejecutar diagnósticos del sistema para identificar posibles problemas?`,
-					options: true,
-					acceptText: "Ejecutar Diagnósticos",
-					cancelText: "Cerrar",
-					callback: async (result) => {
-						if (result === 'accept') {
-							await this.runSystemDiagnostics();
-						}
-					}
-				});
-			}
+			popupError.openPopup({
+				title: errorTitle,
+				content: errorContent,
+				color: "red",
+				options: true
+			});
 
 			// Resetear notificación y estado
 			this.notification();
@@ -2843,123 +2778,6 @@ Si el problema persiste, contacta al soporte técnico.`;
 		}
 	}
 
-	// Función para ejecutar diagnósticos del sistema
-	async runSystemDiagnostics() {
-		try {
-			console.log("Iniciando diagnósticos del sistema...");
-			
-			// Mostrar popup de carga
-			let diagnosticsPopup = new popup();
-			diagnosticsPopup.openPopup({
-				title: "Ejecutando Diagnósticos",
-				content: "Analizando el sistema, por favor espera...",
-				color: "var(--color)",
-				background: false,
-			});
-
-			// Ejecutar diagnósticos
-			const diagnosticsResult = await ipcRenderer.invoke('run-diagnostics');
-			
-			if (!diagnosticsResult.success) {
-				throw new Error(diagnosticsResult.error);
-			}
-
-			const diag = diagnosticsResult.diagnostics;
-			
-			// Preparar reporte de diagnósticos
-			let report = `REPORTE DE DIAGNÓSTICOS
-Fecha: ${new Date(diag.timestamp).toLocaleString()}
-
-SISTEMA:
-• Plataforma: ${diag.system.platform}
-• Arquitectura: ${diag.system.arch}
-• Node.js: ${diag.system.nodeVersion}
-• Electron: ${diag.system.electronVersion}
-
-MEMORIA:
-• Total: ${(diag.memory.total / 1024 / 1024 / 1024).toFixed(1)} GB
-• Libre: ${(diag.memory.free / 1024 / 1024 / 1024).toFixed(1)} GB
-• Usado por launcher: ${(diag.memory.used.rss / 1024 / 1024).toFixed(1)} MB
-
-DIRECTORIOS:
-• App Data: ${diag.directories.appData.exists ? '✓' : '✗'} ${diag.directories.appData.writable ? '(Escribible)' : '(Solo lectura)'}
-• User Data: ${diag.directories.userData.exists ? '✓' : '✗'} ${diag.directories.userData.writable ? '(Escribible)' : '(Solo lectura)'}
-
-JAVA:
-${diag.java.available ? `✓ Disponible: ${diag.java.version}` : `✗ No disponible: ${diag.java.error}`}
-
-CONECTIVIDAD:`;
-
-			if (diag.connectivity) {
-				for (const [url, result] of Object.entries(diag.connectivity)) {
-					if (url !== 'error') {
-						report += `\n• ${url}: ${result.accessible ? '✓' : '✗'} (${result.status})`;
-					}
-				}
-			}
-
-			// Identificar problemas y sugerencias
-			let issues = [];
-			let suggestions = [];
-
-			if (!diag.directories.appData.writable || !diag.directories.userData.writable) {
-				issues.push("Problemas de permisos de escritura");
-				suggestions.push("Ejecuta el launcher como administrador");
-			}
-
-			if (!diag.java.available) {
-				issues.push("Java no está disponible");
-				suggestions.push("Instala Java desde https://adoptium.net/");
-			}
-
-			if (diag.connectivity && Object.values(diag.connectivity).some(c => !c.accessible)) {
-				issues.push("Problemas de conectividad");
-				suggestions.push("Verifica tu conexión a internet y firewall");
-			}
-
-			if ((diag.memory.free / diag.memory.total) < 0.1) {
-				issues.push("Poca memoria libre en el sistema");
-				suggestions.push("Cierra programas innecesarios o añade más RAM");
-			}
-
-			if (issues.length > 0) {
-				report += `\n\nPROBLEMAS DETECTADOS:
-${issues.map(issue => `• ${issue}`).join('\n')}
-
-SUGERENCIAS:
-${suggestions.map(suggestion => `• ${suggestion}`).join('\n')}`;
-			} else {
-				report += `\n\n✓ No se detectaron problemas importantes`;
-			}
-
-			// Cerrar popup de carga y mostrar resultados
-			diagnosticsPopup.closePopup();
-
-			let resultsPopup = new popup();
-			resultsPopup.openPopup({
-				title: issues.length > 0 ? `Diagnósticos (${issues.length} problema(s))` : "Diagnósticos - Sistema OK",
-				content: report,
-				color: issues.length > 0 ? "orange" : "green",
-				options: true,
-			});
-
-			return { success: true, issues: issues.length, report };
-
-		} catch (error) {
-			console.error("Error en diagnósticos:", error);
-			
-			let errorPopup = new popup();
-			errorPopup.openPopup({
-				title: "Error en Diagnósticos",
-				content: `No se pudieron ejecutar los diagnósticos del sistema:\n\n${error.message}`,
-				color: "red",
-				options: true,
-			});
-
-			return { success: false, error: error.message };
-		}
-	}
-
 	// Función para limpiar caché del sistema
 	async cleanSystemCache() {
 		try {
@@ -2971,9 +2789,9 @@ ${suggestions.map(suggestion => `• ${suggestion}`).join('\n')}`;
 				confirmPopup.openDialog({
 					title: "Limpiar Caché del Sistema",
 					content: `Esta acción eliminará:
-• Caché de Electron
-• Caché de GPU
-• Archivos temporales del launcher
+- Caché de Electron
+- Caché de GPU
+- Archivos temporales del launcher
 
 Esto puede mejorar el rendimiento pero requerirá descargar algunos archivos nuevamente.
 
@@ -3021,13 +2839,13 @@ DETALLES:`;
 
 			results.cleaned.forEach(item => {
 				const sizeMB = (item.size / 1024 / 1024).toFixed(1);
-				report += `\n• ${path.basename(item.path)}: ${sizeMB} MB`;
+				report += `\n- ${path.basename(item.path)}: ${sizeMB} MB`;
 			});
 
 			if (results.errors.length > 0) {
 				report += `\n\nERRORES:`;
 				results.errors.forEach(error => {
-					report += `\n• ${path.basename(error.path)}: ${error.error}`;
+					report += `\n- ${path.basename(error.path)}: ${error.error}`;
 				});
 			}
 

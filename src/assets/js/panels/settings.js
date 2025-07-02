@@ -5,7 +5,7 @@
 
 import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead, getTermsAndConditions, setPerformanceMode, isPerformanceModeEnabled, getDiscordUsername, getDiscordPFP, setDiscordUsername } from '../utils.js'
 import { deleteDiscordToken } from '../MKLib.js'
-import { listAvailableJavaInstallations, cleanupUnusedJava } from '../utils/java-manager.js';
+import { listAvailableJavaInstallations, cleanupUnusedJava, getRuntimePath, getGameStatus } from '../utils/java-manager.js';
 
 const os = require('os');
 const { shell, ipcRenderer, dialog } = require('electron');
@@ -867,7 +867,19 @@ class Settings {
     async javaPath() {
         let javaPathText = document.querySelector(".java-path-txt");
         if (javaPathText) {
-            javaPathText.textContent = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}/runtime`;
+            try {
+                // Obtener la ruta real del runtime desde java-manager
+                const runtimePath = getRuntimePath();
+                if (runtimePath) {
+                    javaPathText.textContent = runtimePath;
+                } else {
+                    // Fallback a la ruta calculada
+                    javaPathText.textContent = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}/runtime`;
+                }
+            } catch (error) {
+                console.warn('Error obteniendo ruta de runtime:', error);
+                javaPathText.textContent = `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}/runtime`;
+            }
         }
 
         let configClient = await this.db.readData('configClient')
@@ -930,29 +942,47 @@ class Settings {
 
     async displayJavaInfo() {
         try {
+            console.log('🔍 Iniciando displayJavaInfo...');
+            
             // Buscar contenedor para información de Java
             let javaInfoContainer = document.querySelector(".java-info-container");
             
             if (!javaInfoContainer) {
-                // Crear contenedor si no existe
-                const settingsBox = document.querySelector('.settings-elements-box:has(.java-path-input-text)');
+                console.log('📦 Creando contenedor de Java info...');
+                // Buscar el contenedor de java path de manera más específica
+                const javaPathInput = document.querySelector('.java-path-input-text');
+                const settingsBox = javaPathInput ? javaPathInput.closest('.settings-elements-box') : null;
+                
                 if (settingsBox) {
                     javaInfoContainer = document.createElement('div');
                     javaInfoContainer.className = 'java-info-container';
                     settingsBox.appendChild(javaInfoContainer);
+                    console.log('✅ Contenedor de Java info creado');
+                } else {
+                    console.error('❌ No se pudo encontrar el contenedor parent para Java info');
                 }
             }
             
-            if (!javaInfoContainer) return;
+            if (!javaInfoContainer) {
+                console.warn('❌ No se pudo encontrar o crear el contenedor para información de Java');
+                return;
+            }
+            
+            console.log('🔍 Obteniendo instalaciones de Java...');
             
             // Obtener instalaciones de Java disponibles
             const installations = await listAvailableJavaInstallations();
+            
+            console.log(`📦 Encontradas ${installations.length} instalaciones de Java:`, installations);
             
             let infoHTML = `
                 <div class="java-info-title">🔧 Gestión Automática de Java</div>
                 <div class="java-info-description">
                     El launcher descarga automáticamente la versión de Java compatible con cada versión de Minecraft.
                     Las instalaciones se almacenan en la carpeta 'runtime' y se reutilizan automáticamente.
+                </div>
+                <div class="java-runtime-path">
+                    📁 Directorio runtime: <code>${getRuntimePath() || 'No inicializado'}</code>
                 </div>
             `;
             
@@ -993,6 +1023,9 @@ class Settings {
                         📥 No hay versiones de Java descargadas automáticamente.
                         Se descargarán automáticamente cuando sea necesario.
                     </div>
+                    <div class="java-management-buttons">
+                        <button class="java-refresh-btn" id="java-refresh-btn">🔄 Refrescar Instalaciones</button>
+                    </div>
                 `;
             }
             
@@ -1012,6 +1045,19 @@ class Settings {
             
         } catch (error) {
             console.error('❌ Error mostrando información de Java:', error);
+            
+            // Mostrar información básica aunque falle
+            if (javaInfoContainer) {
+                javaInfoContainer.innerHTML = `
+                    <div class="java-info-title">🔧 Gestión Automática de Java</div>
+                    <div class="java-info-description">
+                        El launcher descarga automáticamente la versión de Java compatible con cada versión de Minecraft.
+                    </div>
+                    <div class="java-installations-empty">
+                        ⚠️ Error al cargar información de Java: ${error.message}
+                    </div>
+                `;
+            }
         }
     }
 
@@ -1063,16 +1109,39 @@ class Settings {
 
     async showJavaCleanupDialog() {
         try {
+            // Verificar si el juego está en progreso
+            const gameStatus = getGameStatus();
+            
             const popup = new (await import('../utils/popup.js')).default();
             
+            if (gameStatus.inProgress) {
+                // Mostrar advertencia si el juego está ejecutándose
+                const warningResult = await new Promise(resolve => {
+                    popup.openDialog({
+                        title: '⚠️ Juego en Progreso',
+                        content: `🎮 Hay un juego ejecutándose actualmente usando Java.<br>La limpieza está bloqueada para evitar problemas con el juego en curso.<br>`,
+                        options: true,
+                        acceptText: 'Forzar Limpieza',
+                        cancelText: 'Cancelar',
+                        callback: resolve
+                    });
+                });
+                
+                if (warningResult === 'cancel') {
+                    return;
+                }
+                
+                // Si el usuario eligió forzar, continuar con forceClean = true
+                return this.executeJavaCleanup(true, popup);
+            }
+            
+            // Si no hay juego en progreso, mostrar diálogo normal
             const dialogResult = await new Promise(resolve => {
                 popup.openDialog({
                     title: '🗑️ Limpiar Instalaciones de Java',
-                    content: `¿Estás seguro de que quieres limpiar las instalaciones de Java no utilizadas?
-
-Esta acción eliminará versiones de Java que no se hayan usado recientemente, liberando espacio en disco.
-
-⚠️ Las versiones se volverán a descargar automáticamente cuando sea necesario.`,
+                    content: `¿Estás seguro de que quieres limpiar las instalaciones de Java no utilizadas?<br>
+                    Esta acción eliminará versiones de Java que no se hayan usado recientemente, liberando espacio en disco.<br><br>
+                    ⚠️ Las versiones se volverán a descargar automáticamente cuando sea necesario.`,
                     options: true,
                     callback: resolve
                 });
@@ -1082,27 +1151,61 @@ Esta acción eliminará versiones de Java que no se hayan usado recientemente, l
                 return;
             }
             
+            // Ejecutar limpieza normal
+            return this.executeJavaCleanup(false, popup);
+            
+        } catch (error) {
+            console.error('❌ Error en diálogo de limpieza de Java:', error);
+            const popup = new (await import('../utils/popup.js')).default();
+            popup.openPopup({
+                title: "Error",
+                content: `❌ Error mostrando diálogo de limpieza: ${error.message}`,
+                color: "red",
+                options: true
+            });
+        }
+    }
+    
+    async executeJavaCleanup(forceClean, popup) {
+        try {
             // Mostrar progreso
             popup.closePopup();
             popup.openPopup({
                 title: "Limpiando Java...",
-                content: "Por favor espera mientras se limpian las instalaciones no utilizadas.",
+                content: forceClean ? 
+                    "Forzando limpieza de instalaciones Java... ⚠️" :
+                    "Por favor espera mientras se limpian las instalaciones no utilizadas.",
                 color: "var(--color)",
                 background: false
             });
             
             // Ejecutar limpieza
-            const result = await cleanupUnusedJava();
+            const result = await cleanupUnusedJava(forceClean);
             popup.closePopup();
             
             if (result.success) {
-                // Mostrar resultados
+                // Mostrar resultados detallados
+                const results = result.results;
+                let contentMsg = `✅ Limpieza de Java completada.\n\n`;
+                
+                if (results.cleaned.length > 0) {
+                    contentMsg += `🗑️ Eliminadas: ${results.cleaned.length} instalaciones<br>`;
+                    contentMsg += `💾 Espacio liberado: ${Math.round(results.freedSpace / (1024 * 1024))} MB<br>`;
+                }
+                
+                if (results.skipped.length > 0) {
+                    contentMsg += `⏭️ Saltadas: ${results.skipped.length} instalaciones (en uso)<br>`;
+                }
+                
+                if (results.errors.length > 0) {
+                    contentMsg += `❌ Errores: ${results.errors.length} instalaciones<br>`;
+                }
+                
+                contentMsg += `Tamaño total procesado: ${Math.round(results.totalSize / (1024 * 1024))} MB<br>`;
+                
                 popup.openPopup({
                     title: "Limpieza Completada",
-                    content: `✅ Limpieza de Java completada.
-
-📊 Archivos procesados: ${result.results.cleaned.length}
-💾 Espacio liberado: ${Math.round(result.results.totalSize / (1024 * 1024))} MB`,
+                    content: contentMsg,
                     color: "var(--color)",
                     options: true
                 });
@@ -1595,6 +1698,6 @@ Esta acción eliminará versiones de Java que no se hayan usado recientemente, l
                 options: true
             });
         }
-    }
+   }
 }
 export default Settings;
