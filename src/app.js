@@ -1310,4 +1310,157 @@ ipcMain.handle('verify-java-config', async (event, javaPath) => {
     }
 });
 
+// Handler para obtener la configuración del launcher de forma síncrona (para JavaManager)
+ipcMain.handle('get-launcher-config-sync', async () => {
+    try {
+        const config = require('./assets/js/utils/config.js');
+        return await config.GetConfig();
+    } catch (error) {
+        console.error('Error getting launcher config sync:', error);
+        return { dataDirectory: 'MiguelkiNetwork' }; // Fallback
+    }
+});
+
+// Handler para verificar compatibilidad de Java con versión de Minecraft
+ipcMain.handle('verify-java-minecraft-compatibility', async (event, options) => {
+    try {
+        const { javaPath, minecraftVersion } = options;
+        
+        if (!javaPath || !fs.existsSync(javaPath)) {
+            return {
+                success: false,
+                compatible: false,
+                reason: 'Java no encontrado en la ruta especificada'
+            };
+        }
+
+        // Determinar la versión de Java requerida para Minecraft
+        const getRequiredJavaVersion = (mcVersion) => {
+            const versionParts = mcVersion.split('.');
+            let majorVersion;
+            
+            if (versionParts[0] === '1' && versionParts.length >= 2) {
+                majorVersion = `${versionParts[0]}.${versionParts[1]}`;
+            } else {
+                majorVersion = versionParts[0];
+            }
+            
+            const numericVersion = parseFloat(majorVersion);
+            if (numericVersion >= 1.21) return 21;
+            if (numericVersion >= 1.17) return 17;
+            return 8;
+        };
+
+        const requiredJavaVersion = getRequiredJavaVersion(minecraftVersion);
+
+        // Obtener versión actual de Java
+        const { spawn } = require('child_process');
+        const javaVersionInfo = await new Promise((resolve, reject) => {
+            const java = spawn(javaPath, ['-version']);
+            let output = '';
+            
+            java.stderr.on('data', (data) => {
+                output += data.toString();
+            });
+            
+            java.on('close', (code) => {
+                if (code === 0) {
+                    const versionMatch = output.match(/version "?([0-9]+)\.?([0-9]+)?\.?([0-9]+)?[^"]*"?/);
+                    if (versionMatch) {
+                        const major = parseInt(versionMatch[1]);
+                        const actualVersion = major >= 9 ? major : parseInt(versionMatch[2] || '8');
+                        resolve({
+                            major: actualVersion,
+                            full: versionMatch[1]
+                        });
+                    } else {
+                        reject(new Error('No se pudo parsear la versión de Java'));
+                    }
+                } else {
+                    reject(new Error(`Java process exited with code ${code}`));
+                }
+            });
+            
+            java.on('error', reject);
+        });
+
+        const isCompatible = javaVersionInfo.major >= requiredJavaVersion;
+        
+        return {
+            success: true,
+            compatible: isCompatible,
+            currentVersion: javaVersionInfo.major,
+            requiredVersion: requiredJavaVersion,
+            reason: isCompatible ? 
+                `Java ${javaVersionInfo.major} es compatible con Minecraft ${minecraftVersion}` :
+                `Java ${requiredJavaVersion}+ requerido para Minecraft ${minecraftVersion}. Versión actual: Java ${javaVersionInfo.major}`
+        };
+
+    } catch (error) {
+        console.error('Error verifying Java-Minecraft compatibility:', error);
+        return {
+            success: false,
+            compatible: false,
+            reason: error.message
+        };
+    }
+});
+
+// Handler para limpiar instalaciones de Java automáticas
+ipcMain.handle('cleanup-automatic-java', async () => {
+    try {
+        const config = require('./assets/js/utils/config.js');
+        const res = await config.GetConfig();
+        const dataDirectory = res.dataDirectory || 'MiguelkiNetwork';
+        
+        const appDataPath = app.getPath('appData');
+        const dirName = process.platform === 'darwin' ? dataDirectory : `.${dataDirectory}`;
+        const runtimePath = path.join(appDataPath, dirName, 'runtime');
+        
+        const results = {
+            cleaned: [],
+            errors: [],
+            totalSize: 0
+        };
+        
+        if (!fs.existsSync(runtimePath)) {
+            return { success: true, results };
+        }
+        
+        const javaVersions = fs.readdirSync(runtimePath);
+        
+        for (const version of javaVersions) {
+            const versionPath = path.join(runtimePath, version);
+            const stat = fs.statSync(versionPath);
+            
+            if (stat.isDirectory()) {
+                try {
+                    // Por ahora, solo reportar el tamaño sin eliminar
+                    // En el futuro se podría implementar lógica para determinar qué versiones eliminar
+                    const size = await getDirectorySize(versionPath);
+                    results.cleaned.push({
+                        path: versionPath,
+                        version: version,
+                        size: size,
+                        type: 'java-installation'
+                    });
+                    results.totalSize += size;
+                } catch (error) {
+                    results.errors.push({
+                        path: versionPath,
+                        error: error.message
+                    });
+                }
+            }
+        }
+        
+        return { success: true, results };
+        
+    } catch (error) {
+        console.error('Error cleaning automatic Java installations:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+
 //# sourceMappingURL=main.js.map

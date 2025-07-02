@@ -37,6 +37,7 @@ import {
 } from "../MKLib.js";
 import cleanupManager from "../utils/cleanup-manager.js";
 import { downloadAssets } from "../utils/instance-manager.js";
+import { getJavaForMinecraft } from "../utils/java-manager.js";
 
 const path = require("path");
 const fs = require("fs");
@@ -1392,6 +1393,90 @@ class Home {
 			}
 		}
 		
+		// ======== VERIFICACIÓN Y DESCARGA AUTOMÁTICA DE JAVA ========
+		console.log("☕ Verificando compatibilidad de Java...");
+		infoStarting.innerHTML = `Verificando Java para Minecraft ${options.loadder.minecraft_version}...`;
+		this.setProgressBarIndeterminate();
+
+		let javaPath = configClient.java_config.java_path;
+		
+		try {
+			// Usar getJavaForMinecraft para obtener la ruta de Java apropiada
+			const compatibleJavaPath = await getJavaForMinecraft(
+				options.loadder.minecraft_version,
+				javaPath,
+				// Progress callback para descarga de Java
+				(progress, downloaded, total) => {
+					this.setProgressBarDeterminate(progress, 100);
+					console.log(`📥 Descarga de Java: ${progress}% (${Math.round(downloaded / (1024 * 1024))}/${Math.round(total / (1024 * 1024))} MB)`);
+				},
+				// Status callback para descarga de Java
+				(status) => {
+					infoStarting.innerHTML = status;
+					console.log(`☕ ${status}`);
+				}
+			);
+			
+			// Actualizar la configuración con la ruta de Java apropiada
+			javaPath = compatibleJavaPath;
+			console.log(`✅ Java verificado/descargado: ${javaPath}`);
+			
+			// Validar que el ejecutable de Java existe y es accesible
+			if (!javaPath || !fs.existsSync(javaPath)) {
+				throw new Error(`Ruta de Java no válida o no existe: ${javaPath}`);
+			}
+			
+			// Validar que el archivo Java es ejecutable
+			try {
+				fs.accessSync(javaPath, fs.constants.X_OK);
+				console.log(`✅ Java ejecutable verificado: ${javaPath}`);
+			} catch (error) {
+				console.warn(`⚠️ Java puede no ser ejecutable: ${error.message}`);
+				// En Windows, esto puede fallar pero el archivo sigue siendo válido
+			}
+			
+			// Si se descargó una nueva versión de Java, actualizar la configuración para uso futuro
+			if (compatibleJavaPath !== configClient.java_config.java_path && 
+				(configClient.java_config.java_path === null || 
+				 configClient.java_config.java_path === 'Utilice la versión de java suministrada con el launcher')) {
+				
+				// Solo actualizar si el usuario no había configurado una ruta personalizada
+				console.log(`📝 Actualizando configuración de Java con nueva ruta automática`);
+				configClient.java_config.java_path = compatibleJavaPath;
+				await this.db.updateData('configClient', configClient);
+			}
+			
+		} catch (javaError) {
+			console.error('❌ Error configurando Java:', javaError);
+			
+			// Mostrar error específico al usuario
+			let popupError = new popup();
+			popupError.openPopup({
+				title: "Error de Java",
+				content: `No se pudo configurar Java para Minecraft ${options.loadder.minecraft_version}:
+
+${javaError.message}
+
+Por favor:
+• Verifica tu conexión a internet
+• Asegúrate de tener suficiente espacio en disco
+• Si el problema persiste, contacta al soporte`,
+				color: "red",
+				options: true,
+			});
+			
+			// Restaurar UI
+			if (infoStartingBOX) infoStartingBOX.style.display = "none";
+			if (instanceSelectBTN) {
+				instanceSelectBTN.disabled = false;
+				instanceSelectBTN.classList.remove("disabled");
+			}
+			if (closeGameButton) closeGameButton.style.display = "none";
+			ipcRenderer.send("main-window-progress-reset");
+			
+			return;
+		}
+		
 		// Configuración específica para minecraft-launcher-core
 		opt = {
 			// Configuración base de tomate-loaders
@@ -1429,10 +1514,11 @@ class Home {
 			// Para Forge específicamente, usar el campo forge si está disponible
 			...(options.loadder.loadder_type === "forge" && launchConfig.forge ? { forge: launchConfig.forge } : {}),
 
-			// Configuración de Java
-			java: {
-				path: configClient.java_config.java_path,
-			},
+			// Configuración de Java - usar la ruta verificada/descargada
+			javaPath: javaPath,
+			
+			// Configuración alternativa para minecraft-launcher-core (algunas versiones usan java en vez de javaPath)
+			java: javaPath,
 
 			// Argumentos personalizados de JVM
 			customArgs: options.jvm_args ? options.jvm_args : [],
@@ -1482,7 +1568,14 @@ class Home {
 			instanceDirectory: instanceGameDirectory,
 			overridesKeys: Object.keys(opt.overrides || {}),
 			modsDirectory: path.join(instanceGameDirectory, 'mods'),
-			modsDirectoryExists: fs.existsSync(path.join(instanceGameDirectory, 'mods'))
+			modsDirectoryExists: fs.existsSync(path.join(instanceGameDirectory, 'mods')),
+			// Añadir información de Java
+			javaPath: opt.javaPath,
+			java: opt.java,
+			javaPathExists: fs.existsSync(opt.javaPath || ''),
+			javaPathType: typeof opt.javaPath,
+			originalJavaConfig: configClient.java_config.java_path,
+			downloadedJavaPath: javaPath
 		});
 		
 		// Verificar que el directorio de mods existe y tiene permisos de escritura
