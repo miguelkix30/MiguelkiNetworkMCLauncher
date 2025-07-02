@@ -78,8 +78,6 @@ RPC.login({ clientId }).catch((err) => {
 	);
 	rpcActive = false;
 });
-
-const { Launch } = require("minecraft-java-core");
 const { Client } = require("minecraft-launcher-core");
 const { shell, ipcRenderer } = require("electron");
 class Home {
@@ -677,6 +675,8 @@ class Home {
 	}
 
 	async startGame() {
+		let musicPlaying = true;
+		
 		try {
 			let configClient = await this.db.readData("configClient");
 
@@ -829,13 +829,7 @@ class Home {
 			popupError.openDialog({
 				title: "Instancia No Encontrada",
 				content: `La instancia "${configClient.instance_selct}" ya no existe en el servidor.
-
-Posibles causas:
-• La instancia fue removida del servidor
-• Problemas de conectividad con el servidor
-• Configuración local desactualizada
-
-¿Quieres actualizar la lista de instancias disponibles?`,
+<br>¿Quieres actualizar la lista de instancias disponibles?`,
 				options: true,
 				acceptText: "Actualizar Lista",
 				cancelText: "Seleccionar Otra",
@@ -844,7 +838,6 @@ Posibles causas:
 						// Recargar lista de instancias
 						try {
 							await config.getInstanceList(true); // Force refresh
-							location.reload(); // Refresh UI
 						} catch (error) {
 							console.error("Error al actualizar lista de instancias:", error);
 							let errorPopup = new popup();
@@ -909,7 +902,7 @@ Posibles causas:
 		infoStartingBOX.style.display = "flex";
 		instanceSelectBTN.disabled = true;
 		instanceSelectBTN.classList.add("disabled");
-		progressBar.style.display = "none";
+		this.hideProgressBar();
 
 		try {
 			const queueResult = await this.checkQueueStatus(hwid, username);
@@ -942,7 +935,7 @@ Posibles causas:
 			return;
 		}
 
-		progressBar.style.display = "";
+		this.showProgressBar();
 		ipcRenderer.send("main-window-progress-load");
 
 		let recentInstances = configClient.recent_instances || [];
@@ -966,6 +959,7 @@ Posibles causas:
 
 		try {
 			infoStarting.innerHTML = `Descargando librerias extra...`;
+			this.setProgressBarIndeterminate();
 			const loaderType = options.loadder.loadder_type;
 			const minecraftVersion = options.loadder.minecraft_version;
 
@@ -1005,7 +999,7 @@ Posibles causas:
 		}
 
 		infoStarting.innerHTML = `Conectando...`;
-		progressBar.value = 0;
+		this.setProgressBarIndeterminate();
 
 		console.log("Obteniendo clave de ejecución...");
 		let execKey = null;
@@ -1070,9 +1064,7 @@ Posibles causas:
 		try {
 			console.log(`Iniciando descarga de assets para la instancia: ${options.name}`);
 			infoStarting.innerHTML = `Descargando assets...`;
-			progressBar.style.display = "block";
-			progressBar.value = 0;
-			progressBar.max = 100;
+			this.setProgressBarDeterminate(0, 100);
 
 			// Carpeta de destino para los assets - directamente en la instancia
 			const instancePath = `${await appdata()}/${
@@ -1094,8 +1086,6 @@ Posibles causas:
 			
 			// Callback para reportar progreso
 			const progressCallback = (progress, processed, total, downloadedSize, totalSize) => {
-				console.log('Progress callback called with:', { progress, processed, total, downloadedSize, totalSize });
-				
 				// Activar modo de progreso
 				showingProgress = true;
 				
@@ -1105,24 +1095,16 @@ Posibles causas:
 				const safeTotal = (typeof total === 'number' && isFinite(total) && !isNaN(total)) ? Math.max(1, total) : 1;
 				const safeDownloadedSize = (typeof downloadedSize === 'number' && isFinite(downloadedSize) && !isNaN(downloadedSize)) ? downloadedSize : 0;
 				const safeTotalSize = (typeof totalSize === 'number' && isFinite(totalSize) && !isNaN(totalSize)) ? totalSize : 0;
-				
-				console.log('Safe values:', { safeProgress, safeProcessed, safeTotal, safeDownloadedSize, safeTotalSize });
-				
 				const sizeText = safeTotalSize > 0 ? 
 					` (${(safeDownloadedSize / 1024 / 1024).toFixed(1)}MB/${(safeTotalSize / 1024 / 1024).toFixed(1)}MB)` : '';
 				
 				// Actualizar la barra de progreso local con valores validados
 				if (progressBar) {
 					try {
-						progressBar.value = safeProgress;
-						progressBar.max = 100;
-						progressBar.style.display = "block";
+						this.setProgressBarDeterminate(safeProgress, 100);
 					} catch (error) {
-						console.error('Error setting progress bar:', error);
-						console.error('Progress value:', safeProgress, typeof safeProgress);
-						// Fallback: set to 0 if there's still an error
 						try {
-							progressBar.value = 0;
+							this.setProgressBarDeterminate(0, 100);
 						} catch (fallbackError) {
 							console.error('Even fallback failed:', fallbackError);
 						}
@@ -1144,7 +1126,7 @@ Posibles causas:
 				}
 			};
 
-			// Callback para actualizar el estado - SOLO para mensajes de estado sin progreso
+			// CallbackProgress event received para actualizar el estado - SOLO para mensajes de estado sin progreso
 			const statusCallback = (status) => {
 				// Validar que el status sea una cadena válida
 				const safeStatus = (typeof status === 'string' && status.trim()) ? status.trim() : 'Procesando...';
@@ -1174,10 +1156,7 @@ Posibles causas:
 			infoStarting.innerHTML = `Assets descargados correctamente`;
 			
 			// Mostrar progreso completo por un momento
-			if (progressBar) {
-				progressBar.value = 100;
-				progressBar.max = 100;
-			}
+			this.setProgressBarDeterminate(100, 100);
 			
 			// Dar tiempo adicional para que todos los procesos asíncronos terminen
 			await new Promise(resolve => setTimeout(resolve, 1500));
@@ -1260,9 +1239,7 @@ Posibles causas:
 			
 			// Mostrar progreso de configuración
 			infoStarting.innerHTML = `Configurando ${options.loadder.loadder_type}...`;
-			progressBar.value = 0;
-			progressBar.max = 100;
-			progressBar.style.display = "block";
+			this.setProgressBarDeterminate(0, 100);
 			
 			const loaderResult = await ipcRenderer.invoke('get-launcher-config', {
 				loaderType: options.loadder.loadder_type,
@@ -1374,12 +1351,15 @@ Posibles causas:
 		let opt;
 		/* if (options.loadder.loadder_type == "forge") { */
 		
-		// Establecer el gameDirectory correcto para la instancia
-		const instanceGameDirectory = `${await appdata()}/${
+		// Definir rootPath al inicio para uso en toda la configuración
+		const rootPath = `${await appdata()}/${
 			process.platform == "darwin"
 				? this.config.dataDirectory
 				: `.${this.config.dataDirectory}`
-		}/instances/${options.name}`;
+		}`;
+		
+		// Establecer el gameDirectory correcto para la instancia
+		const instanceGameDirectory = `${rootPath}/instances/${options.name}`;
 		
 		// Asegurar que launchConfig tiene las propiedades necesarias
 		if (!launchConfig.gameDirectory && !launchConfig.directory) {
@@ -1402,9 +1382,6 @@ Posibles causas:
 			path.join(instanceGameDirectory, 'screenshots'),
 			path.join(instanceGameDirectory, 'logs'),
 			path.join(instanceGameDirectory, 'crash-reports'),
-			path.join(instanceGameDirectory, 'assets'),
-			path.join(instanceGameDirectory, 'libraries'),
-			path.join(instanceGameDirectory, 'versions'),
 			path.join(instanceGameDirectory, 'bin', 'natives')
 		];
 		
@@ -1461,7 +1438,7 @@ Posibles causas:
 			customArgs: options.jvm_args ? options.jvm_args : [],
 			
 			// Argumentos personalizados del juego
-			customLaunchArgs: options.game_args ? options.game_args : [],
+			customLaunchArgs: gameArgs ? gameArgs : [],
 
 			// Configuración de pantalla
 			screen: {
@@ -1480,15 +1457,17 @@ Posibles causas:
 				// Directorio donde el juego genera saves, resource packs, etc.
 				gameDirectory: instanceGameDirectory,
 				// Directorio donde están los archivos del Minecraft jar y version json
-				directory: launchConfig.directory || path.join(instanceGameDirectory, 'versions', options.loadder.minecraft_version),
+				directory: launchConfig.directory || path.join(rootPath, 'versions', options.loadder.minecraft_version),
 				// Directorio de nativos
-				natives: path.join(instanceGameDirectory, 'bin', 'natives'),
+				natives: path.join(rootPath, 'bin', 'natives'),
 				// Directorio de assets
-				assetRoot: path.join(instanceGameDirectory, 'assets'),
+				assetRoot: path.join(rootPath, 'assets'),
 				// Directorio de librerías
-				libraryRoot: path.join(instanceGameDirectory, 'libraries'),
+				libraryRoot: path.join(rootPath, 'libraries'),
 				// Directorio de trabajo para el proceso Java
-				cwd: instanceGameDirectory
+				cwd: instanceGameDirectory,
+
+				detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
 			}
 		};
 		
@@ -1518,48 +1497,9 @@ Posibles causas:
 		} else {
 			console.error(`❌ Directorio de mods no existe: ${modsDir}`);
 		}
-	/* } else {
-		opt = {
-			authenticator: authenticator,
-			timeout: 10000,
-			path: `${await appdata()}/${
-				process.platform == "darwin"
-					? this.config.dataDirectory
-					: `.${this.config.dataDirectory}`
-			}`,
-			instance: options.name,
-			version: options.loadder.minecraft_version,
-			detached:
-				configClient.launcher_config.closeLauncher == "close-all"
-					? false
-					: true,
-
-			loader: {
-				type: options.loadder.loadder_type,
-				build: options.loadder.loadder_version,
-				enable: options.loadder_type == "none" ? false : true,
-			},
-
-			java: {
-				path: configClient.java_config.java_path,
-			},
-
-			JVM_ARGS: options.jvm_args ? options.jvm_args : [],
-			GAME_ARGS: options.game_args ? options.game_args : [],
-
-			screen: {
-				width: configClient.game_config.screen_size.width,
-				height: configClient.game_config.screen_size.height,
-			},
-			memory: {
-				min: `${configClient.java_config.java_memory.min * 1024}M`,
-				max: `${configClient.java_config.java_memory.max * 1024}M`,
-			},
-		};
-	} */
 
 		let musicMuted = configClient.launcher_config.music_muted;
-		let musicPlaying = true;
+		// musicPlaying is already declared at function scope
 
 		let modsApplied = false;
 		let specialModCleaned = false;
@@ -1567,13 +1507,6 @@ Posibles causas:
 		// Inicializar el proceso de limpieza antes del lanzamiento
 		let gameStartMonitoringStarted = false;
 		let cleanupTriggered = false;
-
-		// Definir rootPath para uso en cleanup
-		const rootPath = `${await appdata()}/${
-			process.platform == "darwin"
-				? this.config.dataDirectory
-				: `.${this.config.dataDirectory}`
-		}`;
 
 		if (
 			options.cleaning &&
@@ -1583,7 +1516,7 @@ Posibles causas:
 			console.log(`Configurando limpieza para la instancia: ${options.name}`);
 			await cleanupManager.queueCleanup(
 				options.name,
-				rootPath, // Usar rootPath en lugar de opt.root
+				rootPath, // Usar rootPath definido anteriormente
 				options.cleaning.files,
 				false
 			);
@@ -1593,44 +1526,89 @@ Posibles causas:
 			);
 		}
 
-		/* if (options.loader.loadder_type == "forge") { */
-
-	/* } */
-
 	launcher.launch(opt);
 		
 		
 		
 		infoStarting.innerHTML = `Verificando archivos...`;
-		progressBar.value = 0;
+		//barra de carga indeterminada
+		this.setProgressBarIndeterminate();
 
 		launcher.on("extract", (extract) => {
+			console.log('Extract event received:', extract);
 			ipcRenderer.send("main-window-progress-load");
-			console.log(extract);
+			infoStarting.innerHTML = `Extrayendo archivos...`;
+		});
+		// emitir todos los conteniddos de el evento progress
+		// no solo el porcentaje
+		launcher.on("progress", (type, task, total) => {
+			if (type === "assets") {
+				// Validar que los valores sean números finitos válidos
+				const safeTask = (typeof task === 'number' && isFinite(task)) ? Math.max(0, task) : 0;
+				const safeTotal = (typeof total === 'number' && isFinite(total)) ? Math.max(1, total) : 1;
+				const safePercentage = safeTotal > 0 ? ((safeTask / safeTotal) * 100).toFixed(0) : '0';
+				
+				infoStarting.innerHTML = `Descargando asstes... ${safePercentage}% (${safeTask}/${safeTotal})`;
+				ipcRenderer.send("main-window-progress", { progress: safeTask, size: safeTotal });
+				this.setProgressBarDeterminate(safeTask, safeTotal);
+			} else if (type === "assets-copy") {
+				// Validar que los valores sean números finitos válidos
+				const safeTask = (typeof task === 'number' && isFinite(task)) ? Math.max(0, task) : 0;
+				const safeTotal = (typeof total === 'number' && isFinite(total)) ? Math.max(1, total) : 1;
+				const safePercentage = safeTotal > 0 ? ((safeTask / safeTotal) * 100).toFixed(0) : '0';
+				infoStarting.innerHTML = `Copiando assets... ${safePercentage}% (${safeTask}/${safeTotal})`;
+				ipcRenderer.send("main-window-progress", { progress: safeTask, size: safeTotal });
+				this.setProgressBarDeterminate(safeTask, safeTotal);
+			} else if (type === "natives") {
+				// Validar que los valores sean números finitos válidos
+				const safeTask = (typeof task === 'number' && isFinite(task)) ? Math.max(0, task) : 0;
+				const safeTotal = (typeof total === 'number' && isFinite(total)) ? Math.max(1, total) : 1;
+				const safePercentage = safeTotal > 0 ? ((safeTask / safeTotal) * 100).toFixed(0) : '0';
+				infoStarting.innerHTML = `Descargando nativos... ${safePercentage}% (${safeTask}/${safeTotal})`;
+				ipcRenderer.send("main-window-progress", { progress: safeTask, size: safeTotal });
+				this.setProgressBarDeterminate(safeTask, safeTotal);
+			} else {
+				infoStarting.innerHTML = `Verificando...`;
+				ipcRenderer.send("main-window-progress-load");
+				//barra de carga indeterminada
+				this.setProgressBarIndeterminate();
+			}
 		});
 
-		launcher.on("progress", (progress, size) => {
-			// Validar que los valores sean números finitos válidos
-			const safeProgress = (typeof progress === 'number' && isFinite(progress)) ? Math.max(0, progress) : 0;
-			const safeSize = (typeof size === 'number' && isFinite(size)) ? Math.max(1, size) : 1;
-			const safePercentage = safeSize > 0 ? ((safeProgress / safeSize) * 100).toFixed(0) : '0';
-			
-			infoStarting.innerHTML = `Descargando loader... ${safePercentage}%`;
-			ipcRenderer.send("main-window-progress", { progress: safeProgress, size: safeSize });
-			progressBar.value = safeProgress;
-			progressBar.max = safeSize;
+
+		launcher.on("download_status", (name, type, current, total) => {
+			if (type === "version-jar") {
+				infoStarting.innerHTML = `Descargando versión... ${name} (${current}/${total})`;
+				ipcRenderer.send("main-window-progress", { progress: current, size: total });
+				this.setProgressBarDeterminate(current, total);
+			} else if (type === "asset-json") {
+				infoStarting.innerHTML = `Descargando JSON de assets... ${name} (${current}/${total})`;
+				ipcRenderer.send("main-window-progress", { progress: current, size: total });
+				this.setProgressBarDeterminate(current, total);
+			} else if (type === "assets") {
+				infoStarting.innerHTML = `Descargando assets nativos... ${name} (${current}/${total})`;
+				ipcRenderer.send("main-window-progress", { progress: current, size: total });
+				this.setProgressBarDeterminate(current, total);
+			} else if (type === "log4j") {
+				infoStarting.innerHTML = `Descargando Log4j... ${name} (${current}/${total})`;
+				ipcRenderer.send("main-window-progress", { progress: current, size: total });
+				this.setProgressBarDeterminate(current, total);
+			} else {
+				infoStarting.innerHTML = `Descargando... ${name} (${current}/${total})`;
+				ipcRenderer.send("main-window-progress", { progress: current, size: total });
+				this.setProgressBarDeterminate(current, total);
+			}
 		});
 
 		launcher.on("check", (progress, size) => {
 			// Validar que los valores sean números finitos válidos
 			const safeProgress = (typeof progress === 'number' && isFinite(progress)) ? Math.max(0, progress) : 0;
 			const safeSize = (typeof size === 'number' && isFinite(size)) ? Math.max(1, size) : 1;
-			const safePercentage = safeSize > 0 ? ((safeProgress / safeSize) * 100).toFixed(0) : '0';
+			const safePercentage = safeSize > 0 ? Math.min(100, ((safeProgress / safeSize) * 100)) : 0;
 			
-			infoStarting.innerHTML = `Verificando... ${safePercentage}%`;
+			infoStarting.innerHTML = `Verificando...`;
 			ipcRenderer.send("main-window-progress", { progress: safeProgress, size: safeSize });
-			progressBar.value = safeProgress;
-			progressBar.max = safeSize;
+			this.setProgressBarDeterminate(safeProgress, safeSize);
 		});
 
 		launcher.on("data", async (e) => {
@@ -1728,10 +1706,10 @@ Posibles causas:
 			}
 
 			if (!musicMuted && musicPlaying) {
-				musicPlaying = false;
+				musicMuted = false;
 				fadeOutAudio();
 			}
-			progressBar.style.display = "none";
+			this.hideProgressBar();
 			closeGameButton.style.display = "block";
 
 			if (configClient.launcher_config.closeLauncher == "close-launcher") {
@@ -1747,21 +1725,6 @@ Posibles causas:
 
 			ipcRenderer.send("main-window-progress-load");
 			infoStarting.innerHTML = `Jugando...`;
-		});
-
-		launcher.on("estimated", (time) => {
-			let hours = Math.floor(time / 3600);
-			let minutes = Math.floor((time - hours * 3600) / 60);
-			let seconds = Math.floor(time - hours * 3600 - minutes * 60);
-			console.log(
-				`Tiempo de descarga estimado: ${hours}h ${minutes}m ${seconds}s`
-			);
-		});
-
-		launcher.on("speed", (speed) => {
-			console.log(
-				`Velocidad de descarga: ${(speed / 1067008).toFixed(2)} Mb/s`
-			);
 		});
 
 		launcher.on("patch", (patch) => {
@@ -2997,6 +2960,40 @@ DETALLES:`;
 			});
 
 			return { success: false, error: error.message };
+		}
+	}
+
+	// Funciones para manejar los estados de la barra de progreso
+	setProgressBarIndeterminate() {
+		const progressBar = document.querySelector(".progress-bar");
+		if (progressBar) {
+			progressBar.classList.add("indeterminate");
+			progressBar.removeAttribute("value");
+			progressBar.removeAttribute("max");
+		}
+	}
+
+	setProgressBarDeterminate(value = 0, max = 100) {
+		const progressBar = document.querySelector(".progress-bar");
+		if (progressBar) {
+			progressBar.classList.remove("indeterminate");
+			progressBar.value = value;
+			progressBar.max = max;
+		}
+	}
+
+	hideProgressBar() {
+		const progressBar = document.querySelector(".progress-bar");
+		if (progressBar) {
+			progressBar.style.display = "none";
+			progressBar.classList.remove("indeterminate");
+		}
+	}
+
+	showProgressBar() {
+		const progressBar = document.querySelector(".progress-bar");
+		if (progressBar) {
+			progressBar.style.display = "block";
 		}
 	}
 }

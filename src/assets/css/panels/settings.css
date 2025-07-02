@@ -793,6 +793,48 @@ input:disabled::placeholder {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
+.open-console-btn {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.open-console-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(255, 152, 0, 0.4);
+}
+
+.open-console-btn:hover::before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.open-console-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.open-logs-folder-btn {
+    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.open-logs-folder-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(156, 39, 176, 0.4);
+}
+
+.open-logs-folder-btn:hover::before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.open-logs-folder-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
 .launcher-behavior-box {
   display: flex;
   flex-direction: column;

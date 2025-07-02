@@ -290,18 +290,6 @@ async function fetchRemoteAssetList(url) {
         
         console.log(`📦 Received ${assets.length} assets from server`);
         
-        // Log first few assets for debugging
-        if (assets.length > 0) {
-            console.log('🔍 Sample assets from server:');
-            assets.slice(0, 3).forEach((asset, index) => {
-                console.log(`  Asset ${index + 1}:`);
-                console.log(`    path: ${asset.path}`);
-                console.log(`    url: ${asset.url}`);
-                console.log(`    size: ${asset.size || 'N/A'}`);
-                console.log(`    hash: ${asset.hash || 'N/A'}`);
-            });
-        }
-        
         // Validate asset structure
         const validAssets = assets.filter(asset => {
             if (!asset.path || !asset.url) {
@@ -331,60 +319,29 @@ async function shouldDownloadFile(localPath, asset, shouldIgnoreChecksum) {
         const stats = await fs.promises.stat(localPath);
         
         if (!stats.isFile()) {
-            console.log(`❌ File does not exist or is not a file: ${asset.path}`);
             return true;
         }
         
         // If we should ignore checksum, just check existence
         if (shouldIgnoreChecksum) {
-            console.log(`⚠️  Ignoring checksum verification for: ${asset.path}`);
             return false;
         }
         
         // Verify file size first (faster check)
         if (asset.size && stats.size !== asset.size) {
-            console.log(`❌ Size mismatch for ${asset.path}: expected ${asset.size}, got ${stats.size}`);
             return true;
         }
         
         // Verify file hash if provided
         if (asset.hash) {
-            // For debugging: only show detailed logs for first few files
-            const shouldDebug = asset.path.includes('sounds/') || asset.path.includes('lang/') || asset.path.includes('blockstates/');
-            
-            if (shouldDebug) {
-                console.log(`🔍 DEBUGGING: Verifying hash for ${asset.path}...`);
-                console.log(`   File path: ${localPath}`);
-                console.log(`   Expected hash from server: "${asset.hash}"`);
-                console.log(`   Expected size from server: ${asset.size} bytes`);
-                console.log(`   Actual file size: ${stats.size} bytes`);
-            }
             
             const fileHash = await calculateFileHash(localPath);
             const expectedHash = asset.hash.toLowerCase().trim();
             const calculatedHash = fileHash.toLowerCase().trim();
             
-            if (shouldDebug) {
-                console.log(`   Calculated hash: "${calculatedHash}"`);
-                console.log(`   Expected hash:   "${expectedHash}"`);
-                console.log(`   Hash match: ${calculatedHash === expectedHash}`);
-                console.log(`   Hash lengths: calculated=${calculatedHash.length}, expected=${expectedHash.length}`);
-                
-                // Show first and last few characters for comparison
-                console.log(`   Hash comparison:`);
-                console.log(`     Calculated: ${calculatedHash.substring(0,8)}...${calculatedHash.substring(calculatedHash.length-8)}`);
-                console.log(`     Expected:   ${expectedHash.substring(0,8)}...${expectedHash.substring(expectedHash.length-8)}`);
-            }
-            
             if (calculatedHash !== expectedHash) {
                 console.log(`❌ Hash mismatch for ${asset.path}`);
-                if (!shouldDebug) {
-                    console.log(`   Expected: "${expectedHash}"`);
-                    console.log(`   Got:      "${calculatedHash}"`);
-                }
                 return true;
-            } else if (shouldDebug) {
-                console.log(`✅ Hash verified for ${asset.path}`);
             }
         } else {
             console.log(`⚠️  No hash provided for ${asset.path}, skipping hash verification`);
@@ -436,7 +393,7 @@ async function downloadFile(asset, localPath) {
     const response = await nodeFetch(asset.url, {
         timeout: 60000,
         headers: {
-            'User-Agent': 'Miguelki-Network-MCLauncher'
+            'User-Agent': 'MiguelkiNetworkMCLauncher'
         }
     });
     
@@ -471,7 +428,6 @@ async function downloadFile(asset, localPath) {
 async function calculateFileHash(filePath) {
     return new Promise((resolve, reject) => {
         try {
-            console.log(`📄 Calculating hash for: ${filePath}`);
             
             // Check if file exists first
             if (!fs.existsSync(filePath)) {
@@ -496,10 +452,6 @@ async function calculateFileHash(filePath) {
             
             stream.on('end', () => {
                 const result = hash.digest('hex');
-                console.log(`🔍 Hash calculation complete for ${path.basename(filePath)}:`);
-                console.log(`   File: ${filePath}`);
-                console.log(`   Size: ${bytesRead} bytes`);
-                console.log(`   SHA1: ${result}`);
                 resolve(result);
             });
             
@@ -566,7 +518,6 @@ async function cleanupObsoleteFiles(baseFolder, localFiles, validFiles, ignoredL
         try {
             const fullPath = path.join(baseFolder, file);
             await fs.promises.unlink(fullPath);
-            console.log(`Deleted obsolete file: ${file}`);
         } catch (error) {
             console.warn(`Failed to delete obsolete file ${file}:`, error.message);
         }

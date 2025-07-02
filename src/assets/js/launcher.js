@@ -203,6 +203,7 @@ class Launcher {
       'box-button': '#0078bd',
       'box-button-hover': '#053e8a',
       'box-button-hover-2': '#001f47',
+      'box-hover': '#202020',
       'box-button-gradient-1': '#00FFFF',
       'box-button-gradient-2': '#0096FF'
     };
@@ -212,18 +213,40 @@ class Launcher {
       'box-button',
       'box-button-hover', 
       'box-button-hover-2',
+      'box-hover',
       'box-button-gradient-1',
       'box-button-gradient-2'
     ];
+    
+    const appliedColors = {};
     
     themeProperties.forEach(property => {
       const value = res.theme[property] || defaultTheme[property];
       if (value) {
         document.documentElement.style.setProperty(`--${property}`, value);
+        appliedColors[property] = value;
       } else {
         console.warn(`No se encontró '${property}' en la configuración del servidor, aplicando valor predeterminado`);
       }
     });
+
+    // Enviar colores a la consola separada con reintentos
+    try {
+      const sendColorsWithRetry = (colors, retries = 5) => {
+        ipcRenderer.send('apply-dynamic-colors', colors);
+        
+        // Reenviar colores cada 2 segundos por si la consola se inicializa después
+        if (retries > 0) {
+          setTimeout(() => {
+            sendColorsWithRetry(colors, retries - 1);
+          }, 2000);
+        }
+      };
+      
+      sendColorsWithRetry(appliedColors);
+    } catch (error) {
+      console.warn('Error enviando colores a la consola:', error);
+    }
   }
   
   startLoadingDisplayTimer() {
@@ -747,22 +770,41 @@ class Launcher {
   }
 
   async initWindow() {
+    // Configurar FileLogger y ConsoleWindow para los loggers
+    const fileLogger = {
+      log: (level, ...args) => {
+        ipcRenderer.send('log-message', {
+          level: level,
+          args: args,
+          timestamp: new Date(),
+          identifier: 'Launcher'
+        });
+      }
+    };
+
+    const consoleWindow = {
+      isReady: () => true,
+      sendLog: (logData) => {
+        ipcRenderer.send('log-message', logData);
+      }
+    };
+
     window.logger2 = {
-      launcher: new Logger2("Launcher", "#FF7F18"),
-      minecraft: new Logger2("Minecraft", "#43B581"),
+      launcher: new Logger2("Launcher", "#FF7F18", fileLogger, consoleWindow),
+      minecraft: new Logger2("Minecraft", "#43B581", fileLogger, consoleWindow),
     };
 
     this.initLogs();
 
     let hwid = await getHWID();
-    let hwidConsoleLabel = document.querySelector(".console-hwid");
-    hwidConsoleLabel.innerHTML = hwid;
     
-    let hwidCopyButton = document.querySelector(".copy-console-hwid");
-    hwidCopyButton.addEventListener("click", () => {
-      navigator.clipboard.writeText(hwid);
+    // Enviar HWID a la consola separada
+    ipcRenderer.send('log-message', {
+      level: 'info',
+      args: [`ID de soporte: ${hwid}`],
+      timestamp: new Date(),
+      identifier: 'System'
     });
-
 
     window.console = window.logger2.launcher;
 
@@ -1694,178 +1736,65 @@ class Launcher {
   }
 
   async initLogs() {
-    let logs = document.querySelector(".log-bg");
-    let logContent = document.querySelector(".logger .content");
-    let scrollToBottomButton = document.querySelector(".scroll-to-bottom");
-    let autoScroll = true;
-
+    // Configurar atajos de teclado para abrir la consola separada
     document.addEventListener("keydown", (e) => {
       if ((e.ctrlKey && e.shiftKey && e.keyCode == 73) || e.keyCode == 123) {
-        logs.classList.toggle("show");
+        // Abrir consola separada
+        ipcRenderer.send('console-window-toggle');
       }
     });
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === 'Escape' && logs.classList.contains('show')) {
-        logs.classList.toggle("show");
+      if (e.key === 'Escape') {
+        // Cerrar consola separada si está abierta
+        ipcRenderer.send('console-window-close');
       }
     });
 
-    let close = document.querySelector(".log-close");
-    close.addEventListener("click", () => {
-      logs.classList.toggle("show");
-    });
-
-    logContent.addEventListener("scroll", () => {
-      // Calculamos si estamos cerca del final del scroll
-      const isNearBottom = logContent.scrollTop + logContent.clientHeight >= logContent.scrollHeight - 50;
-      
-      if (!isNearBottom) {
-        autoScroll = false;
-        scrollToBottomButton.classList.add("show");
-      } else {
-        autoScroll = true;
-        scrollToBottomButton.classList.remove("show");
-      }
-    });
-
-    scrollToBottomButton.addEventListener("click", () => {
-      autoScroll = true;
-      logContent.scrollTo({
-        top: logContent.scrollHeight,
-        behavior: "smooth"
-      });
-      scrollToBottomButton.classList.remove("show");
-    });
-
-    // Inicialización del scrollToBottomButton para asegurar que tenga los estilos correctos
-    scrollToBottomButton.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
-    scrollToBottomButton.querySelector('i').style.fontSize = '24px';
-    
-    // Verificar si hay scroll al inicio y mostrar el botón si es necesario
-    setTimeout(() => {
-      if (logContent.scrollHeight > logContent.clientHeight) {
-        const isNearBottom = logContent.scrollTop + logContent.clientHeight >= logContent.scrollHeight - 50;
-        if (!isNearBottom) {
-          scrollToBottomButton.classList.add("show");
-        }
-      }
-    }, 500);
-
-    // Obtener referencias a botones y preparar tooltips
-    let patchToolkit = document.querySelector(".patch-toolkit");
-    let reportIssueButton = document.querySelector(".report-issue");
-    let copyButton = document.querySelector(".copy-console-hwid");
-
-    // Función para añadir tooltips
-    const addTooltip = (element, text) => {
-      let tooltip = null;
-      
-      element.addEventListener('mouseenter', () => {
-        tooltip = document.createElement('div');
-        tooltip.className = 'tooltip';
-        tooltip.innerText = text;
-        document.body.appendChild(tooltip);
-
-        const rect = element.getBoundingClientRect();
-        tooltip.style.left = rect.left - tooltip.offsetWidth - 10 + 'px';
-        tooltip.style.top = rect.top + (rect.height / 2) - (tooltip.offsetHeight / 2) + 'px';
-        
-        // Cambiar flecha al lado derecho
-        tooltip.style.setProperty('--tooltip-arrow-side', 'right');
-        
-        // Hacer que el tooltip sea visible
-        setTimeout(() => {
-          tooltip.style.opacity = '1';
-        }, 10);
-      });
-      
-      element.addEventListener('mouseleave', () => {
-        if (tooltip) {
-          tooltip.style.opacity = '0';
-          setTimeout(() => {
-            // Add null check before accessing parentNode
-            if (tooltip && tooltip.parentNode) {
-              tooltip.parentNode.removeChild(tooltip);
-            }
-            tooltip = null;
-          }, 200);
-        }
-      });
-    };
-
-    // Añadir tooltips a los botones
-    addTooltip(copyButton, "Copiar ID al portapapeles");
-    addTooltip(scrollToBottomButton, "Desplazar al final de los registros");
-    
-    // Configurar el botón de patch toolkit
-    let res = await config.GetConfig();
-    if (res.patchToolkit) {
-      patchToolkit.addEventListener("click", () => {
-        logs.classList.toggle("show");
-        this.runPatchToolkit();
-      });
-      addTooltip(patchToolkit, "Ejecutar Toolkit de Parches");
-    } else {
-      patchToolkit.style.display = "none";
-      // Adjust scroll button position when patch toolkit is hidden
-      scrollToBottomButton.style.bottom = "80px";
-    }
-
-    // Configurar el botón de reportar problema
-    reportIssueButton.classList.add("show");
-    reportIssueButton.addEventListener("click", () => {
-      logs.classList.toggle("show");
+    // Configurar listeners para eventos de la consola desde app.js
+    ipcRenderer.on('report-issue-triggered', () => {
       this.confirmReportIssue();
     });
-    addTooltip(reportIssueButton, "Reportar un problema");
 
-    // Configurar eventos de logger
-    logger2.launcher.on("info", (...args) => {
-      addLog(logContent, "info", args);
+    ipcRenderer.on('patch-toolkit-triggered', () => {
+      this.runPatchToolkit();
     });
 
-    logger2.launcher.on("warn", (...args) => {
-      addLog(logContent, "warn", args);
-    });
-
-    logger2.launcher.on("debug", (...args) => {
-      addLog(logContent, "debug", args);
-    });
-
-    logger2.launcher.on("error", (...args) => {
-      addLog(logContent, "error", args);
-    });
-
-    function addLog(content, type, args) {
-      let final = [];
-      for (let arg of args) {
-        if (typeof arg == "string") {
-          final.push(arg);
-        } else if (arg instanceof Error) {
-          final.push(arg.stack);
-        } else if (typeof arg == "object") {
-          final.push(JSON.stringify(arg));
-        } else {
-          final.push(arg);
-        }
+    // Listener para enviar colores cuando la consola los solicite
+    ipcRenderer.on('send-colors-to-console', async () => {
+      console.log('Consola solicita colores dinámicos, reenviando...');
+      try {
+        // Releer los colores del servidor y enviarlos a la consola
+        await this.loadColors();
+      } catch (error) {
+        console.warn('Error reenviando colores a la consola:', error);
       }
-      let span = document.createElement("span");
-      span.classList.add(type);
-      span.innerHTML = `${final.join(" ")}<br>`
-        .replace(/\x20/g, "&nbsp;")
-        .replace(/\n/g, "<br>");
+    });
 
-      content.appendChild(span);
-      if (autoScroll) {
-        content.scrollTop = content.scrollHeight;
-      } else if (content.scrollHeight > content.clientHeight) {
-        // Si no está en autoScroll y hay suficiente contenido para scroll, mostrar el botón
-        scrollToBottomButton.classList.add("show");
+    // Listener para enviar configuración del servidor cuando la consola la solicite
+    ipcRenderer.on('send-server-config-to-console', async () => {
+      console.log('Consola solicita configuración del servidor, enviando...');
+      try {
+        const res = await config.GetConfig();
+        const configForConsole = {
+          patchToolkit: res.patchToolkit !== false // Por defecto true, false solo si se especifica
+        };
+        
+        ipcRenderer.send('apply-server-config', configForConsole);
+        console.log('Configuración del servidor enviada a la consola:', configForConsole);
+      } catch (error) {
+        console.warn('Error enviando configuración del servidor a la consola:', error);
       }
-    }
+    });
 
-    logContent.scrollTop = logContent.scrollHeight;
+    // Enviar cleanup queue cuando se cierre la aplicación
+    ipcRenderer.on('process-cleanup-queue', async () => {
+      await this.processCleanupQueue();
+    });
+
+    // Ya no necesitamos configurar la consola interna,
+    // todos los logs se envían automáticamente a la consola separada
+    console.log("Sistema de logs configurado para consola separada");
   }
 
   async confirmReportIssue() {
@@ -1880,7 +1809,7 @@ class Launcher {
         });
     });
     if (dialogResult === 'cancel') {
-        logs.classList.toggle("show");
+        ipcRenderer.send('console-window-open');
         return;
     }
     this.sendReport();
@@ -1903,7 +1832,7 @@ class Launcher {
         });
     });
     if (dialogResult === 'cancel') {
-      logs.classList.toggle("show");
+      ipcRenderer.send('console-window-open');
       return;
     }
     patchLoader();

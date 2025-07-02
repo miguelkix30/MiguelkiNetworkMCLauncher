@@ -1046,6 +1046,22 @@ class Settings {
                 this.handleDeleteAssets();
             });
         }
+
+        // Botones de herramientas de desarrollo
+        const openConsoleBtn = document.querySelector('.open-console-btn');
+        const openLogsFolderBtn = document.querySelector('.open-logs-folder-btn');
+
+        if (openConsoleBtn) {
+            openConsoleBtn.addEventListener('click', () => {
+                this.handleOpenConsole();
+            });
+        }
+
+        if (openLogsFolderBtn) {
+            openLogsFolderBtn.addEventListener('click', () => {
+                this.handleOpenLogsFolder();
+            });
+        }
     }
 
     async handleResetConfig() {
@@ -1333,6 +1349,44 @@ class Settings {
                         options: true
                     });
                 }
+            });
+        }
+    }
+
+    // Manejar apertura de consola
+    handleOpenConsole() {
+        console.log('Abriendo consola...');
+        ipcRenderer.send('console-window-open');
+    }
+
+    // Manejar apertura de carpeta de logs
+    async handleOpenLogsFolder() {
+        try {
+            console.log('Abriendo carpeta de logs...');
+            const { shell } = require('electron');
+            const path = require('path');
+            const fs = require('fs');
+            
+            // Obtener la ruta de datos del usuario
+            const userDataPath = await ipcRenderer.invoke('path-user-data');
+            const logsPath = path.join(userDataPath, 'logs');
+            
+            // Crear el directorio si no existe
+            if (!fs.existsSync(logsPath)) {
+                fs.mkdirSync(logsPath, { recursive: true });
+            }
+            
+            // Abrir la carpeta
+            shell.openPath(logsPath);
+        } catch (error) {
+            console.error('Error abriendo carpeta de logs:', error);
+            
+            const errorPopup = new popup();
+            errorPopup.openPopup({
+                title: 'Error',
+                content: 'No se pudo abrir la carpeta de logs: ' + error.message,
+                color: 'red',
+                options: true
             });
         }
     }

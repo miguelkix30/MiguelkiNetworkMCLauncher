@@ -10,9 +10,96 @@ const { vanilla, fabric, forge, quilt } = require('tomate-loaders');
 
 const UpdateWindow = require("./assets/js/windows/updateWindow.js");
 const MainWindow = require("./assets/js/windows/mainWindow.js");
+const ConsoleWindow = require("./assets/js/windows/consoleWindow.js");
+const FileLogger = require("./assets/js/utils/file-logger.js");
+
 let dev = process.env.NODE_ENV === 'dev';
 let server;
 let authToken;
+let consoleWindow;
+let fileLogger;
+let logsDirectory;
+
+// Función para configurar el directorio de logs
+async function setupLogsDirectory() {
+    try {
+        // Intentar obtener la configuración del servidor
+        const config = require('./assets/js/utils/config.js');
+        const res = await config.GetConfig();
+        
+        if (dev) {
+            logsDirectory = path.resolve('./data/logs');
+        } else {
+            const appData = app.getPath('appData');
+            const dataDir = res.dataDirectory || 'MiguelkiNetwork';
+            const dirName = process.platform === 'darwin' ? dataDir : `.${dataDir}`;
+            logsDirectory = path.join(appData, dirName, 'logs');
+        }
+        
+        // Asegurar que el directorio de logs existe
+        if (!fs.existsSync(logsDirectory)) {
+            fs.mkdirSync(logsDirectory, { recursive: true });
+        }
+        
+        // Inicializar file logger
+        fileLogger = new FileLogger(logsDirectory);
+        
+        console.log(`Directorio de logs configurado: ${logsDirectory}`);
+        
+    } catch (error) {
+        console.error('Error configurando directorio de logs, usando fallback:', error);
+        
+        // Fallback al directorio de configuración del servidor si está disponible
+        try {
+            const { appdata } = require('./assets/js/utils.js');
+            const appdataPath = await appdata();
+            const config = require('./assets/js/utils/config.js');
+            const res = await config.GetConfig();
+            
+            const dirName = process.platform === 'darwin' ? res.dataDirectory : `.${res.dataDirectory}`;
+            logsDirectory = path.join(appdataPath, dirName, 'logs');
+            
+            if (!fs.existsSync(logsDirectory)) {
+                fs.mkdirSync(logsDirectory, { recursive: true });
+            }
+            
+            fileLogger = new FileLogger(logsDirectory);
+            console.log(`Directorio de logs configurado con fallback: ${logsDirectory}`);
+            
+        } catch (fallbackError) {
+            console.error('Error configurando directorio de logs con fallback, usando userData:', fallbackError);
+            
+            // Último fallback al directorio userData
+            if (dev) {
+                logsDirectory = path.resolve('./data/logs');
+            } else {
+                logsDirectory = path.join(app.getPath('userData'), 'logs');
+            }
+            
+            if (!fs.existsSync(logsDirectory)) {
+                fs.mkdirSync(logsDirectory, { recursive: true });
+            }
+            
+            fileLogger = new FileLogger(logsDirectory);
+        }
+    }
+}
+
+// Configurar directorio de logs inicialmente (será reconfigurado cuando se cargue la config)
+if (dev) {
+    logsDirectory = path.resolve('./data/logs');
+} else {
+    logsDirectory = path.join(app.getPath('userData'), 'logs');
+}
+
+// Asegurar que el directorio de logs existe
+if (!fs.existsSync(logsDirectory)) {
+    fs.mkdirSync(logsDirectory, { recursive: true });
+}
+
+// Inicializar file logger temporal
+fileLogger = new FileLogger(logsDirectory);
+
 let config = {
     "clientId": "1307003977442787451",
     "clientSecret": "UZSX-RM_KnL10I8vCGRYFaIKBDFzYn4Y",
@@ -149,13 +236,39 @@ if (dev) {
 }
 
 if (!app.requestSingleInstanceLock()) app.quit();
-else app.whenReady().then(() => {
-    if (dev) return MainWindow.createWindow();
-    UpdateWindow.createWindow();
+else app.whenReady().then(async () => {
+    // Configurar directorio de logs con la configuración del servidor
+    await setupLogsDirectory();
+    
+    if (dev) {
+        MainWindow.createWindow();
+        // Inicializar la consola automáticamente al crear la ventana principal
+        setTimeout(() => {
+            if (!consoleWindow) {
+                consoleWindow = new ConsoleWindow();
+                consoleWindow.init();
+            }
+        }, 1000); // Pequeño delay para asegurar que la ventana principal esté lista
+    } else {
+        UpdateWindow.createWindow();
+    }
 });
 
 // Main window IPC handlers
-ipcMain.on('main-window-open', () => MainWindow.createWindow());
+ipcMain.on('main-window-open', async () => {
+    // Reconfigurar directorio de logs cuando se abra la ventana principal
+    await setupLogsDirectory();
+    
+    MainWindow.createWindow();
+    
+    // Inicializar la consola automáticamente cuando se abra la ventana principal
+    setTimeout(() => {
+        if (!consoleWindow) {
+            consoleWindow = new ConsoleWindow();
+            consoleWindow.init();
+        }
+    }, 1000); // Pequeño delay para asegurar que la ventana principal esté lista
+});
 ipcMain.on('main-window-dev-tools', () => MainWindow.getWindow().webContents.openDevTools({ mode: 'detach' }));
 ipcMain.on('main-window-dev-tools-close', () => MainWindow.getWindow().webContents.closeDevTools());
 ipcMain.on('main-window-close', async () => {
@@ -171,11 +284,230 @@ ipcMain.on('main-window-progress-reset', () => MainWindow.getWindow().setProgres
 ipcMain.on('main-window-progress-load', () => MainWindow.getWindow().setProgressBar(2));
 ipcMain.on('main-window-minimize', () => MainWindow.getWindow().minimize());
 
+// Console window IPC handlers
+ipcMain.on('console-window-open', () => {
+    if (!consoleWindow) {
+        consoleWindow = new ConsoleWindow();
+        consoleWindow.init();
+    }
+    consoleWindow.show();
+    
+    // Solicitar colores y configuración actuales cuando se abra la consola
+    setTimeout(() => {
+        const mainWindow = MainWindow.getWindow();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('send-colors-to-console');
+            mainWindow.webContents.send('send-server-config-to-console');
+        }
+    }, 500);
+});
+
+ipcMain.on('console-window-close', () => {
+    if (consoleWindow) {
+        consoleWindow.hide();
+    }
+});
+
+ipcMain.on('console-window-toggle', () => {
+    if (!consoleWindow) {
+        consoleWindow = new ConsoleWindow();
+        consoleWindow.init();
+    }
+    consoleWindow.toggle();
+});
+
+ipcMain.on('console-window-destroy', () => {
+    if (consoleWindow) {
+        consoleWindow.destroy();
+        consoleWindow = null;
+    }
+});
+
+// Log message to console window and file
+ipcMain.on('log-message', (event, logData) => {
+    // Log to file
+    if (fileLogger) {
+        try {
+            fileLogger.log(logData.level || 'info', logData.identifier || '', ...(logData.args || [logData.message || '']));
+        } catch (error) {
+            console.error('Error writing to file logger:', error);
+        }
+    }
+
+    // Send to console window if it exists
+    if (consoleWindow && consoleWindow.isReady()) {
+        consoleWindow.sendLog(logData);
+    }
+});
+
+// Clear logs in console window
+ipcMain.on('clear-console-logs', () => {
+    if (consoleWindow && consoleWindow.isReady()) {
+        consoleWindow.clearLogs();
+    }
+});
+
+// Handlers para las acciones de la consola redirigidas desde la ventana de consola
+ipcMain.on('trigger-report-issue', () => {
+    const mainWindow = MainWindow.getWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('report-issue-triggered');
+    }
+});
+
+ipcMain.on('trigger-patch-toolkit', () => {
+    const mainWindow = MainWindow.getWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('patch-toolkit-triggered');
+    }
+});
+
 ipcMain.on('update-window-close', () => UpdateWindow.destroyWindow());
 ipcMain.on('update-window-dev-tools', () => UpdateWindow.getWindow().webContents.openDevTools({ mode: 'detach' }));
 ipcMain.on('update-window-progress', (event, options) => UpdateWindow.getWindow().setProgressBar(options.progress / options.size));
 ipcMain.on('update-window-progress-reset', () => UpdateWindow.getWindow().setProgressBar(-1));
 ipcMain.on('update-window-progress-load', () => UpdateWindow.getWindow().setProgressBar(2));
+
+// Handlers para consola y configuraciones
+ipcMain.removeHandler('get-hwid'); // Limpiar handler existente si existe
+ipcMain.handle('get-hwid', async () => {
+    try {
+        // Usar node-machine-id directamente (más confiable)
+        const { machineIdSync } = require('node-machine-id');
+        return machineIdSync();
+    } catch (error) {
+        console.error('Error obteniendo HWID:', error);
+        return 'unknown-hwid';
+    }
+});
+
+ipcMain.removeHandler('save-file'); // Limpiar handler existente si existe
+ipcMain.handle('save-file', async (event, options) => {
+    try {
+        const { dialog } = require('electron');
+        const { filename, content, filters } = options;
+
+        const result = await dialog.showSaveDialog(null, {
+            defaultPath: filename,
+            filters: filters || [
+                { name: 'All Files', extensions: ['*'] }
+            ]
+        });
+
+        if (!result.canceled && result.filePath) {
+            fs.writeFileSync(result.filePath, content, 'utf8');
+            return { success: true, path: result.filePath };
+        }
+
+        return { success: false, cancelled: true };
+    } catch (error) {
+        console.error('Error guardando archivo:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.on('open-logs-folder', () => {
+    try {
+        const { shell } = require('electron');
+        shell.openPath(logsDirectory);
+    } catch (error) {
+        console.error('Error abriendo carpeta de logs:', error);
+    }
+});
+
+// Handler para aplicar colores dinámicos a la consola
+ipcMain.on('apply-dynamic-colors', (event, colors) => {
+    if (consoleWindow && consoleWindow.isReady()) {
+        consoleWindow.window.webContents.send('apply-dynamic-colors', colors);
+    }
+});
+
+// Handler para que la consola solicite los colores cuando esté lista
+ipcMain.on('request-dynamic-colors', () => {
+    const mainWindow = MainWindow.getWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('send-colors-to-console');
+    }
+});
+
+// Handler para aplicar configuración del servidor a la consola
+ipcMain.on('apply-server-config', (event, config) => {
+    if (consoleWindow && consoleWindow.isReady()) {
+        consoleWindow.window.webContents.send('apply-server-config', config);
+    }
+});
+
+// Handler para solicitar configuración del servidor
+ipcMain.on('request-server-config', () => {
+    const mainWindow = MainWindow.getWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('send-server-config-to-console');
+    }
+});
+
+// Handlers para las acciones de la consola
+ipcMain.on('report-issue', () => {
+    // Enviar señal a la ventana principal para manejar el reporte
+    const mainWindow = MainWindow.getWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('report-issue-triggered');
+    }
+});
+
+ipcMain.on('open-patch-toolkit', () => {
+    // Enviar señal a la ventana principal para manejar el toolkit
+    const mainWindow = MainWindow.getWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('patch-toolkit-triggered');
+    }
+});
+
+// Handler para obtener información de versión
+ipcMain.removeHandler('get-version-info'); // Limpiar handler existente si existe
+ipcMain.handle('get-version-info', async () => {
+    try {
+        // Obtener información base del repositorio
+        let baseVersionInfo = null;
+        try {
+            const fetch = require('node-fetch');
+            const response = await fetch('https://api.github.com/repos/miguelkix30/MiguelkiNetworkMCLauncher/releases/latest');
+            if (response.ok) {
+                const data = await response.json();
+                baseVersionInfo = {
+                    version: data.tag_name || data.name,
+                    published_at: data.published_at,
+                    body: data.body
+                };
+            }
+        } catch (error) {
+            console.warn('Error obteniendo información del repositorio base:', error);
+        }
+
+        return {
+            version: pkg.version,
+            sub_version: pkg.sub_version || null,
+            baseVersionInfo: baseVersionInfo,
+            repository: pkg.repository
+        };
+    } catch (error) {
+        console.error('Error obteniendo información de versión:', error);
+        return {
+            version: '?.?.?',
+            sub_version: null,
+            baseVersionInfo: null
+        };
+    }
+});
+
+// Handler para actualizar información de versión base desde el proceso renderer
+ipcMain.on('update-base-version-info', (event, baseVersionInfo) => {
+    try {
+        pkg.baseVersionInfo = baseVersionInfo;
+        console.log('Información de versión base actualizada:', baseVersionInfo);
+    } catch (error) {
+        console.error('Error actualizando información de versión base:', error);
+    }
+});
 
 ipcMain.handle('path-user-data', () => app.getPath('userData'));
 ipcMain.handle('appData', e => app.getPath('appData'));
@@ -215,11 +547,6 @@ ipcMain.handle('get-launcher-config', async (event, options) => {
                     if (!launchConfig.gameDirectory) {
                         launchConfig.gameDirectory = rootPath;
                     }
-                    // Crear directorio de mods si no existe para Forge
-                    const forgeModsPath = path.join(rootPath, 'mods');
-                    if (!fs.existsSync(forgeModsPath)) {
-                        fs.mkdirSync(forgeModsPath, { recursive: true });
-                    }
                     break;
                 case 'fabric':
                     console.log('Using Fabric loader configuration');
@@ -231,11 +558,6 @@ ipcMain.handle('get-launcher-config', async (event, options) => {
                     if (!launchConfig.gameDirectory) {
                         launchConfig.gameDirectory = rootPath;
                     }
-                    // Crear directorio de mods si no existe para Fabric
-                    const fabricModsPath = path.join(rootPath, 'mods');
-                    if (!fs.existsSync(fabricModsPath)) {
-                        fs.mkdirSync(fabricModsPath, { recursive: true });
-                    }
                     break;
                 case 'quilt':
                     console.log('Using Quilt loader configuration');
@@ -246,11 +568,6 @@ ipcMain.handle('get-launcher-config', async (event, options) => {
                     // Asegurar que Quilt tenga la configuración correcta para mods
                     if (!launchConfig.gameDirectory) {
                         launchConfig.gameDirectory = rootPath;
-                    }
-                    // Crear directorio de mods si no existe para Quilt
-                    const quiltModsPath = path.join(rootPath, 'mods');
-                    if (!fs.existsSync(quiltModsPath)) {
-                        fs.mkdirSync(quiltModsPath, { recursive: true });
                     }
                     break;
                 case 'vanilla':
@@ -993,4 +1310,4 @@ ipcMain.handle('verify-java-config', async (event, javaPath) => {
     }
 });
 
-// ...existing handlers...
+//# sourceMappingURL=main.js.map
