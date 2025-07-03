@@ -1,6 +1,6 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
-    "preductname": "Miguelki Network MC Launcher",
+    "productname": "Miguelki Network MC Launcher",
     "version": "4.0.0",
     "sub_version": "",
     "changelog": "Actualizada la librería principal de ejecución de juego.",

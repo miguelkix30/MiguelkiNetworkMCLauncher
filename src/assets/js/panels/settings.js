@@ -1676,9 +1676,13 @@ class Settings {
             const path = require('path');
             const fs = require('fs');
             
-            // Obtener la ruta de datos del usuario
-            const userDataPath = await ipcRenderer.invoke('path-user-data');
-            const logsPath = path.join(userDataPath, 'logs');
+            // Obtener el productName del package.json
+            const pkg = require('../../../package.json');
+            const productName = pkg.productname || 'Miguelki Network MC Launcher';
+            
+            // Usar la ruta estándar: %APPDATA%/MiguelkiNetwork/ProductName/logs
+            const appDataPath = await ipcRenderer.invoke('appData');
+            const logsPath = path.join(appDataPath, 'MiguelkiNetwork', productName, 'logs');
             
             // Crear el directorio si no existe
             if (!fs.existsSync(logsPath)) {

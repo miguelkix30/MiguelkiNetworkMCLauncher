@@ -20,85 +20,18 @@ let consoleWindow;
 let fileLogger;
 let logsDirectory;
 
-// Función para configurar el directorio de logs
-async function setupLogsDirectory() {
-    try {
-        // Intentar obtener la configuración del servidor
-        const config = require('./assets/js/utils/config.js');
-        const res = await config.GetConfig();
-        const dataDir = res.dataDirectory || 'MiguelkiNetwork';
-        
-        if (dev) {
-            logsDirectory = path.resolve(`./data/.${dataDir}/logs`);
-        } else {
-            const appData = app.getPath('appData');
-            const dirName = process.platform === 'darwin' ? dataDir : `.${dataDir}`;
-            logsDirectory = path.join(appData, dirName, 'logs');
-        }
-        
-        // Asegurar que el directorio de logs existe
-        if (!fs.existsSync(logsDirectory)) {
-            fs.mkdirSync(logsDirectory, { recursive: true });
-        }
-        
-        // Inicializar file logger
-        fileLogger = new FileLogger(logsDirectory);
-        
-        console.log(`Directorio de logs configurado: ${logsDirectory}`);
-        
-    } catch (error) {
-        console.error('Error configurando directorio de logs, usando fallback:', error);
-        
-        // Fallback al directorio de configuración del servidor si está disponible
-        try {
-            const { appdata } = require('./assets/js/utils.js');
-            const appdataPath = await appdata();
-            const config = require('./assets/js/utils/config.js');
-            const res = await config.GetConfig();
-            
-            const dirName = process.platform === 'darwin' ? res.dataDirectory : `.${res.dataDirectory}`;
-            logsDirectory = path.join(appdataPath, dirName, 'logs');
-            
-            if (!fs.existsSync(logsDirectory)) {
-                fs.mkdirSync(logsDirectory, { recursive: true });
-            }
-            
-            fileLogger = new FileLogger(logsDirectory);
-            console.log(`Directorio de logs configurado con fallback: ${logsDirectory}`);
-            
-        } catch (fallbackError) {
-            console.error('Error configurando directorio de logs con fallback, usando userData:', fallbackError);
-            
-            // Último fallback al directorio userData
-            if (dev) {
-                logsDirectory = path.resolve('./data/logs');
-            } else {
-                logsDirectory = path.join(app.getPath('userData'), 'logs');
-            }
-            
-            if (!fs.existsSync(logsDirectory)) {
-                fs.mkdirSync(logsDirectory, { recursive: true });
-            }
-            
-            fileLogger = new FileLogger(logsDirectory);
-        }
-    }
-}
-
-// Configurar directorio de logs inicialmente (será reconfigurado cuando se cargue la config)
-if (dev) {
-    logsDirectory = path.resolve('./data/logs');
-} else {
-    logsDirectory = path.join(app.getPath('userData'), 'logs');
-}
+    const appDataPath = dev ? path.resolve('./data').replace(/\\/g, '/') : app.getPath('appData');
+    logsDirectory = path.join(appDataPath, 'MiguelkiNetwork', pkg.name || 'MiguelkiNetwork-MCLauncher', 'logs');
 
 // Asegurar que el directorio de logs existe
 if (!fs.existsSync(logsDirectory)) {
     fs.mkdirSync(logsDirectory, { recursive: true });
 }
 
-// Inicializar file logger temporal
+// Inicializar file logger
 fileLogger = new FileLogger(logsDirectory);
+
+console.log(`Directorio de logs configurado: ${logsDirectory}`);
 
 let config = {
     "clientId": "1307003977442787451",
@@ -237,9 +170,6 @@ if (dev) {
 
 if (!app.requestSingleInstanceLock()) app.quit();
 else app.whenReady().then(async () => {
-    // Configurar directorio de logs con la configuración del servidor
-    await setupLogsDirectory();
-    
     if (dev) {
         MainWindow.createWindow();
         // Inicializar la consola automáticamente al crear la ventana principal
@@ -256,9 +186,6 @@ else app.whenReady().then(async () => {
 
 // Main window IPC handlers
 ipcMain.on('main-window-open', async () => {
-    // Reconfigurar directorio de logs cuando se abra la ventana principal
-    await setupLogsDirectory();
-    
     MainWindow.createWindow();
     
     // Inicializar la consola automáticamente cuando se abra la ventana principal

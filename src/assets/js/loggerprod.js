@@ -56,16 +56,8 @@ class Logger2 {
     // Normalizar el evento
     const normalizedEvent = event === "log" ? "info" : event;
     
-    // Log al archivo si está disponible
-    if (this.fileLogger) {
-      try {
-        this.fileLogger.log(normalizedEvent, `[${this.identifier}]`, ...args);
-      } catch (error) {
-        this.console.error('Error writing to file logger:', error);
-      }
-    }
-    
-    // Enviar a la ventana de consola si está disponible
+    // Solo enviar a la ventana de consola, no al archivo directamente
+    // El archivo se maneja a través del handler 'log-message' en app.js
     if (this.consoleWindow && this.consoleWindow.isReady && this.consoleWindow.isReady()) {
       try {
         this.consoleWindow.sendLog({

@@ -10,7 +10,7 @@ class ConsoleWindow {
 
     init() {
         this.window = new BrowserWindow({
-            title: `${pkg.preductname} - Consola`,
+            title: `${pkg.productname} - Consola`,
             width: 1000,
             height: 700,
             minWidth: 800,

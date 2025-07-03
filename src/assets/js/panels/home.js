@@ -64,7 +64,7 @@ RPC.on("ready", async () => {
 		state: `En el launcher`,
 		startTimestamp: startingTime,
 		largeImageKey: "icon",
-		largeImageText: pkg.preductname,
+		largeImageText: pkg.productname,
 		instance: true,
 	}).catch((err) => {
 		console.error("Error al establecer la actividad de Discord:", err);
@@ -317,7 +317,7 @@ class Home {
 	}
 
 	async news() {
-		let name = pkg.preductname;
+		let name = pkg.productname;
 		let version = pkg.version;
 		let subversion = pkg.sub_version;
 		let changelog = pkg.changelog;
@@ -1766,7 +1766,7 @@ ${error.message}`,
 						largeImageKey: "icon",
 						smallImageKey: `https://minotar.net/helm/${username}/512.png`,
 						smallImageText: username,
-						largeImageText: pkg.preductname,
+						largeImageText: pkg.productname,
 						instance: true,
 					});
 				}
@@ -1921,7 +1921,7 @@ ${error.message}`,
 					state: `En el launcher`,
 					startTimestamp: startingTime,
 					largeImageKey: "icon",
-					largeImageText: pkg.preductname,
+					largeImageText: pkg.productname,
 					instance: true,
 				}).catch();
 				playquitMSG(configClient.instance_selct);
@@ -2005,7 +2005,7 @@ ${error.message}`,
 					RPC.setActivity({
 						state: `En el launcher`,
 						largeImageKey: "icon",
-						largeImageText: pkg.preductname,
+						largeImageText: pkg.productname,
 						instance: true,
 					}).catch();
 				} catch (rpcError) {
@@ -2074,7 +2074,7 @@ ${error.message}`,
 					RPC.setActivity({
 						state: `En el launcher`,
 						largeImageKey: "icon",
-						largeImageText: pkg.preductname,
+						largeImageText: pkg.productname,
 						instance: true,
 					}).catch();
 				} catch (rpcError) {
