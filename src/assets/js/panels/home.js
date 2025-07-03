@@ -1386,10 +1386,7 @@ ${error.message}`,
 			path.join(instanceGameDirectory, 'resourcepacks'),
 			path.join(instanceGameDirectory, 'screenshots'),
 			path.join(instanceGameDirectory, 'logs'),
-			path.join(instanceGameDirectory, 'crash-reports'),
-			path.join(rootPath, 'natives'),
-			path.join(rootPath, 'libraries'),
-			path.join(rootPath, 'assets')
+			path.join(instanceGameDirectory, 'crash-reports')
 		];
 		
 		for (const dir of requiredDirs) {
