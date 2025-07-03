@@ -1013,7 +1013,7 @@ class Settings {
                 // Agregar botón de limpieza
                 infoHTML += `
                     <div class="java-management-buttons">
-                        <button class="java-cleanup-btn" id="java-cleanup-btn">🗑️ Limpiar Java No Utilizado</button>
+                        <button class="java-cleanup-btn" id="java-cleanup-btn">🗑️ Eliminar instalaciones de Java</button>
                         <button class="java-refresh-btn" id="java-refresh-btn">🔄 Actualizar Lista</button>
                     </div>
                 `;

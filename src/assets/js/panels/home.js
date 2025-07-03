@@ -37,7 +37,7 @@ import {
 } from "../MKLib.js";
 import cleanupManager from "../utils/cleanup-manager.js";
 import { downloadAssets } from "../utils/instance-manager.js";
-import { getJavaForMinecraft, setGameInProgress, setGameFinished } from "../utils/java-manager.js";
+import { getJavaForMinecraft, setGameInProgress, setGameFinished, getJavaVersion } from "../utils/java-manager.js";
 
 const path = require("path");
 const fs = require("fs");
@@ -680,6 +680,7 @@ class Home {
 		
 		try {
 			let configClient = await this.db.readData("configClient");
+			let javaPath = configClient.java_config.java_path;
 
 		if (!configClient.instance_selct) {
 			this.enablePlayButton();
@@ -756,6 +757,7 @@ class Home {
 				if (authenticator) {
 					console.log(
 						`Cuenta encontrada por método alternativo: ${authenticator.name} (ID: ${authenticator.ID})`
+
 					);
 
 					await this.db.updateData("accounts", authenticator, authenticator.ID);
@@ -774,6 +776,7 @@ class Home {
 					`Cuentas disponibles: ${allAccounts
 						.map((a) => `${a.name}(${a.ID})`)
 						.join(", ")}`
+
 				);
 			}
 
@@ -844,7 +847,8 @@ class Home {
 							let errorPopup = new popup();
 							errorPopup.openPopup({
 								title: "Error de Actualización",
-								content: `No se pudo actualizar la lista de instancias:\n\n${error.message}`,
+								content: `No se pudo actualizar la lista de instancias:
+${error.message}`,
 								color: "red",
 								options: true,
 							});
@@ -1383,7 +1387,9 @@ class Home {
 			path.join(instanceGameDirectory, 'screenshots'),
 			path.join(instanceGameDirectory, 'logs'),
 			path.join(instanceGameDirectory, 'crash-reports'),
-			path.join(instanceGameDirectory, 'bin', 'natives')
+			path.join(rootPath, 'natives'),
+			path.join(rootPath, 'libraries'),
+			path.join(rootPath, 'assets')
 		];
 		
 		for (const dir of requiredDirs) {
@@ -1393,13 +1399,44 @@ class Home {
 			}
 		}
 		
+		// ======== CONFIGURACIÓN ESPECÍFICA PARA VERSIONES LEGACY ========
+		// Añadir argumentos JVM específicos para versiones antiguas de Minecraft
+		const minecraftVersionFloat = parseFloat(options.loadder.minecraft_version.replace(/^1\./, '1.'));
+		let legacyJvmArgs = [];
+		
+		if (minecraftVersionFloat <= 1.16) {
+			console.log(`🔧 Aplicando configuración legacy para Minecraft ${options.loadder.minecraft_version}`);
+			
+			// Argumentos específicos para LWJGL 2.x (versiones legacy)
+			legacyJvmArgs = [
+				// Forzar el uso de OpenGL software rendering como fallback
+				'-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=true',
+				// Configurar biblioteca nativa LWJGL
+				'-Dorg.lwjgl.librarypath=' + path.join(rootPath, 'bin', 'natives'),
+				// Deshabilitar verificaciones de compatibilidad de LWJGL que pueden fallar
+				'-Dorg.lwjgl.util.NoChecks=true',
+				// Configurar OpenAL para compatibilidad
+				'-Dopenal.library=' + path.join(rootPath, 'bin', 'natives', process.platform === 'win32' ? 'OpenAL32.dll' : 'libopenal.so'),
+				// Argumentos para prevenir errores de memoria de LWJGL
+				'-Dorg.lwjgl.util.Debug=false',
+				// Configurar DirectX/OpenGL para Windows
+				...(process.platform === 'win32' ? [
+					'-Djava.library.path=' + path.join(rootPath, 'bin', 'natives'),
+					'-Dsun.java2d.d3d=false',
+					'-Dsun.java2d.opengl=false'
+				] : [])
+			];
+			
+			console.log(`🛠️ Argumentos JVM legacy añadidos`);
+		}
+
 		// ======== VERIFICACIÓN Y DESCARGA AUTOMÁTICA DE JAVA ========
 		console.log("☕ Verificando compatibilidad de Java...");
+		console.log(`🎮 Versión de Minecraft: ${options.loadder.minecraft_version}`);
+		console.log(`📍 Java configurado actualmente: ${javaPath}`);
 		infoStarting.innerHTML = `Verificando Java para Minecraft ${options.loadder.minecraft_version}...`;
 		this.setProgressBarIndeterminate();
 
-		let javaPath = configClient.java_config.java_path;
-		
 		try {
 			// Usar getJavaForMinecraft para obtener la ruta de Java apropiada
 			const compatibleJavaPath = await getJavaForMinecraft(
@@ -1418,6 +1455,16 @@ class Home {
 			);
 			
 			// Actualizar la configuración con la ruta de Java apropiada
+			javaPath = compatibleJavaPath;
+			console.log(`✅ Java final seleccionado: ${javaPath}`);
+			
+			// Verificar versión de Java seleccionada
+			try {
+				const javaVersionInfo = await getJavaVersion(javaPath);
+				console.log(`📊 Versión de Java detectada: Java ${javaVersionInfo.major}.${javaVersionInfo.minor} (${javaVersionInfo.full})`);
+			} catch (versionError) {
+				console.warn(`⚠️ No se pudo verificar la versión de Java: ${versionError.message}`);
+			}
 			javaPath = compatibleJavaPath;
 			console.log(`✅ Java verificado/descargado: ${javaPath}`);
 			
@@ -1521,8 +1568,11 @@ class Home {
 			// Configuración alternativa para minecraft-launcher-core (algunas versiones usan java en vez de javaPath)
 			java: javaPath,
 
-			// Argumentos personalizados de JVM
-			customArgs: options.jvm_args ? options.jvm_args : [],
+			// Argumentos personalizados de JVM (incluir argumentos legacy si es necesario)
+			customArgs: [
+				...(legacyJvmArgs || []),
+				...(options.jvm_args ? options.jvm_args : [])
+			],
 			
 			// Argumentos personalizados del juego
 			customLaunchArgs: gameArgs ? gameArgs : [],
@@ -1546,14 +1596,13 @@ class Home {
 				// Directorio donde están los archivos del Minecraft jar y version json
 				directory: launchConfig.directory || path.join(rootPath, 'versions', options.loadder.minecraft_version),
 				// Directorio de nativos
-				natives: path.join(rootPath, 'bin', 'natives'),
+				natives: path.join(rootPath, 'natives'),
 				// Directorio de assets
 				assetRoot: path.join(rootPath, 'assets'),
 				// Directorio de librerías
 				libraryRoot: path.join(rootPath, 'libraries'),
 				// Directorio de trabajo para el proceso Java
 				cwd: instanceGameDirectory,
-
 				detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
 			}
 		};
@@ -1806,15 +1855,13 @@ class Home {
 			this.hideProgressBar();
 			closeGameButton.style.display = "block";
 
-			if (configClient.launcher_config.closeLauncher == "close-launcher") {
-				ipcRenderer.send("main-window-hide");
-			}
-
 			if (!playing) {
 				playing = true;
 				playMSG(configClient.instance_selct);
-
 				removeUserFromQueue(hwid);
+				if (configClient.launcher_config.closeLauncher == "close-launcher") {
+					ipcRenderer.send("main-window-hide");
+				}
 			}
 
 			ipcRenderer.send("main-window-progress-load");
@@ -1828,13 +1875,7 @@ class Home {
 		});
 
 		launcher.on("close", async (code) => {
-			if (configClient.launcher_config.closeLauncher == "close-launcher") {
-				ipcRenderer.send("main-window-show");
-			}
-
-			// Marcar que el juego ha terminado y liberar Java
 			setGameFinished();
-			console.log("🛑 Juego cerrado, Java liberado para limpieza");
 
 			this.notification();
 			if (!musicMuted && !musicPlaying) {
@@ -1850,6 +1891,10 @@ class Home {
 
 			if (closeGameButton) {
 				closeGameButton.style.display = "none";
+			}
+
+			if (configClient.launcher_config?.closeLauncher == "close-launcher") {
+				ipcRenderer.send("main-window-show");
 			}
 
 			this.enablePlayButton();
@@ -2767,7 +2812,7 @@ class Home {
 							title: "Error",
 							content:
 								"No se pudo cerrar el juego. Intenta cerrarlo manualmente.",
-							color: "red",
+						 color: "red",
 							options: true,
 						});
 					}

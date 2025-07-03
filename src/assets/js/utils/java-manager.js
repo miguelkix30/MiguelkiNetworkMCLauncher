@@ -119,12 +119,15 @@ const MINECRAFT_JAVA_COMPATIBILITY = {
     '1.14': 'java8',
     '1.15': 'java8',
     '1.16': 'java8',
-    // Minecraft 1.17+: Java 17+
+    // Minecraft 1.17 - 1.20.6: Java 17+
     '1.17': 'java17',
     '1.18': 'java17',
     '1.19': 'java17',
     '1.20': 'java17',
-    '1.21': 'java21'
+    // Minecraft 1.21+: Java 21+
+    '1.21': 'java21',
+    '1.22': 'java21', // Para futuras versiones
+    '1.23': 'java21'
 };
 
 // Variables globales para paths y estado del juego
@@ -223,6 +226,8 @@ function getRuntimePath() {
  * Determina qué versión de Java se necesita para una versión específica de Minecraft
  */
 function getRequiredJavaVersion(minecraftVersion) {
+    console.log(`🔍 Determinando versión de Java para Minecraft ${minecraftVersion}`);
+    
     // Extraer la versión principal (ej: "1.20.4" -> "1.20")
     const versionParts = minecraftVersion.split('.');
     let majorVersion;
@@ -233,22 +238,30 @@ function getRequiredJavaVersion(minecraftVersion) {
         majorVersion = versionParts[0];
     }
     
-    // Buscar la versión de Java compatible
-    for (const [mcVersion, javaVersion] of Object.entries(MINECRAFT_JAVA_COMPATIBILITY)) {
-        if (majorVersion.startsWith(mcVersion)) {
-            return javaVersion;
-        }
+    console.log(`📋 Versión principal extraída: ${majorVersion}`);
+    
+    // Buscar coincidencia exacta primero
+    if (MINECRAFT_JAVA_COMPATIBILITY[majorVersion]) {
+        const javaVersion = MINECRAFT_JAVA_COMPATIBILITY[majorVersion];
+        console.log(`✅ Coincidencia exacta encontrada: ${majorVersion} → ${javaVersion}`);
+        return javaVersion;
     }
     
-    // Fallback: para versiones muy nuevas usar Java 21, para muy viejas usar Java 8
+    // Si no hay coincidencia exacta, usar lógica numérica para determinar la versión
     const numericVersion = parseFloat(majorVersion);
+    console.log(`🔢 Evaluando numéricamente: ${numericVersion}`);
+    
+    let javaVersion;
     if (numericVersion >= 1.21) {
-        return 'java21';
+        javaVersion = 'java21';
     } else if (numericVersion >= 1.17) {
-        return 'java17';
+        javaVersion = 'java17';
     } else {
-        return 'java8';
+        javaVersion = 'java8';
     }
+    
+    console.log(`☕ Versión de Java determinada: ${javaVersion} para Minecraft ${minecraftVersion}`);
+    return javaVersion;
 }
 
 /**
@@ -312,7 +325,7 @@ async function isJavaCompatible(javaPath, minecraftVersion) {
         const requiredJava = getRequiredJavaVersion(minecraftVersion);
         const requiredMajorVersion = parseInt(requiredJava.replace('java', ''));
         
-        // Verificar compatibilidad
+        // Verificar compatibilidad mínima
         if (javaVersion.major < requiredMajorVersion) {
             return { 
                 compatible: false, 
@@ -320,7 +333,41 @@ async function isJavaCompatible(javaPath, minecraftVersion) {
             };
         }
 
-        return { compatible: true, version: javaVersion };
+        // ⚠️ REGLAS ESPECIALES DE COMPATIBILIDAD ⚠️
+        // Para versiones antiguas de Minecraft (1.16.5 y anteriores), Java 17+ causa problemas
+        const minecraftVersionFloat = parseFloat(minecraftVersion.replace(/^1\./, '1.'));
+        
+        if (minecraftVersionFloat <= 1.16 && javaVersion.major >= 17) {
+            return {
+                compatible: false,
+                reason: `Minecraft ${minecraftVersion} no es compatible con Java ${javaVersion.major}. Las versiones antiguas de Minecraft requieren Java 8-16. Java ${javaVersion.major} causa ClassCastException con el sistema de classloaders.`,
+                incompatibilityType: 'legacy-minecraft',
+                recommendedJava: 'java8'
+            };
+        }
+
+        // Para Minecraft 1.17-1.20, Java 21+ puede causar problemas
+        if (minecraftVersionFloat >= 1.17 && minecraftVersionFloat <= 1.20 && javaVersion.major >= 21) {
+            return {
+                compatible: false,
+                reason: `Minecraft ${minecraftVersion} puede tener problemas con Java ${javaVersion.major}. Se recomienda Java 17 para máxima compatibilidad.`,
+                incompatibilityType: 'modern-minecraft-stability',
+                recommendedJava: 'java17'
+            };
+        }
+
+        // Indicar si es la versión óptima o solo compatible
+        const isOptimal = javaVersion.major === requiredMajorVersion;
+        const compatibilityNote = isOptimal 
+            ? `Java ${javaVersion.major} es la versión óptima para Minecraft ${minecraftVersion}`
+            : `Java ${javaVersion.major} es compatible con Minecraft ${minecraftVersion}, pero Java ${requiredMajorVersion} sería óptimo`;
+
+        return { 
+            compatible: true, 
+            version: javaVersion,
+            optimal: isOptimal,
+            note: compatibilityNote
+        };
     } catch (error) {
         console.error('❌ Error verificando compatibilidad de Java:', error);
         return { compatible: false, reason: error.message };
@@ -560,11 +607,11 @@ async function downloadFile(url, outputPath, progressCallback = null, statusCall
                 progressCallback(progress, downloadedBytes, contentLength);
             }
             
-            if (statusCallback && downloadedBytes % (1024 * 1024) === 0) { // Cada MB
+            /* if (statusCallback && downloadedBytes % (1024 * 1024) === 0) { // Cada MB
                 const mbDownloaded = Math.round(downloadedBytes / (1024 * 1024));
                 const mbTotal = Math.round(contentLength / (1024 * 1024));
                 statusCallback(`Descargando Java: ${mbDownloaded}/${mbTotal} MB`);
-            }
+            } */
         });
         
         response.body.pipe(fileStream);
@@ -700,36 +747,80 @@ async function getJavaForMinecraft(minecraftVersion, currentJavaPath = null, pro
         
         console.log(`☕ Verificando Java para Minecraft ${minecraftVersion}...`);
         
-        // Si hay una ruta personalizada de Java, verificar si es compatible
+        // Si hay una ruta personalizada de Java, verificar si es la versión óptima
         if (currentJavaPath && currentJavaPath !== 'Utilice la versión de java suministrada con el launcher') {
             const compatibility = await isJavaCompatible(currentJavaPath, minecraftVersion);
             if (compatibility.compatible) {
-                console.log(`✅ Java personalizado es compatible`);
-                return currentJavaPath;
+                if (compatibility.optimal) {
+                    console.log(`✅ Java personalizado es la versión óptima para Minecraft ${minecraftVersion}`);
+                    return currentJavaPath;
+                } else {
+                    console.log(`⚠️ Java personalizado es compatible pero no óptimo (${compatibility.note}). Se descargará la versión óptima.`);
+                    // Continuar con descarga automática para obtener la versión óptima
+                }
             } else {
                 console.log(`⚠️ Java personalizado no es compatible: ${compatibility.reason}`);
                 // Continuar con descarga automática
             }
         }
         
-        // Verificar si ya tenemos Java compatible descargado
+        // Determinar la versión óptima de Java para esta versión de Minecraft
         const requiredJava = getRequiredJavaVersion(minecraftVersion);
+        console.log(`🎯 Versión óptima de Java para Minecraft ${minecraftVersion}: ${requiredJava}`);
+        
+        // PRIMERA PRIORIDAD: Buscar la versión exacta requerida
         const javaVersionPath = path.join(runtimePath, requiredJava);
         const existingJava = await findExistingJava(javaVersionPath);
         
         if (existingJava) {
-            const compatibility = await isJavaCompatible(existingJava, minecraftVersion);
-            if (compatibility.compatible) {
-                console.log(`✅ Java ${requiredJava} ya está disponible y es compatible`);
+            // Verificar que es exactamente la versión requerida, no solo compatible
+            const javaVersionInfo = await getJavaVersion(existingJava);
+            const requiredMajorVersion = parseInt(requiredJava.replace('java', ''));
+            
+            if (javaVersionInfo.major === requiredMajorVersion) {
+                console.log(`✅ Java ${requiredJava} (versión exacta) ya está disponible: ${existingJava}`);
                 return existingJava;
+            } else {
+                console.log(`⚠️ Java en ${javaVersionPath} no es la versión exacta requerida (encontrado: Java ${javaVersionInfo.major}, requerido: Java ${requiredMajorVersion})`);
             }
         }
         
-        // Descargar Java automáticamente
-        console.log(`📥 Descargando Java ${requiredJava} automáticamente...`);
-        const javaPath = await downloadAndInstallJava(minecraftVersion, progressCallback, statusCallback);
-        
-        return javaPath;
+        // SEGUNDA PRIORIDAD: Descargar la versión exacta requerida
+        console.log(`📥 Descargando Java ${requiredJava} (versión óptima) automáticamente...`);
+        try {
+            const javaPath = await downloadAndInstallJava(minecraftVersion, progressCallback, statusCallback);
+            return javaPath;
+        } catch (downloadError) {
+            console.error(`❌ Error descargando Java ${requiredJava}:`, downloadError);
+            
+            // TERCERA PRIORIDAD: Solo como último recurso, buscar versiones alternativas instaladas
+            console.log(`🔍 Como último recurso, buscando versiones alternativas de Java instaladas...`);
+            const allInstallations = await listAvailableJavaInstallations();
+            const compatibleInstallations = [];
+            
+            for (const installation of allInstallations) {
+                if (!installation.corrupted && installation.javaVersion) {
+                    const requiredMajorVersion = parseInt(requiredJava.replace('java', ''));
+                    if (installation.javaVersion.major >= requiredMajorVersion) {
+                        compatibleInstallations.push(installation);
+                    }
+                }
+            }
+            
+            if (compatibleInstallations.length > 0) {
+                // Ordenar por versión (preferir la más baja que sea compatible)
+                compatibleInstallations.sort((a, b) => a.javaVersion.major - b.javaVersion.major);
+                const bestFallback = compatibleInstallations[0];
+                
+                console.log(`⚠️ Usando Java ${bestFallback.javaVersion.major} como fallback para Minecraft ${minecraftVersion}`);
+                console.log(`🎯 ADVERTENCIA: Para el mejor rendimiento, se recomienda usar Java ${requiredJava.replace('java', '')}`);
+                
+                return bestFallback.javaPath;
+            }
+            
+            // Si no hay fallback disponible, re-lanzar el error de descarga
+            throw downloadError;
+        }
         
     } catch (error) {
         console.error('❌ Error obteniendo Java para Minecraft:', error);
