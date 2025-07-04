@@ -233,15 +233,15 @@ Para ver el reporte detallado con la matriz completa de compatibilidad, consulta
 
 ## 🎮 Compatibilidad de Loaders
 
-> **Última actualización:** 3 de julio de 2025  
-> **Total de pruebas:** 315 | **Exitosas:** 180 (57.1%)
+> **Última actualización:** 4 de julio de 2025  
+> **Total de pruebas:** 315 | **Exitosas:** 167 (53.0%)
 
 ### 📊 Resumen por Loader
 
 | Loader | Compatibilidad | Versiones Soportadas |
 |--------|----------------|---------------------|
-| **VANILLA** | 100.0% | 63/63 |
-| **FORGE** | 68.3% | 43/63 |
+| **VANILLA** | 84.1% | 53/63 |
+| **FORGE** | 63.5% | 40/63 |
 | **NEOFORGE** | 9.5% | 6/63 |
 | **FABRIC** | 57.1% | 36/63 |
 | **QUILT** | 50.8% | 32/63 |
@@ -250,16 +250,16 @@ Para ver el reporte detallado con la matriz completa de compatibilidad, consulta
 
 | Versión | Vanilla | Forge | NeoForge | Fabric | Quilt | Total Compatible |
 |---------|---------|-------|----------|--------|-------|------------------|
-| 1.8 | ✅ | ✅ | ❌ | ❌ | ❌ | 2/5 | |
-| 1.8.1 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
-| 1.8.2 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
-| 1.8.3 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
-| 1.8.4 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
-| 1.8.5 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
-| 1.8.6 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
-| 1.8.7 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
-| 1.8.8 | ✅ | ✅ | ❌ | ❌ | ❌ | 2/5 | |
-| 1.8.9 | ✅ | ✅ | ❌ | ❌ | ❌ | 2/5 | |
+| 1.8 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
+| 1.8.1 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
+| 1.8.2 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
+| 1.8.3 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
+| 1.8.4 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
+| 1.8.5 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
+| 1.8.6 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
+| 1.8.7 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
+| 1.8.8 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
+| 1.8.9 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
 | 1.9 | ✅ | ✅ | ❌ | ❌ | ❌ | 2/5 | |
 | 1.9.1 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
 | 1.9.2 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
@@ -318,7 +318,5 @@ Para ver el reporte detallado con la matriz completa de compatibilidad, consulta
 ### 🔗 Enlaces Útiles
 
 - [📄 Reporte Completo de Compatibilidad](loader-compatibility-report.md)
-- [🛠️ Guía de Instalación de Loaders](docs/loader-installation.md)
-- [❓ Solución de Problemas](docs/troubleshooting.md)
 
 ---
