@@ -52,6 +52,9 @@ const CONFIG = {
         '1.20', '1.20.1', '1.20.2', '1.20.3', '1.20.4', '1.20.5', '1.20.6',
         // Versiones 1.21
         '1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4'
+    ],
+    nonWorkingVersions: [
+        '1.8', '1.8.1', '1.8.2', '1.8.3', '1.8.4', '1.8.5', '1.8.6', '1.8.7', '1.8.8', '1.8.9'
     ]
 };
 
@@ -199,7 +202,9 @@ class ComprehensiveCompatibilityManager {
 
     async getLoaderConfig(loaderType, gameVersion, rootPath) {
         const { vanilla, fabric, forge, quilt, neoforge } = require('tomate-loaders');
-        
+        if (CONFIG.nonWorkingVersions.includes(gameVersion)) {
+            throw new Error(`Versión ${gameVersion} no soportada por ${loaderType}`);
+        }
         switch (loaderType.toLowerCase()) {
             case 'vanilla':
                 return await vanilla.getMCLCLaunchConfig({
@@ -214,18 +219,12 @@ class ComprehensiveCompatibilityManager {
                 });
                 
             case 'neoforge':
-                // NeoForge usa una implementación específica
                 const versionNumber = parseFloat(gameVersion.split('.').slice(0, 2).join('.'));
                 if (versionNumber >= 1.20) {
-                    // Intentar con neoforge si está disponible
-                    if (neoforge && neoforge.getMCLCLaunchConfig) {
                         return await neoforge.getMCLCLaunchConfig({
                             gameVersion: gameVersion,
                             rootPath: rootPath
                         });
-                    } else {
-                        throw new Error('NeoForge support requires specific implementation');
-                    }
                 }
                 throw new Error('NeoForge not available for this version');
                 
@@ -521,8 +520,6 @@ ${Object.values(stats.loaderStats).map(loader =>
 ### 🔗 Enlaces Útiles
 
 - [📄 Reporte Completo de Compatibilidad](loader-compatibility-report.md)
-- [🛠️ Guía de Instalación de Loaders](docs/loader-installation.md)
-- [❓ Solución de Problemas](docs/troubleshooting.md)
 
 ---`;
 

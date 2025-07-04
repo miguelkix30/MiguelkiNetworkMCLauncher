@@ -1,5 +1,4 @@
-# module du helios launcher
-name: 🚀 Launcher Build & Compatibility Update
+name: 🚀 Launcher Build
 on:
   push:
     branches: [ master ]
@@ -113,13 +112,13 @@ jobs:
           echo "Changes found:"
           git diff --staged --name-only
         fi
-
+  # en vez de poner el nombre del commit como update loader compatibility report ponerlo como Release <version> (utilizando el ultimo tag de la release)
     - name: 🔄 Commit and Push Changes
       if: steps.changes.outputs.has_changes == 'true'
       run: |
         git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git commit -m "🔧 Update loader compatibility report - $(date '+%Y-%m-%d %H:%M:%S') [skip ci]"
+        git config --local user.name "Miguelki Report Bot"
+        git commit -m "🔧 Relase ${{ needs.create-release.outputs.release_tag }} - $(date '+%Y-%m-%d %H:%M:%S') [skip ci]"
         git push
 
     - name: 🎯 Summary
