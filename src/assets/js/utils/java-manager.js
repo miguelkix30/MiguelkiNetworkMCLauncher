@@ -830,7 +830,6 @@ async function listAvailableJavaInstallations() {
                     if (javaExecutable) {
                         try {
                             const javaVersion = await getJavaVersion(javaExecutable);
-                            console.log(`✅ Versión de Java detectada: Java ${javaVersion.major}.${javaVersion.minor}`);
                             
                             installations.push({
                                 version: version,

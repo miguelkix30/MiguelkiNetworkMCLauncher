@@ -1343,8 +1343,6 @@ class Launcher {
         
         // Filtrar cuentas nulas o inválidas antes de procesarlas
         accounts = accounts.filter(acc => acc && typeof acc === 'object' && acc.ID !== undefined);
-        console.log(`Cuentas válidas después de filtrado: ${accounts.length}`);
-        
         // Si después del filtrado no hay cuentas, redireccionar al login
         if (accounts.length === 0) {
             configClient.account_selected = null;

@@ -1055,18 +1055,23 @@ async function setStatus(opt) {
         playersOnline.innerHTML = '0'
         return
     }
+    
     instanceIcon.src = opt.icon || './assets/images/icon.png'
     let { ip, port, nameServer } = opt.status
     nameServerElement.innerHTML = nameServer
     
-    console.log(`Checking server status for ${ip}:${port}`);
+    // Mostrar estado de carga inmediatamente
+    statusServerElement.classList.remove('red')
+    statusServerElement.innerHTML = `Cargando...`
+    document.querySelector('.status-player-count').classList.remove('red')
+    playersOnline.innerHTML = '0'
+    
     
     try {
         // Use the new lightweight MinecraftStatus
         let status = new MinecraftStatus(ip, port);
         let statusServer = await status.getStatus();
         
-        console.log('Server status result:', statusServer);
         
         if (statusServer.online) {
             statusServerElement.classList.remove('red')

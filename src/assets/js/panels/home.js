@@ -38,6 +38,7 @@ import {
 import cleanupManager from "../utils/cleanup-manager.js";
 import { downloadAssets } from "../utils/instance-manager.js";
 import { getJavaForMinecraft, setGameInProgress, setGameFinished, getJavaVersion } from "../utils/java-manager.js";
+import MinecraftStatus from "../utils/minecraft-status.js";
 
 const path = require("path");
 const fs = require("fs");
@@ -611,6 +612,12 @@ class Home {
 				if (e.target.closest(".instance-element")) {
 					let newInstanceSelect = e.target.closest(".instance-element").id;
 					let activeInstanceSelect = document.querySelector(".active-instance");
+
+					// Clear cache when changing instance
+					if (instanceSelect !== newInstanceSelect) {
+						console.log('Clearing server status cache due to instance change in popup');
+						MinecraftStatus.clearCache();
+					}
 
 					if (activeInstanceSelect)
 						activeInstanceSelect.classList.remove("active-instance");
@@ -2489,6 +2496,12 @@ ${error.message}`,
 			const oldInstance = configClient.instance_selct;
 			configClient.instance_selct = instanceName;
 			await this.db.updateData("configClient", configClient);
+
+			// Clear MinecraftStatus cache when switching instances
+			if (oldInstance !== instanceName) {
+				console.log('Clearing server status cache due to instance change');
+				MinecraftStatus.clearCache();
+			}
 
 			let instance = await config
 				.getInstanceList()

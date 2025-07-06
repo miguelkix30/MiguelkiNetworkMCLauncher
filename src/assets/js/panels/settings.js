@@ -973,7 +973,6 @@ class Settings {
             // Obtener instalaciones de Java disponibles
             const installations = await listAvailableJavaInstallations();
             
-            console.log(`📦 Encontradas ${installations.length} instalaciones de Java:`, installations);
             
             let infoHTML = `
                 <div class="java-info-title">🔧 Gestión Automática de Java</div>
