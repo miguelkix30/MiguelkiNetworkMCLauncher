@@ -2,7 +2,6 @@
  * @author MiguelkiNetwork (based on work by Luuxis)
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-const { AZauth } = require("minecraft-java-core");
 const { Authenticator } = require("minecraft-launcher-core");
 const { ipcRenderer } = require("electron");
 
@@ -18,6 +17,7 @@ import {
 	clickableHead,
 	getDiscordUsername,
 } from "../utils.js";
+import AZauth from "../utils/azauth.js";
 import { getHWID, loginMSG, verificationError } from "../MKLib.js";
 
 class Login {
@@ -236,25 +236,40 @@ class Login {
 					return;
 				}
 
-				// Create offline account using minecraft-launcher-core
-				// When no password is provided, getAuth creates an offline account
-				const offlineAuth = await Authenticator.getAuth(emailOffline.value);
+				// Validate and truncate username to Minecraft's 16-character limit
+				let username = emailOffline.value.trim();
+				if (username.length > 16) {
+					username = username.substring(0, 16);
+					console.warn(`Username truncated from "${emailOffline.value}" to "${username}" (Minecraft 16-char limit)`);
+					
+					popupLogin.closePopup();
+					popupLogin.openDialog({
+						title: "Nombre truncado",
+						content: `Tu nombre de usuario era demasiado largo y fue truncado a: "${username}".<br>¿Deseas continuar con este nombre?`,
+						color: "orange",
+						acceptText: "Continuar",
+						cancelText: "Cancelar",
+						callback: async (result) => {
+							if (result === 'accept') {
+								try {
+									await this.createOfflineAccount(username, popupLogin);
+								} catch (error) {
+									popupLogin.openPopup({
+										title: "Error",
+										content: "Ocurrió un error al crear la cuenta offline. Intente nuevamente.",
+										options: true,
+									});
+								}
+							}
+							connectOffline.disabled = false;
+						}
+					});
+					return;
+				}
 
-				const accountData = {
-					access_token: offlineAuth.access_token,
-					client_token: offlineAuth.client_token,
-					uuid: offlineAuth.uuid,
-					name: offlineAuth.name,
-					user_properties: offlineAuth.user_properties || "{}",
-					meta: {
-						type: "Mojang",
-						offline: true,
-					},
-				};
-
-				console.log(`Created offline account: ${accountData.name}`);
-				await this.saveData(accountData);
-				popupLogin.closePopup();
+				await this.createOfflineAccount(username, popupLogin);
+				connectOffline.disabled = false;
+				
 			} catch (error) {
 				console.error("Error during offline login:", error);
 				popupLogin.closePopup();
@@ -264,8 +279,8 @@ class Login {
 						"Ocurrió un error al crear la cuenta offline. Intente nuevamente.",
 					options: true,
 				});
+				connectOffline.disabled = false;
 			}
-			connectOffline.disabled = false;
 		});
 	}
 
@@ -353,7 +368,7 @@ class Login {
 			}
 		});
 
-		// AZauth login (unchanged)
+		// AZauth login with new module
 		AZauthConnectBTN.addEventListener("click", async () => {
 			popupLogin.openPopup({
 				title: "Conexión en curso...",
@@ -372,21 +387,36 @@ class Login {
 					return;
 				}
 
-				// Attempt login
+				// Attempt login with new AZauth module
 				let AZauthConnect = await AZauthClient.login(
 					AZauthEmail.value,
 					AZauthPassword.value
 				);
 
-				if (AZauthConnect.error) {
-					popupLogin.openPopup({
-						title: "Error",
-						content: AZauthConnect.message,
-						options: true,
-					});
-					return;
-				} else if (AZauthConnect.A2F) {
-					// 2FA required
+				// Transform response to match expected format
+				const connectionData = {
+					name: AZauthConnect.user.name,
+					uuid: AZauthConnect.user.uuid,
+					access_token: AZauthConnect.access_token,
+					refresh_token: AZauthConnect.refresh_token,
+					meta: {
+						type: 'azauth',
+						demo: false,
+						...AZauthConnect.meta
+					},
+					user: AZauthConnect.user
+				};
+
+				await this.saveData(connectionData);
+				clickableHead(true);
+				popupLogin.closePopup();
+
+			} catch (error) {
+				console.error("AZauth login error:", error);
+				
+				// Check if 2FA is required
+				if (error.requiresTwoFactor) {
+					// Show 2FA form
 					loginAZauthA2F.style.display = "block";
 					loginAZauth.style.display = "none";
 					popupLogin.closePopup();
@@ -415,47 +445,46 @@ class Login {
 								return;
 							}
 
-							AZauthConnect = await AZauthClient.login(
+							let AZauth2FA = await AZauthClient.loginWith2FA(
 								AZauthEmail.value,
 								AZauthPassword.value,
 								AZauthA2F.value
 							);
 
-							if (AZauthConnect.error) {
-								popupLogin.openPopup({
-									title: "Error",
-									content: AZauthConnect.message,
-									options: true,
-								});
-								return;
-							}
+							// Transform response to match expected format
+							const connectionData = {
+								name: AZauth2FA.user.name,
+								uuid: AZauth2FA.user.uuid,
+								access_token: AZauth2FA.access_token,
+								refresh_token: AZauth2FA.refresh_token,
+								meta: {
+									type: 'azauth',
+									demo: false,
+									...AZauth2FA.meta
+								},
+								user: AZauth2FA.user
+							};
 
-							await this.saveData(AZauthConnect);
+							await this.saveData(connectionData);
 							clickableHead(true);
 							popupLogin.closePopup();
 						} catch (error) {
 							console.error("Error during 2FA verification:", error);
 							popupLogin.openPopup({
 								title: "Error",
-								content: "Ocurrió un error al verificar el código 2FA.",
+								content: error.message || "Ocurrió un error al verificar el código 2FA.",
 								options: true,
 							});
 						}
 					});
-				} else if (!AZauthConnect.A2F) {
-					// Normal login successful
-					await this.saveData(AZauthConnect);
-					clickableHead(true);
-					popupLogin.closePopup();
+				} else {
+					// Show regular error
+					popupLogin.openPopup({
+						title: "Error",
+						content: error.message || "Ocurrió un error durante el inicio de sesión. Intente nuevamente.",
+						options: true,
+					});
 				}
-			} catch (error) {
-				console.error("AZauth login error:", error);
-				popupLogin.openPopup({
-					title: "Error",
-					content:
-						"Ocurrió un error durante el inicio de sesión. Intente nuevamente.",
-					options: true,
-				});
 			}
 		});
 	}
@@ -597,6 +626,51 @@ class Login {
 			return account;
 		} catch (error) {
 			console.error("Error in saveData:", error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Creates an offline account with proper validation and format
+	 * @param {string} username - Validated username (max 16 chars)
+	 * @param {popup} popupLogin - Popup instance for UI feedback
+	 */
+	async createOfflineAccount(username, popupLogin) {
+		try {
+			// Create offline account using minecraft-launcher-core
+			// When no password is provided, getAuth creates an offline account
+			const offlineAuth = await Authenticator.getAuth(username);
+
+			// Ensure the username in the auth object is also properly limited
+			if (offlineAuth.name && offlineAuth.name.length > 16) {
+				offlineAuth.name = offlineAuth.name.substring(0, 16);
+				console.warn(`Auth name truncated to: ${offlineAuth.name}`);
+			}
+
+			const accountData = {
+				access_token: offlineAuth.access_token,
+				client_token: offlineAuth.client_token,
+				uuid: offlineAuth.uuid,
+				name: offlineAuth.name || username, // Fallback to our validated username
+				user_properties: offlineAuth.user_properties || "{}",
+				meta: {
+					type: "Mojang",
+					offline: true,
+				},
+			};
+
+			// Final validation to ensure name is within limits
+			if (accountData.name.length > 16) {
+				accountData.name = accountData.name.substring(0, 16);
+				console.warn(`Final account name truncated to: ${accountData.name}`);
+			}
+
+			console.log(`Created offline account: ${accountData.name} (${accountData.name.length} chars)`);
+			await this.saveData(accountData);
+			popupLogin.closePopup();
+			
+		} catch (error) {
+			console.error("Error in createOfflineAccount:", error);
 			throw error;
 		}
 	}

@@ -1522,6 +1522,23 @@ ${error.message}`,
 			return;
 		}
 		
+		// ======== VALIDACIÓN DEL OBJETO AUTENTICADOR ========
+		// Asegurar que el nombre del usuario esté dentro del límite de 16 caracteres de Minecraft
+		if (authenticator && authenticator.name && authenticator.name.length > 16) {
+			console.warn(`⚠️ Nombre de usuario demasiado largo: "${authenticator.name}" (${authenticator.name.length} chars)`);
+			console.warn(`🔧 Truncando nombre a 16 caracteres para evitar error de protocolo`);
+			
+			// Crear una copia del objeto authenticator con el nombre truncado
+			authenticator = {
+				...authenticator,
+				name: authenticator.name.substring(0, 16)
+			};
+			
+			console.log(`✅ Nombre truncado a: "${authenticator.name}" (${authenticator.name.length} chars)`);
+		}
+		
+		console.log(`👤 Usuario final para autenticación: "${authenticator.name}" (${authenticator.name.length} chars)`);
+		
 		// Configuración específica para minecraft-launcher-core
 		opt = {
 			// Configuración base de tomate-loaders

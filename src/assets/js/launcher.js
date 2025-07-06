@@ -45,9 +45,9 @@ import {
   deleteDiscordToken,
   migrateDiscordToken
 } from "./MKLib.js";
-const { AZauth } = require("minecraft-java-core");
 const { Auth } = require("msmc");
 const { Authenticator } = require("minecraft-launcher-core");
+import AZauth from "./utils/azauth.js";
 
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
@@ -1449,7 +1449,7 @@ class Launcher {
                     refreshedAccounts.push(account);
                     continue;
                 }
-            } else if (account.meta.type == "AZauth") {
+            } else if (account.meta.type == "azauth") {
               console.log(`Plataforma: MKNetworkID | Usuario: ${account.name}`);
               popupRefresh.openPopup({
                 title: "Conectando...",
@@ -1487,26 +1487,79 @@ class Launcher {
                 }
               }
               
-              let refresh_accounts = await new AZauth(this.config.online).verify(account);
-              if (refresh_accounts.error) {
-                await this.db.deleteData("accounts", account_ID);
+              try {
+                let AZauthClient = new AZauth(this.config.online);
+                let refresh_accounts = await AZauthClient.verify(account.access_token);
+                
+                // Transform response to match expected format
+                const refreshedAccount = {
+                  ID: account_ID,
+                  name: refresh_accounts.user.name,
+                  uuid: refresh_accounts.user.uuid,
+                  access_token: account.access_token, // Keep existing token
+                  refresh_token: account.refresh_token, // Keep existing token
+                  meta: {
+                    type: 'azauth',
+                    demo: false,
+                    ...refresh_accounts.meta
+                  },
+                  user: refresh_accounts.user
+                };
+                
+                await this.db.updateData("accounts", refreshedAccount, account_ID);
+                // Agregar la cuenta actualizada al array de cuentas refrescadas
+                refreshedAccounts.push(refreshedAccount);
+                
                 if (account_ID == account_selected) {
-                  configClient.account_selected = null;
-                  await this.db.updateData("configClient", configClient);
+                  // Solo seleccionar la cuenta pero no agregar visualmente aquí
+                  clickableHead();
+                  await setUsername(account.name);
+                  await loginMSG();
                 }
-                console.error(`[Account] ${account.name}: ${refresh_accounts.message}`);
-                continue;
-              }
-              refresh_accounts.ID = account_ID;
-              await this.db.updateData("accounts", refresh_accounts, account_ID);
-              // Agregar la cuenta actualizada al array de cuentas refrescadas
-              refreshedAccounts.push(refresh_accounts);
-              
-              if (account_ID == account_selected) {
-                // Solo seleccionar la cuenta pero no agregar visualmente aquí
-                clickableHead();
-                await setUsername(account.name);
-                await loginMSG();
+              } catch (error) {
+                console.error(`[Account] ${account.name}: ${error.message}`);
+                
+                // Try to refresh the token if verification failed
+                if (account.refresh_token) {
+                  try {
+                    let AZauthClient = new AZauth(this.config.online);
+                    let tokenRefresh = await AZauthClient.refresh(account.refresh_token);
+                    
+                    // Update account with new tokens
+                    const refreshedAccount = {
+                      ...account,
+                      access_token: tokenRefresh.access_token,
+                      refresh_token: tokenRefresh.refresh_token
+                    };
+                    
+                    await this.db.updateData("accounts", refreshedAccount, account_ID);
+                    refreshedAccounts.push(refreshedAccount);
+                    
+                    if (account_ID == account_selected) {
+                      clickableHead();
+                      await setUsername(account.name);
+                      await loginMSG();
+                    }
+                  } catch (refreshError) {
+                    console.error(`[Account] ${account.name}: Token refresh failed: ${refreshError.message}`);
+                    
+                    // Remove account if refresh fails
+                    await this.db.deleteData("accounts", account_ID);
+                    if (account_ID == account_selected) {
+                      configClient.account_selected = null;
+                      await this.db.updateData("configClient", configClient);
+                    }
+                    continue;
+                  }
+                } else {
+                  // Remove account if no refresh token
+                  await this.db.deleteData("accounts", account_ID);
+                  if (account_ID == account_selected) {
+                    configClient.account_selected = null;
+                    await this.db.updateData("configClient", configClient);
+                  }
+                  continue;
+                }
               }
             } else if (account.meta.type == "Mojang") {
               console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
@@ -1522,19 +1575,36 @@ class Launcher {
                   // Use minecraft-launcher-core for offline accounts
                   let refresh_accounts;
                   
+                  // Ensure username is within Minecraft's 16-character limit
+                  let validUsername = account.name;
+                  if (validUsername && validUsername.length > 16) {
+                    validUsername = validUsername.substring(0, 16);
+                    console.warn(`Offline account username truncated from "${account.name}" to "${validUsername}" (Minecraft 16-char limit)`);
+                  }
+                  
                   // Check if getAuth returns a Promise
-                  const authResult = Authenticator.getAuth(account.name);
+                  const authResult = Authenticator.getAuth(validUsername);
                   if (authResult && typeof authResult.then === 'function') {
                     refresh_accounts = await authResult;
                   } else {
                     refresh_accounts = authResult;
                   }
                   
+                  // Ensure the returned auth object also has the correct username
+                  if (refresh_accounts && refresh_accounts.name && refresh_accounts.name.length > 16) {
+                    refresh_accounts.name = refresh_accounts.name.substring(0, 16);
+                    console.warn(`Auth object name truncated to: ${refresh_accounts.name}`);
+                  }
+                  
                   // Ensure the account has the required properties
                   if (!refresh_accounts || !refresh_accounts.name) {
                     console.error(`Failed to refresh offline account: ${account.name}`);
-                    // Keep the original account if refresh fails
-                    refreshedAccounts.push(account);
+                    // Keep the original account if refresh fails, but ensure name is valid
+                    const fallbackAccount = { ...account };
+                    if (fallbackAccount.name && fallbackAccount.name.length > 16) {
+                      fallbackAccount.name = fallbackAccount.name.substring(0, 16);
+                    }
+                    refreshedAccounts.push(fallbackAccount);
                     continue;
                   }
                   
@@ -1544,12 +1614,18 @@ class Launcher {
                       offline: true
                   };
                   
+                  // Ensure the final account name is also valid
+                  if (refresh_accounts.name && refresh_accounts.name.length > 16) {
+                    refresh_accounts.name = refresh_accounts.name.substring(0, 16);
+                    console.warn(`Final refresh account name truncated to: ${refresh_accounts.name}`);
+                  }
+                  
                   refreshedAccounts.push(refresh_accounts);
                   await this.db.updateData("accounts", refresh_accounts, account_ID);
                   
                   if (account_ID == account_selected) {
                     clickableHead();
-                    await setUsername(account.name);
+                    await setUsername(refresh_accounts.name); // Use the validated name
                     await loginMSG();
                   }
                 } else {

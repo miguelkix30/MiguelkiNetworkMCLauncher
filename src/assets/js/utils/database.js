@@ -91,9 +91,7 @@ class database {
 				if (!result) {
 					throw new Error("Failed to add account");
 				}
-
-				// Ensure the original ID format is maintained for compatibility
-				// This is crucial for the Minecraft-java-core library
+				
 				if (result.ID !== undefined) {
 					// Convert ID to number for better compatibility with original system
 					result.ID = Number(result.ID);
