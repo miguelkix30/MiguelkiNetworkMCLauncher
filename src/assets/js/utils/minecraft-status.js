@@ -16,44 +16,21 @@ class MinecraftStatus {
     async getStatus() {
         return new Promise((resolve) => {
             const startTime = Date.now();
-            const socket = new net.Socket();
             
-            // Set timeout for connection
-            socket.setTimeout(5000);
-            
-            console.log(`Attempting to connect to ${this.host}:${this.port}`);
-            
-            socket.on('connect', () => {
+            // Try to get detailed server info directly
+            this.getDetailedStatus().then(detailedInfo => {
                 const ms = Date.now() - startTime;
-                console.log(`Connected to ${this.host}:${this.port} in ${ms}ms`);
-                socket.destroy();
-                
-                // Try to get detailed server info
-                this.getDetailedStatus().then(detailedInfo => {
-                    console.log('Got detailed server info:', detailedInfo);
-                    resolve({
-                        online: true,
-                        ms: ms,
-                        playersConnect: detailedInfo.players || 0,
-                        playersMax: detailedInfo.maxPlayers || 0,
-                        version: detailedInfo.version || 'Unknown',
-                        motd: detailedInfo.motd || 'Minecraft Server'
-                    });
-                }).catch((err) => {
-                    console.log('Failed to get detailed info, using basic info:', err.message);
-                    resolve({
-                        online: true,
-                        ms: ms,
-                        playersConnect: 0,
-                        playersMax: 0,
-                        version: 'Unknown',
-                        motd: 'Minecraft Server'
-                    });
+                console.log('Got detailed server info:', detailedInfo);
+                resolve({
+                    online: true,
+                    ms: ms,
+                    playersConnect: detailedInfo.players || 0,
+                    playersMax: detailedInfo.maxPlayers || 0,
+                    version: detailedInfo.version || 'Unknown',
+                    motd: detailedInfo.motd || 'Minecraft Server'
                 });
-            });
-            
-            socket.on('error', (err) => {
-                console.log(`Connection error to ${this.host}:${this.port}:`, err.message);
+            }).catch((err) => {
+                console.log('Failed to get detailed info:', err.message);
                 resolve({
                     error: true,
                     message: err.message,
@@ -63,21 +40,6 @@ class MinecraftStatus {
                     playersMax: 0
                 });
             });
-            
-            socket.on('timeout', () => {
-                console.log(`Connection timeout to ${this.host}:${this.port}`);
-                socket.destroy();
-                resolve({
-                    error: true,
-                    message: 'Connection timeout',
-                    online: false,
-                    ms: 0,
-                    playersConnect: 0,
-                    playersMax: 0
-                });
-            });
-            
-            socket.connect(this.port, this.host);
         });
     }
 
@@ -86,34 +48,57 @@ class MinecraftStatus {
             const socket = new net.Socket();
             socket.setTimeout(5000);
             
+            let hasResponded = false;
+            
             socket.on('connect', () => {
+                console.log(`Connected to ${this.host}:${this.port} for detailed status`);
+                
                 // Send handshake packet
                 const handshake = this.createHandshakePacket();
                 socket.write(handshake);
                 
                 // Send status request
-                const statusRequest = Buffer.from([0x01, 0x00]);
+                const statusRequest = this.createStatusRequestPacket();
                 socket.write(statusRequest);
             });
             
             socket.on('data', (data) => {
+                if (hasResponded) return;
+                hasResponded = true;
+                
                 try {
                     const response = this.parseStatusResponse(data);
-                    socket.destroy();
+                    
+                    // Send ping request to complete the handshake
+                    const pingRequest = this.createPingRequestPacket();
+                    socket.write(pingRequest);
+                    
+                    // Close socket after a brief delay
+                    setTimeout(() => {
+                        socket.destroy();
+                    }, 100);
+                    
                     resolve(response);
                 } catch (err) {
+                    console.error('Error parsing status response:', err);
                     socket.destroy();
                     reject(err);
                 }
             });
             
             socket.on('error', (err) => {
-                reject(err);
+                console.error('Socket error in detailed status:', err);
+                if (!hasResponded) {
+                    reject(err);
+                }
             });
             
             socket.on('timeout', () => {
+                console.log('Socket timeout in detailed status');
                 socket.destroy();
-                reject(new Error('Timeout'));
+                if (!hasResponded) {
+                    reject(new Error('Timeout'));
+                }
             });
             
             socket.connect(this.port, this.host);
@@ -126,12 +111,31 @@ class MinecraftStatus {
         port.writeUInt16BE(this.port, 0);
         
         const packetData = Buffer.concat([
-            Buffer.from([0x00]), // Packet ID
-            this.writeVarInt(754), // Protocol version
+            Buffer.from([0x00]), // Packet ID (Handshake)
+            this.writeVarInt(770), // Protocol version (1.21.4 - updated to current version)
             this.writeVarInt(hostname.length), // Hostname length
             hostname, // Hostname
             port, // Port
-            Buffer.from([0x01]) // Next state (status)
+            this.writeVarInt(1) // Next state (1 for status)
+        ]);
+        
+        const length = this.writeVarInt(packetData.length);
+        return Buffer.concat([length, packetData]);
+    }
+
+    createStatusRequestPacket() {
+        // Status Request packet: packet length (1) + packet ID (0x00)
+        return Buffer.from([0x01, 0x00]);
+    }
+
+    createPingRequestPacket() {
+        // Ping Request packet with current timestamp
+        const timestamp = Buffer.allocUnsafe(8);
+        timestamp.writeBigInt64BE(BigInt(Date.now()), 0);
+        
+        const packetData = Buffer.concat([
+            Buffer.from([0x01]), // Packet ID (Ping Request)
+            timestamp // Timestamp
         ]);
         
         const length = this.writeVarInt(packetData.length);
@@ -150,33 +154,58 @@ class MinecraftStatus {
 
     parseStatusResponse(data) {
         try {
-            // Skip packet length and packet ID
             let offset = 0;
             
             // Read packet length
             const { value: packetLength, offset: newOffset } = this.readVarInt(data, offset);
             offset = newOffset;
             
+            console.log('Packet length:', packetLength);
+            
             // Read packet ID
             const { value: packetId, offset: newOffset2 } = this.readVarInt(data, offset);
             offset = newOffset2;
+            
+            console.log('Packet ID:', packetId);
+            
+            if (packetId !== 0x00) {
+                throw new Error(`Expected packet ID 0x00, got 0x${packetId.toString(16)}`);
+            }
             
             // Read JSON length
             const { value: jsonLength, offset: newOffset3 } = this.readVarInt(data, offset);
             offset = newOffset3;
             
+            console.log('JSON length:', jsonLength);
+            
             // Read JSON data
             const jsonData = data.slice(offset, offset + jsonLength).toString('utf8');
+            console.log('JSON data:', jsonData);
+            
             const status = JSON.parse(jsonData);
+            
+            // Extract MOTD - handle both string and object formats
+            let motd = 'Minecraft Server';
+            if (status.description) {
+                if (typeof status.description === 'string') {
+                    motd = status.description;
+                } else if (status.description.text) {
+                    motd = status.description.text;
+                } else if (status.description.extra) {
+                    motd = status.description.extra.map(part => part.text || '').join('');
+                }
+            }
             
             return {
                 players: status.players?.online || 0,
                 maxPlayers: status.players?.max || 0,
                 version: status.version?.name || 'Unknown',
-                motd: status.description?.text || status.description || 'Minecraft Server'
+                motd: motd
             };
         } catch (err) {
-            throw new Error('Failed to parse status response');
+            console.error('Error parsing status response:', err);
+            console.error('Raw data:', data.toString('hex'));
+            throw new Error('Failed to parse status response: ' + err.message);
         }
     }
 
@@ -185,7 +214,7 @@ class MinecraftStatus {
         let position = 0;
         let currentByte;
         
-        while (true) {
+        while (offset < buffer.length) {
             currentByte = buffer[offset++];
             value |= (currentByte & 0x7F) << position;
             
