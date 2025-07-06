@@ -542,7 +542,6 @@ class database {
 	 */
 	async consolidateStorage() {
 		try {
-			console.log("Starting storage consolidation from database.js");
 			return await encryptedStorage.consolidateStorage();
 		} catch (error) {
 			console.error("Error consolidating storage:", error);

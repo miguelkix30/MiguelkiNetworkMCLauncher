@@ -534,7 +534,7 @@ function setStaticBackground() {
   
   (async () => {
     const imagePaths = [
-      `assets/images/background/${season}.jpg`,
+      `assets/images/background/${season}.png`,
       'assets/images/background/default.png'
     ];
     

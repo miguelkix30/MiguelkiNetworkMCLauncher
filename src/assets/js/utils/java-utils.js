@@ -116,13 +116,7 @@ async function extractTarGzNodeJs(archivePath, extractPath) {
         
         // Para Windows, usar mensaje de error más claro
         if (process.platform === 'win32') {
-            throw new Error(`TAR.GZ extraction not fully supported on Windows. Please use ZIP format instead or install Windows Subsystem for Linux (WSL).
-
-El archivo ${archivePath} es un formato TAR.GZ que requiere herramientas adicionales en Windows.
-Soluciones:
-• Instalar 7-Zip y agregar al PATH del sistema
-• Usar Windows Subsystem for Linux (WSL)
-• El launcher intentará descargar versión ZIP si está disponible`);
+            throw new Error(`TAR.GZ extraction not fully supported on Windows. Please use ZIP format instead or install Windows Subsystem for Linux (WSL).<br><br>El archivo ${archivePath} es un formato TAR.GZ que requiere herramientas adicionales en Windows.<br><br>Soluciones:<br>- Instalar 7-Zip y agregar al PATH del sistema<br>- Usar Windows Subsystem for Linux (WSL)<br>- El launcher intentará descargar versión ZIP si está disponible<br>`);
         } else {
             // En Unix/Linux/Mac, usar tar del sistema
             return new Promise((resolve, reject) => {
