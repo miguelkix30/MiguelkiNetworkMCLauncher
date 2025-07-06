@@ -1,24 +1,24 @@
 # Reporte de Compatibilidad de Loaders de Minecraft
 
-**Generado el:** 4 de julio de 2025, 12:13  
-**Versiones probadas:** 63  
+**Generado el:** 6 de julio de 2025, 12:38  
+**Versiones probadas:** 66  
 **Loaders probados:** vanilla, forge, neoforge, fabric, quilt  
-**Total de pruebas:** 315  
+**Total de pruebas:** 330  
 
 ## 📊 Resumen General
 
-- ✅ **Exitosas:** 167 (53.0%)
-- ❌ **Fallidas:** 148 (47.0%)
+- ✅ **Exitosas:** 180 (54.5%)
+- ❌ **Fallidas:** 150 (45.5%)
 
 ## 🔧 Compatibilidad por Loader
 
 | Loader | Exitosas | Fallidas | Total | Porcentaje |
 |--------|----------|----------|-------|------------|
-| VANILLA | 53 | 10 | 63 | 84.1% |
-| FORGE | 40 | 23 | 63 | 63.5% |
-| NEOFORGE | 6 | 57 | 63 | 9.5% |
-| FABRIC | 36 | 27 | 63 | 57.1% |
-| QUILT | 32 | 31 | 63 | 50.8% |
+| VANILLA | 56 | 10 | 66 | 84.8% |
+| FORGE | 43 | 23 | 66 | 65.2% |
+| NEOFORGE | 7 | 59 | 66 | 10.6% |
+| FABRIC | 39 | 27 | 66 | 59.1% |
+| QUILT | 35 | 31 | 66 | 53.0% |
 
 ## 🎮 Compatibilidad por Versión de Minecraft
 
@@ -87,8 +87,11 @@
 | 1.21.2 | ✅ | ❌ | ❌ | ✅ | ✅ | 3/5 | |
 | 1.21.3 | ✅ | ✅ | ✅ | ✅ | ✅ | 5/5 | |
 | 1.21.4 | ✅ | ✅ | ✅ | ✅ | ✅ | 5/5 | |
+| 1.21.5 | ✅ | ✅ | ✅ | ✅ | ✅ | 5/5 | |
+| 1.21.6 | ✅ | ✅ | ❌ | ✅ | ✅ | 4/5 | |
+| 1.21.7 | ✅ | ✅ | ❌ | ✅ | ✅ | 4/5 | |
 
 ## 📝 Notas Técnicas
 
 - **Timeout por prueba**: 30 segundos
-- **Timestamp**: 2025-07-04T12:13:44.068Z
+- **Timestamp**: 2025-07-06T12:38:59.421Z
