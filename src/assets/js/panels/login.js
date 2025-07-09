@@ -16,6 +16,7 @@ import {
 	setUsername,
 	clickableHead,
 	getDiscordUsername,
+	localization,
 } from "../utils.js";
 import AZauth from "../utils/azauth.js";
 import { getHWID, loginMSG, verificationError } from "../MKLib.js";
@@ -510,7 +511,6 @@ class Login {
 					account_selected: null,
 					launcher_config: {
 						closeLauncher: "close-launcher",
-						download_multi: 3,
 						theme: "auto",
 						music_muted: false,
 						performance_mode: false,
@@ -533,15 +533,14 @@ class Login {
 						if (Array.isArray(allowedHWIDs) && !allowedHWIDs.includes(hwid)) {
 							let protectedPopup = new popup();
 							protectedPopup.openPopup({
-								title: "Cuenta protegida",
+								title: localization.t("login.protected_account"),
 								content:
-									"Esta cuenta está protegida y no puede ser usada en este dispositivo.",
+									localization.t("login.protected_account_info"),
 								color: "red",
 								options: true,
 							});
-
 							await verificationError(accountData.name, true);
-							throw new Error("Protected account");
+							return;
 						}
 					}
 				}

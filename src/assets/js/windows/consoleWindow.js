@@ -102,6 +102,37 @@ class ConsoleWindow {
             this.window.webContents.send('system-info', info);
         }
     }
+
+    async getLogs() {
+        if (this.isReady()) {
+            try {
+                const logs = await this.window.webContents.executeJavaScript(`
+                    (function() {
+                        if (window.consoleManager && typeof window.consoleManager.getLogsAsString === 'function') {
+                            const logs = window.consoleManager.getLogsAsString();
+                            console.log('Logs extraídos por getLogsAsString:', logs ? logs.length : 'null');
+                            return logs;
+                        } else if (window.consoleManager && window.consoleManager.logs && window.consoleManager.logs.length > 0) {
+                            console.log('Usando método de fallback para extraer logs');
+                            return window.consoleManager.logs.map(log => 
+                                '[' + log.timestamp.toISOString() + '] [' + log.level.toUpperCase() + '] ' + (log.identifier ? '[' + log.identifier + '] ' : '') + log.message
+                            ).join('\\n');
+                        } else {
+                            console.log('ConsoleManager no disponible o sin logs');
+                            const status = window.consoleManager ? window.consoleManager.getConsoleStatus() : null;
+                            console.log('Estado de la consola:', status);
+                            return null;
+                        }
+                    })()
+                `);
+                return logs;
+            } catch (error) {
+                console.error('Error obteniendo logs desde ConsoleWindow:', error);
+                return null;
+            }
+        }
+        return null;
+    }
 }
 
 module.exports = ConsoleWindow;

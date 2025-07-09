@@ -930,44 +930,6 @@ body:has(.patch-toolkit[hidden]) .scroll-to-bottom {
   accent-color: var(--color);
 }
 
-.setup-download-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin: 20px 0;
-  color: white;
-}
-
-.setup-download-input-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.setup-download-input {
-  width: 80px;
-  padding: 10px;
-  text-align: center;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background-color: rgba(0, 0, 0, 0.3);
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  transition: border-color 0.3s, background-color 0.3s;
-}
-
-.setup-download-input:focus {
-  outline: none;
-  border-color: var(--box-button);
-}
-
-.setup-download-input.invalid {
-  border-color: red;
-  background-color: rgba(255, 0, 0, 0.1);
-}
-
 .setup-note {
   font-size: 12px;
   opacity: 0.8;
@@ -1010,51 +972,6 @@ body:has(.patch-toolkit[hidden]) .scroll-to-bottom {
   height: 20px;
   cursor: pointer;
   accent-color: var(--color);
-}
-
-.setup-download-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin: 20px 0;
-  color: white;
-}
-
-.setup-download-input-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.setup-download-input {
-  width: 80px;
-  padding: 10px;
-  text-align: center;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background-color: rgba(0, 0, 0, 0.3);
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  transition: border-color 0.3s, background-color 0.3s;
-}
-
-.setup-download-input:focus {
-  outline: none;
-  border-color: var(--box-button);
-}
-
-.setup-download-input.invalid {
-  border-color: red;
-  background-color: rgba(255, 0, 0, 0.1);
-}
-
-.setup-note {
-  font-size: 12px;
-  opacity: 0.8;
-  margin-top: 10px;
-  color: rgba(255, 255, 255, 0.8);
 }
 
 .setup-buttons {
@@ -1089,7 +1006,7 @@ body:has(.patch-toolkit[hidden]) .scroll-to-bottom {
 .setup-next-btn {
   background-color: var(--color);
   margin-left: auto;
-}Add commentMore actions
+}
 
 .setup-finish-btn {
   background-color: var(--color);
@@ -1611,24 +1528,6 @@ body.performance-mode .loading-overlay {
 
 body.performance-mode .loading-overlay {
   transition: none !important;
-}
-
-.max-downloads-error {
-  color: red !important;
-  font-size: 12px !important;
-  margin-top: 5px !important;
-  text-align: center;
-  font-weight: normal;
-  width: 100%;
-}
-
-.setup-download-input-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin-top: 10px;
-  position: relative;
 }
 
 /* Estilo de las barras de progreso */

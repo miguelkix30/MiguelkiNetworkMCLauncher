@@ -308,6 +308,43 @@ ipcMain.handle('get-hwid', async () => {
     }
 });
 
+// Handler para obtener logs desde la consola separada
+ipcMain.handle('get-console-logs', async () => {
+    try {
+        // Si la consola no existe, intentar crearla primero
+        if (!consoleWindow) {
+            console.log('ConsoleWindow no existe, creando una nueva instancia...');
+            consoleWindow = new ConsoleWindow();
+            consoleWindow.init();
+            
+            // Dar un poco de tiempo para que se inicialice
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        if (consoleWindow && consoleWindow.isReady()) {
+            console.log('Intentando obtener logs desde la consola separada...');
+            
+            // Usar el método getLogs() de ConsoleWindow
+            const logs = await consoleWindow.getLogs();
+            
+            if (logs && logs.trim() !== '' && logs !== 'null') {
+                console.log(`Logs obtenidos exitosamente: ${logs.length} caracteres`);
+                return logs;
+            } else {
+                console.log('ConsoleWindow no devolvió logs válidos, logs encontrados:', logs);
+                return 'No hay logs disponibles en la consola';
+            }
+        } else {
+            const reason = !consoleWindow ? 'consoleWindow no pudo crearse' : 'consola no está lista después de inicialización';
+            console.log(`Consola no disponible: ${reason}`);
+            return `Consola no disponible: ${reason}`;
+        }
+    } catch (error) {
+        console.error('Error obteniendo logs de consola:', error);
+        return `Error al obtener logs: ${error.message}`;
+    }
+});
+
 ipcMain.removeHandler('save-file'); // Limpiar handler existente si existe
 ipcMain.handle('save-file', async (event, options) => {
     try {
@@ -359,16 +396,24 @@ ipcMain.on('request-dynamic-colors', () => {
 
 // Handler para aplicar configuración del servidor a la consola
 ipcMain.on('apply-server-config', (event, config) => {
+    console.log('Aplicando configuración del servidor a la consola:', config);
     if (consoleWindow && consoleWindow.isReady()) {
         consoleWindow.window.webContents.send('apply-server-config', config);
+        console.log('Configuración enviada a la consola exitosamente');
+    } else {
+        console.warn('ConsoleWindow no está listo para recibir configuración');
     }
 });
 
 // Handler para solicitar configuración del servidor
 ipcMain.on('request-server-config', () => {
+    console.log('Consola solicita configuración del servidor');
     const mainWindow = MainWindow.getWindow();
     if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('send-server-config-to-console');
+        console.log('Solicitud de configuración enviada a la ventana principal');
+    } else {
+        console.warn('MainWindow no está disponible para enviar configuración');
     }
 });
 
@@ -1389,5 +1434,34 @@ ipcMain.handle('cleanup-automatic-java', async () => {
     }
 });
 
+// Handler para obtener logs desde el archivo directamente
+ipcMain.handle('get-file-log-content', async () => {
+    try {
+        if (fileLogger) {
+            const currentLogFile = fileLogger.getCurrentLogFile();
+            if (currentLogFile && fs.existsSync(currentLogFile)) {
+                console.log(`Leyendo archivo de log para reporte: ${currentLogFile}`);
+                const content = fs.readFileSync(currentLogFile, 'utf8');
+                
+                // Limitar el contenido si es muy largo (últimas 50KB)
+                if (content.length > 50000) {
+                    console.log(`Archivo de log muy grande (${content.length} chars), limitando a últimas 50KB`);
+                    return content.slice(-50000);
+                }
+                
+                return content;
+            } else {
+                console.warn('Archivo de log no encontrado');
+                return 'Archivo de log no encontrado';
+            }
+        } else {
+            console.warn('FileLogger no inicializado');
+            return 'FileLogger no inicializado';
+        }
+    } catch (error) {
+        console.error('Error leyendo archivo de log:', error);
+        return `Error leyendo archivo de log: ${error.message}`;
+    }
+});
 
 //# sourceMappingURL=main.js.map

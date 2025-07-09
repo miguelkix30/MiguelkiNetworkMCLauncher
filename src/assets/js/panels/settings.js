@@ -111,12 +111,6 @@ class Settings {
             this.applyButtonPressEffect(resolutionResetBtn);
         }
 
-        // Aplicar efectos al botón de reset de max-files
-        const maxFilesResetBtn = document.querySelector('.max-files-btn');
-        if (maxFilesResetBtn) {
-            this.applyButtonPressEffect(maxFilesResetBtn);
-        }
-
         // Aplicar efectos a los botones de gestión de datos
         const dataManagementBtns = document.querySelectorAll('.data-management-btn');
         dataManagementBtns.forEach(button => {
@@ -124,7 +118,7 @@ class Settings {
         });
 
         // Aplicar efectos a los campos numéricos
-        const numericInputs = document.querySelectorAll('.input-resolution, .input-max-files');
+        const numericInputs = document.querySelectorAll('.input-resolution');
         numericInputs.forEach(input => {
             input.addEventListener('focus', () => {
                 input.style.borderColor = 'var(--box-button)';
@@ -495,7 +489,6 @@ class Settings {
                             instance_selct: null,
                             launcher_config: {
                                 closeLauncher: "close-launcher",
-                                download_multi: 3,
                                 theme: "auto",
                                 music_muted: false,
                                 performance_mode: false
@@ -991,9 +984,8 @@ class Settings {
             
             let infoHTML = `
                 <div class="java-info-title">🔧 ${localization.t('java.java_management')}</div>
-                <div class="java-info-description" data-translate="java.java_management_info">
-                    El launcher descarga automáticamente la versión de Java compatible con cada versión de Minecraft.
-                    Las instalaciones se almacenan en la carpeta 'runtime' y se reutilizan automáticamente.
+                <div class="java-info-description">
+                    ${localization.t('java.java_management_info')}
                 </div>
                 <div class="java-runtime-path">
                     📁 ${localization.t('java.java_runtime_directory_title')}: <code>${getRuntimePath() || localization.t('java.java_runtime_directory_not_initialized')}</code>
@@ -1037,7 +1029,7 @@ class Settings {
                         📥 ${localization.t('java.java_no_versions_installed')}
                     </div>
                     <div class="java-management-buttons">
-                        <button class="java-refresh-btn" id="java-refresh-btn">🔄 ${localization.t('java.java_no_versions_installed')}</button>
+                        <button class="java-refresh-btn" id="java-refresh-btn">🔄 ${localization.t('java.java_installed_refresh')}</button>
                     </div>
                 `;
             }
@@ -1062,9 +1054,9 @@ class Settings {
             // Mostrar información básica aunque falle
             if (javaInfoContainer) {
                 javaInfoContainer.innerHTML = `
-                    <div class="java-info-title">🔧 Gestión Automática de Java</div>
+                    <div class="java-info-title">🔧 ${localization.t('java.java_management')}</div>
                     <div class="java-info-description">
-                        El launcher descarga automáticamente la versión de Java compatible con cada versión de Minecraft.
+                        ${localization.t('java.java_management_info')}
                     </div>
                     <div class="java-installations-empty">
                         ⚠️ Error al cargar información de Java: ${error.message}
@@ -1273,31 +1265,6 @@ class Settings {
 
     async launcher() {
         let configClient = await this.db.readData('configClient');
-
-        let maxDownloadFiles = configClient?.launcher_config?.download_multi || 3;
-        let maxDownloadFilesInput = document.querySelector(".max-files");
-        let maxDownloadFilesReset = document.querySelector(".max-files-reset");
-        
-        if (maxDownloadFilesInput) {
-            maxDownloadFilesInput.value = maxDownloadFiles;
-
-            maxDownloadFilesInput.addEventListener("change", async () => {
-                let configClient = await this.db.readData('configClient')
-                configClient.launcher_config.download_multi = maxDownloadFilesInput.value;
-                await this.db.updateData('configClient', configClient);
-            });
-        }
-
-        if (maxDownloadFilesReset) {
-            maxDownloadFilesReset.addEventListener("click", async () => {
-                let configClient = await this.db.readData('configClient')
-                if (maxDownloadFilesInput) {
-                    maxDownloadFilesInput.value = 3;
-                }
-                configClient.launcher_config.download_multi = 3;
-                await this.db.updateData('configClient', configClient);
-            });
-        }
 
         const performanceModeCheckbox = document.querySelector(".performance-mode-checkbox");
         if (performanceModeCheckbox) {
@@ -1756,13 +1723,18 @@ class Settings {
             const currentLanguage = localization.getCurrentLanguage();
             const configClient = await this.db.readData('configClient');
             
+            // Determinar qué valor mostrar en el selector
+            let selectedValue = 'auto'; // Por defecto automático
+            
             if (configClient && configClient.language) {
-                languageSelect.value = configClient.language;
-            } else if (currentLanguage === localization.systemLanguage) {
-                languageSelect.value = 'auto';
-            } else {
-                languageSelect.value = currentLanguage;
+                selectedValue = configClient.language;
+            } else if (currentLanguage !== localization.systemLanguage) {
+                // Si el idioma actual no coincide con el del sistema, no es automático
+                selectedValue = currentLanguage;
             }
+            
+            console.log(`Estableciendo valor del selector a: ${selectedValue}`);
+            languageSelect.value = selectedValue;
 
             // Event listener para cambios de idioma
             languageSelect.addEventListener('change', async (e) => {
@@ -1775,6 +1747,19 @@ class Settings {
                     // Si es automático, usar el idioma del sistema
                     if (selectedLanguage === 'auto') {
                         targetLanguage = localization.systemLanguage;
+                        console.log(`Idioma del sistema detectado: ${targetLanguage}`);
+                        
+                        // Verificar que el idioma del sistema no sea undefined
+                        if (!targetLanguage) {
+                            targetLanguage = localization.fallbackLanguage || 'es-ES';
+                            console.warn(`Idioma del sistema no definido, usando fallback: ${targetLanguage}`);
+                        }
+                    }
+                    
+                    // Verificar que el idioma objetivo esté disponible
+                    if (!localization.isLanguageAvailable(targetLanguage)) {
+                        console.warn(`Idioma ${targetLanguage} no disponible, usando fallback`);
+                        targetLanguage = localization.fallbackLanguage || 'es-ES';
                     }
                     
                     // Cambiar idioma
@@ -1785,7 +1770,7 @@ class Settings {
                     if (!configClient) {
                         configClient = {};
                     }
-                    configClient.language = selectedLanguage;
+                    configClient.language = selectedLanguage; // Guardar la selección original (incluye 'auto')
                     await this.db.updateData('configClient', configClient);
                     
                     // Mostrar notificación
@@ -1808,8 +1793,13 @@ class Settings {
                         options: true
                     });
                     
-                    // Revertir selección
-                    languageSelect.value = localization.getCurrentLanguage();
+                    // Revertir selección al valor anterior
+                    const configClient = await this.db.readData('configClient');
+                    if (configClient && configClient.language) {
+                        languageSelect.value = configClient.language;
+                    } else {
+                        languageSelect.value = 'auto'; // Default a automático si no hay configuración
+                    }
                 }
             });
             

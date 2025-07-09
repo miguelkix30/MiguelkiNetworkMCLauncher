@@ -58,8 +58,23 @@ class ConsoleManager {
         // Solicitar configuración del servidor para ocultar/mostrar botones
         try {
             ipcRenderer.send('request-server-config');
+            
+            // Timeout para asegurar que el botón se mantenga oculto si no llega la configuración
+            setTimeout(() => {
+                const patchToolkitBtn = document.getElementById('patch-toolkit-btn');
+                if (patchToolkitBtn && patchToolkitBtn.style.display !== 'inline-block') {
+                    // Si después de 3 segundos el botón no está visible, asegurar que esté oculto
+                    patchToolkitBtn.style.display = 'none';
+                    this.addLog('warn', '[Console] Timeout esperando configuración del servidor, manteniendo Toolkit de parches oculto', null, 'Console');
+                }
+            }, 3000);
         } catch (error) {
             console.warn('Error solicitando configuración del servidor:', error);
+            // Asegurar que el botón esté oculto si hay error
+            const patchToolkitBtn = document.getElementById('patch-toolkit-btn');
+            if (patchToolkitBtn) {
+                patchToolkitBtn.style.display = 'none';
+            }
         }
         
         this.initialized = true;
@@ -540,22 +555,55 @@ class ConsoleManager {
     }
 
     applyServerConfig(config) {
-        if (!config) return;
+        console.log('[Console] Aplicando configuración del servidor:', config);
         
         // Manejar visibilidad del botón de Toolkit de parches
         const patchToolkitBtn = document.getElementById('patch-toolkit-btn');
         if (patchToolkitBtn) {
-            if (config.patchToolkit === false) {
-                patchToolkitBtn.style.display = 'none';
-                this.addLog('info', 'Toolkit de parches deshabilitado por configuración del servidor', null, 'Console');
+            let shouldShow = false;
+            
+            if (config && config.patchToolkit !== undefined) {
+                shouldShow = config.patchToolkit === true;
+                this.addLog('info', `[Console] Toolkit de parches ${shouldShow ? 'habilitado' : 'deshabilitado'} por configuración del servidor`, null, 'Console');
             } else {
-                patchToolkitBtn.style.display = 'flex';
+                // Si no hay configuración o no se especifica patchToolkit, mantener oculto por seguridad
+                this.addLog('warn', '[Console] Configuración de Toolkit de parches no especificada, manteniendo oculto', null, 'Console');
             }
+            
+            patchToolkitBtn.style.display = shouldShow ? 'inline-block' : 'none';
+            console.log(`[Console] Botón Toolkit de parches: ${shouldShow ? 'visible' : 'oculto'}`);
+        } else {
+            console.warn('[Console] Botón patch-toolkit-btn no encontrado en el DOM');
         }
         
         // Aquí se pueden agregar más configuraciones del servidor en el futuro
+    }
+
+    // Método para obtener logs como string (para reportes)
+    getLogsAsString() {
+        if (!this.logs || this.logs.length === 0) {
+            return null;
+        }
+
+        return this.logs.map(log => 
+            `[${log.timestamp.toISOString()}] [${log.level.toUpperCase()}] ${log.identifier ? '[' + log.identifier + '] ' : ''}${log.message}`
+        ).join('\n');
+    }
+
+    // Método para obtener información de estado de la consola
+    getConsoleStatus() {
+        return {
+            initialized: this.initialized,
+            logCount: this.logs ? this.logs.length : 0,
+            queueSize: this.logQueue ? this.logQueue.length : 0,
+            autoScroll: this.autoScroll,
+            hwid: this.hwid
+        };
     }
 }
 
 // Inicializar el manager de consola
 const consoleManager = new ConsoleManager();
+
+// Exponer el consoleManager en el objeto window para acceso desde el proceso principal
+window.consoleManager = consoleManager;

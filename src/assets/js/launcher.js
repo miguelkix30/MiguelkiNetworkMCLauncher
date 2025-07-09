@@ -101,13 +101,20 @@ class Launcher {
     const configClient = await this.db.readData("configClient");
     const isFirstRun = !configClient;
     
+    console.log(`ConfigClient existe: ${!!configClient}, Primera ejecución: ${isFirstRun}`);
+    
     if (isFirstRun) {
       console.log("Primera ejecución detectada. Iniciando configuración inicial...");
-      await this.showInitialSetup();
+      try {
+        await this.showInitialSetup();
+        console.log("Configuración inicial completada exitosamente");
+      } catch (error) {
+        console.error("Error durante la configuración inicial:", error);
+      }
       this.hideLoadingOverlayWithFade();
       
       console.log("Inicializando cleanup manager después de configuración inicial");
-      await cleanupManager.initialize();
+      await cleanupManager.initializeWithDatabase(this.db);
     } else {
       // Verificar explícitamente la existencia de la propiedad launcher_config.performance_mode
       // antes de intentar acceder a ella
@@ -125,7 +132,7 @@ class Launcher {
       }
       
       console.log("Inicializando cleanup manager con configuración existente");
-      await cleanupManager.initialize();
+      await cleanupManager.initializeWithDatabase(this.db);
     }
     this.startLoadingDisplayTimer();
     
@@ -152,7 +159,7 @@ class Launcher {
     
     this.initFrame();
     
-    if (isFirstRun) {
+    if (!isFirstRun) {
       await this.initConfigClient();
     }
     
@@ -340,6 +347,7 @@ class Launcher {
   }
 
   async showInitialSetup() {
+    console.log("=== INICIO DE showInitialSetup() ===");
     return new Promise(async (resolve) => {
       console.log("Mostrando configuración inicial");
       
@@ -357,14 +365,38 @@ class Launcher {
         loadingOverlay.classList.remove('active');
         loadingOverlay.style.visibility = 'hidden';
         loadingOverlay.style.opacity = '0';
+        console.log("Loading overlay ocultado para mostrar setup");
+      } else {
+        console.warn("No se encontró loading overlay");
       }
       
-      document.querySelector('.setup-modal').style.display = 'flex';
+      const setupModal = document.querySelector('.setup-modal');
+      console.log("DOM elements found:", {
+        setupModal: !!setupModal,
+        body: !!document.body,
+        panels: !!document.querySelector('.panels')
+      });
       
-      document.querySelector('#setup-total-ram').textContent = `${totalMem} GB`;
+      if (setupModal) {
+        setupModal.style.display = 'flex';
+        console.log("Setup modal mostrado");
+      } else {
+        console.error("No se encontró el elemento .setup-modal");
+        console.log("HTML body contains:", document.body ? document.body.innerHTML.substring(0, 500) : "No body found");
+        resolve(); // Resolver inmediatamente si no se encuentra el modal
+        return;
+      }
+      
+      const totalRamElement = document.querySelector('#setup-total-ram');
+      if (totalRamElement) {
+        totalRamElement.textContent = `${totalMem} GB`;
+      } else {
+      }
       
       const setupSliderElement = document.querySelector(".setup-memory-slider");
-      setupSliderElement.setAttribute("max", Math.trunc((80 * totalMem) / 100));
+      if (setupSliderElement) {
+        setupSliderElement.setAttribute("max", Math.trunc((80 * totalMem) / 100));
+      }
       
       class SetupSlider {
         constructor(element, minValue, maxValue) {
@@ -542,14 +574,43 @@ class Launcher {
       }
       
       setTimeout(() => {
-        const setupSlider = new SetupSlider(setupSliderElement, defaultMinRam, defaultMaxRam);
+        
+        // Re-verificar que setupModal esté disponible
+        const setupModalCheck = document.querySelector('.setup-modal');
+        if (!setupModalCheck) {
+          console.error("SetupModal desapareció después del timeout");
+          resolve();
+          return;
+        }
+        
+        // Re-verificar setupSliderElement
+        const setupSliderElementCheck = document.querySelector(".setup-memory-slider");
+        if (!setupSliderElementCheck) {
+
+          resolve();
+          return;
+        }
+        
+        const setupSlider = new SetupSlider(setupSliderElementCheck, defaultMinRam, defaultMaxRam);
         
         let currentStep = 1;
-        const totalSteps = 4;
+        const totalSteps = 3;
         
         const prevBtn = document.querySelector('.setup-prev-btn');
         const nextBtn = document.querySelector('.setup-next-btn');
         const finishBtn = document.querySelector('.setup-finish-btn');
+        
+        if (!prevBtn || !nextBtn || !finishBtn) {
+          console.error("No se encontraron todos los botones del setup:", {
+            prevBtn: !!prevBtn,
+            nextBtn: !!nextBtn,
+            finishBtn: !!finishBtn
+          });
+          resolve(); // Resolver inmediatamente si faltan botones
+          return;
+        }
+        
+        console.log("Todos los botones del setup encontrados correctamente");
         
         const stepIndicators = document.querySelectorAll('.step');
         
@@ -591,50 +652,9 @@ class Launcher {
           }
         });
         
-        const maxDownloadsInput = document.querySelector("#setup-max-downloads");
-        let isMaxDownloadsValid = true;
-        
-        const validateMaxDownloads = () => {
-          if (!maxDownloadsInput) return true;
-          
-          const value = parseInt(maxDownloadsInput.value);
-          isMaxDownloadsValid = !isNaN(value) && value >= 1 && value <= 20;
-          
-          if (isMaxDownloadsValid) {
-            maxDownloadsInput.style.borderColor = "";
-            maxDownloadsInput.style.backgroundColor = "";
-            
-            const existingError = document.querySelector('.max-downloads-error');
-            if (existingError) {
-              existingError.remove();
-            }
-          } else {
-            maxDownloadsInput.style.borderColor = "red";
-            maxDownloadsInput.style.backgroundColor = "rgba(255, 0, 0, 0.1)";
-            
-            let errorMsg = document.querySelector('.max-downloads-error');
-            if (!errorMsg) {
-              errorMsg = document.createElement('div');
-              errorMsg.className = 'max-downloads-error';
-              errorMsg.style.color = 'red';
-              errorMsg.style.fontSize = '12px';
-              errorMsg.style.marginTop = '5px';
-              errorMsg.innerText = 'Por favor ingresa un número entre 1 y 20';
-              
-              maxDownloadsInput.insertAdjacentElement('afterend', errorMsg);
-            }
-          }
-          
-          return isMaxDownloadsValid;
-        };
+
         
         nextBtn.addEventListener('click', () => {
-          if (currentStep === 3) {
-            if (!validateMaxDownloads()) {
-              return;
-            }
-          }
-          
           if (currentStep < totalSteps) {
             currentStep++;
             updateStepUI(currentStep);
@@ -660,27 +680,12 @@ class Launcher {
         
         const performanceModeToggle = document.querySelector("#setup-performance-mode");
         performanceModeToggle.checked = false;
-        
-        if (maxDownloadsInput) {
-          maxDownloadsInput.value = 3;
-          
-          maxDownloadsInput.addEventListener('input', () => {
-            const value = parseInt(maxDownloadsInput.value);
-            validateMaxDownloads();
-          });
-          
-          maxDownloadsInput.addEventListener('blur', validateMaxDownloads);
-        }
+
         
         finishBtn.addEventListener('click', async () => {
-          if (!validateMaxDownloads()) {
-            return;
-          }
-          
           const ramMin = setupSlider.getMinValue();
           const ramMax = setupSlider.getMaxValue();
           const performanceMode = document.querySelector("#setup-performance-mode").checked;
-          const maxDownloads = maxDownloadsInput ? parseInt(maxDownloadsInput.value) || 3 : 3;
           
           document.querySelector('.setup-modal').style.display = 'none';
           
@@ -713,7 +718,6 @@ class Launcher {
               },
             },
             launcher_config: {
-              download_multi: maxDownloads,
               theme: "auto",
               closeLauncher: selectedLauncherBehavior,
               intelEnabledMac: true,
@@ -727,7 +731,7 @@ class Launcher {
           }
           resolve();
         });
-      }, 200);
+      }, 500);
     });
   }
 
@@ -1016,10 +1020,10 @@ class Launcher {
         token = null;
         let discordDialog = new popup();
         
-        const promptTitle = token ? "Error de autenticación" : "Verificación de Discord";
+        const promptTitle = token ? localization.t('verification.discord_authentication_error') : localization.t('verification.discord_verification');
         const promptContent = token 
-          ? "No se ha podido verificar la sesión de Discord. <br><br>¿Quieres volver a intentarlo?"
-          : "Para poder acceder al launcher debes iniciar sesión con tu cuenta de Discord y estar en el servidor de Miguelki Network. <br><br>¿Quieres iniciar sesión ahora?";
+          ? localization.t('verification.discord_authentication_error_info')
+          : localization.t('verification.discord_verification_info');
         
         const dialogResult = await new Promise((resolve) => {
           discordDialog.openDialog({
@@ -1038,8 +1042,8 @@ class Launcher {
         try {
           let connectingPopup = new popup();
           connectingPopup.openPopup({
-            title: 'Verificación de Discord',
-            content: 'Esperando a la autorización...',
+            title: localization.t('verification.discord_verification'),
+            content: localization.t('verification.discord_waiting'),
             color: 'var(--color)'
           });
           
@@ -1056,8 +1060,8 @@ class Launcher {
           let errorDialog = new popup();
           const retryResult = await new Promise((resolve) => {
             errorDialog.openDialog({
-              title: "Error al verificar la cuenta de Discord",
-              content: "No se ha podido verificar la cuenta de Discord. <br><br>¿Quieres intentarlo de nuevo?",
+              title: localization.t('verification.discord_verification_error'),
+              content: localization.t('verification.discord_verification_error_info'),
               options: true,
               callback: resolve,
             });
@@ -1088,8 +1092,8 @@ class Launcher {
       
       let verifyPopup = new popup();
       verifyPopup.openPopup({
-        title: "Verificando cuenta de Discord...",
-        content: "Por favor, espera un momento...",
+        title: localization.t('verification.discord_verifying'),
+        content: localization.t('verification.please_wait'),
         color: "var(--color)",
         background: false,
       });
@@ -1106,8 +1110,8 @@ class Launcher {
         let errorDialog = new popup();
         const retryResult = await new Promise((resolve) => {
           errorDialog.openDialog({
-            title: "Error de conexión",
-            content: "No se ha podido verificar la membresía en el servidor de Discord. <br><br>¿Quieres intentarlo de nuevo?",
+            title: localization.t('verification.discord_verification_error'),
+            content: localization.t('verification.discord_membership_error_info'),
             options: true,
             callback: resolve,
           });
@@ -1126,11 +1130,31 @@ class Launcher {
       verifyPopup.closePopup();
 
       if (!isMember) {
+        //si pkg.discord_url no está vacio o es null mostrar el popup de unirse al servidor
+        if (!pkg.discord_url || pkg.discord_url === "") {
+        let errorDialog = new popup();
+        const retryResult = await new Promise((resolve) => {
+          errorDialog.openDialog({
+            title: localization.t('verification.discord_verification_error'),
+            content: localization.t('verification.discord_membership_missing'),
+            options: true,
+            callback: resolve,
+          });
+        });
+        if (retryResult === "cancel") {
+          quitAPP();
+          return;
+        } else {
+          token = null;
+          await deleteDiscordToken();
+          continue;
+        }
+      } else {
         let joinServerDialog = new popup();
         const joinResult = await new Promise((resolve) => {
           joinServerDialog.openDialog({
-            title: "Error al verificar la cuenta de Discord",
-            content: "No se ha detectado que seas miembro del servidor de Discord. Para poder utilizar el launcher debes ser miembro del servidor. <br><br>¿Quieres unirte ahora? Se abrirá una ventana en tu navegador.",
+            title: localization.t('verification.discord_verification_error'),
+            content: localization.t('verification.discord_membership_missing_with_invite'),
             options: true,
             callback: resolve,
           });
@@ -1145,6 +1169,7 @@ class Launcher {
           await deleteDiscordToken();
           continue;
         }
+      }
       } else {
         verificationComplete = true;
         
@@ -1337,18 +1362,13 @@ class Launcher {
                         
                         popupRefresh.closePopup();
                         let popupError = new popup();
-                        
-                        await new Promise(resolve => {
                             popupError.openPopup({
-                                title: 'Cuenta protegida',
-                                content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo. Por favor, contacta con el administrador si crees que esto es un error.',
+                                title: localization.t('login.protected_account'),
+                                content: localization.t('login.protected_account_info'),
                                 color: 'red',
-                                options: {
-                                    value: "Entendido",
-                                    event: resolve
-                                }
+                                options: true,
                             });
-                        });
+                        return;
                     }
                 }
               }
@@ -1404,8 +1424,8 @@ class Launcher {
             if (account.meta.type === "Xbox" || account.meta.type === "Microsoft") {
               console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
                 popupRefresh.openPopup({
-                  title: "Conectando...",
-                  content: `Plataforma: ${account.meta.type} | Usuario: ${account.name}`,
+                  title: localization.t('launcher.connecting'),
+                  content: `${localization.t('refresh.platform')}: ${account.meta.type} | ${localization.t('refresh.user')}: ${account.name}`,
                   color: "var(--color)",
                   background: false,
                 });
@@ -1475,8 +1495,8 @@ class Launcher {
             } else if (account.meta.type == "azauth") {
               console.log(`Plataforma: MKNetworkID | Usuario: ${account.name}`);
               popupRefresh.openPopup({
-                title: "Conectando...",
-                content: `Plataforma: MKNetworkID | Usuario: ${account.name}`,
+                title: localization.t('launcher.connecting'),
+                content: `${localization.t('refresh.platform')}: MKNetworkID | ${localization.t('refresh.user')}: ${account.name}`,
                 color: "var(--color)",
                 background: false,
               });
@@ -1498,8 +1518,8 @@ class Launcher {
                     popupRefresh.closePopup();
                     let popupError = new popup();
                     popupError.openPopup({
-                      title: 'Cuenta protegida',
-                      content: 'Esta cuenta está protegida y no puede ser usada en este dispositivo. Por favor, contacta con el administrador si crees que esto es un error.',
+                      title: localization.t('login.protected_account'),
+                      content: localization.t('login.protected_account_info'),
                       color: 'red',
                       options: true
                     });
@@ -1587,8 +1607,8 @@ class Launcher {
             } else if (account.meta.type == "Mojang") {
               console.log(`Plataforma: ${account.meta.type} | Usuario: ${account.name}`);
               popupRefresh.openPopup({
-                title: "Conectando...",
-                content: `Plataforma: ${account.meta.type} | Usuario: ${account.name}`,
+                title: localization.t('launcher.connecting'),
+                content: `${localization.t('refresh.platform')}: ${account.meta.type} | ${localization.t('refresh.user')}: ${account.name}`,
                 color: "var(--color)",
                 background: false,
               });
@@ -1851,8 +1871,8 @@ class Launcher {
     });
 
     // Configurar listeners para eventos de la consola desde app.js
-    ipcRenderer.on('report-issue-triggered', () => {
-      this.confirmReportIssue();
+    ipcRenderer.on('report-issue-triggered', async () => {
+      await this.confirmReportIssue();
     });
 
     ipcRenderer.on('patch-toolkit-triggered', () => {
@@ -1875,14 +1895,22 @@ class Launcher {
       console.log('Consola solicita configuración del servidor, enviando...');
       try {
         const res = await config.GetConfig();
+        console.log('Configuración obtenida del servidor:', {
+          patchToolkit: res.patchToolkit,
+          patchToolkitType: typeof res.patchToolkit,
+          patchToolkitValue: res.patchToolkit === true
+        });
+        
         const configForConsole = {
-          patchToolkit: res.patchToolkit !== false // Por defecto true, false solo si se especifica
+          patchToolkit: res.patchToolkit === true // Solo true si es específicamente true
         };
         
         ipcRenderer.send('apply-server-config', configForConsole);
         console.log('Configuración del servidor enviada a la consola:', configForConsole);
       } catch (error) {
         console.warn('Error enviando configuración del servidor a la consola:', error);
+        // Enviar configuración por defecto (toolkit deshabilitado) en caso de error
+        ipcRenderer.send('apply-server-config', { patchToolkit: false });
       }
     });
 
@@ -1898,11 +1926,10 @@ class Launcher {
 
   async confirmReportIssue() {
     let reportPopup = new popup();
-    let logs = document.querySelector(".log-bg");
     let dialogResult = await new Promise(resolve => {
       reportPopup.openDialog({
-            title: 'Enviar reporte de rendimiento?',
-            content: 'Si estas experimentando problemas con el launcher, puedes enviar un reporte de rendimiento para ayudarnos a solucionar el problema. <br><br>Quieres enviar un reporte de rendimiento?',
+            title: localization.t('mklib.report_prompt'),
+            content: localization.t('mklib.report_prompt_info'),
             options: true,
             callback: resolve
         });
@@ -1911,28 +1938,117 @@ class Launcher {
         ipcRenderer.send('console-window-open');
         return;
     }
-    this.sendReport();
+    await this.sendReport();
   }
 
-  sendReport() {
-    let logContent = document.querySelector(".logger .content").innerText;
-    sendClientReport(logContent, false);
+  async sendReport() {
+    try {
+      // Obtener logs desde la consola separada
+      console.log("Solicitando logs de consola para reporte...");
+      const logContent = await ipcRenderer.invoke('get-console-logs');
+      
+      console.log("Respuesta de get-console-logs:", {
+        type: typeof logContent,
+        length: logContent ? logContent.length : 0,
+        preview: logContent ? logContent.substring(0, 100) : 'null',
+        isError: logContent && logContent.includes('Error al obtener logs'),
+        isNotAvailable: logContent && logContent.includes('No hay logs disponibles'),
+        isConsoleNotAvailable: logContent && logContent.includes('Consola no disponible')
+      });
+      
+      // Validar que el contenido de logs no esté vacío y sea válido
+      if (!logContent || 
+          logContent.trim() === '' || 
+          logContent === 'No hay logs disponibles' ||
+          logContent.includes('No hay logs disponibles en la consola') ||
+          logContent.includes('Consola no disponible')) {
+        
+        console.warn("No se encontraron logs válidos en la consola separada, intentando obtener desde archivo...");
+        console.warn("Razón:", logContent);
+        
+        // Intentar obtener logs desde el archivo del FileLogger
+        try {
+          const fileLogContent = await this.getFileLogContent();
+          console.log("Logs obtenidos desde archivo:", {
+            type: typeof fileLogContent,
+            length: fileLogContent ? fileLogContent.length : 0,
+            preview: fileLogContent ? fileLogContent.substring(0, 100) : 'null'
+          });
+          
+          if (fileLogContent && fileLogContent.trim() !== '' && 
+              !fileLogContent.includes('Archivo de log no encontrado') &&
+              !fileLogContent.includes('FileLogger no inicializado')) {
+            console.log("Logs obtenidos desde archivo exitosamente");
+            sendClientReport(fileLogContent, false);
+          } else {
+            console.warn("No se pudieron obtener logs desde archivo, usando información de diagnóstico");
+            const diagnosticInfo = `Error: No se pudieron obtener logs válidos para el reporte.
+            
+Información de diagnóstico:
+- Fecha: ${new Date().toISOString()}
+- Respuesta de consola: ${logContent}
+- Respuesta de archivo: ${fileLogContent}
+- User Agent: ${navigator.userAgent}
+- Versión del launcher: ${pkg.version}${pkg.sub_version ? `-${pkg.sub_version}` : ''}
+- Estado de la aplicación: ${document.readyState}
+- URL actual: ${window.location.href}`;
+            
+            sendClientReport(diagnosticInfo, false);
+          }
+        } catch (fileError) {
+          console.error("Error obteniendo logs desde archivo:", fileError);
+          const errorInfo = `Error al obtener logs: ${fileError.message}
+          
+Información de diagnóstico:
+- Fecha: ${new Date().toISOString()}
+- Error de consola: ${logContent}
+- Error de archivo: ${fileError.stack || fileError.message}
+- Versión del launcher: ${pkg.version}${pkg.sub_version ? `-${pkg.sub_version}` : ''}`;
+          
+          sendClientReport(errorInfo, false);
+        }
+      } else {
+        console.log("Logs obtenidos exitosamente desde consola separada");
+        sendClientReport(logContent, false);
+      }
+    } catch (error) {
+      console.error('Error obteniendo logs para el reporte:', error);
+      // Fallback: usar mensaje de error detallado
+      const errorMessage = `Error crítico al obtener logs: ${error.message}
+
+Stack trace: ${error.stack || 'No disponible'}
+Fecha: ${new Date().toISOString()}
+Tipo de error: ${error.name || 'Unknown'}
+Versión del launcher: ${pkg.version}${pkg.sub_version ? `-${pkg.sub_version}` : ''}
+User Agent: ${navigator.userAgent}`;
+      
+      sendClientReport(errorMessage, false);
+    }
   }
 
+  async getFileLogContent() {
+    try {
+      // Solicitar el contenido del archivo de log actual al proceso principal
+      const fileLogContent = await ipcRenderer.invoke('get-file-log-content');
+      return fileLogContent;
+    } catch (error) {
+      console.error('Error obteniendo contenido del archivo de log:', error);
+      return null;
+    }
+  }
   async runPatchToolkit() {
     let patchToolkitPopup = new popup();
-    let logs = document.querySelector(".log-bg");
     let dialogResult = await new Promise(resolve => {
       patchToolkitPopup.openDialog({
-            title: 'Ejecutar Toolkit de Parches?',
-            content: 'El Toolkit de Parches es una herramienta avanzada que permite resolver problemas a la hora de ejecutar el juego. <br>Ejecuta esta herramienta SOLO si tienes problemas para iniciar el juego.<br>Quieres ejecutar el Toolkit de Parches?<br>Si es así, se descargará y parcheará el juego de forma automática.',
+            title: localization.t('mklib.patch_toolkit_prompt'),
+            content: localization.t('mklib.patch_toolkit_prompt_info'),
             options: true,
             callback: resolve
         });
     });
     if (dialogResult === 'cancel') {
-      ipcRenderer.send('console-window-open');
-      return;
+        ipcRenderer.send('console-window-open');
+        return;
     }
     patchLoader();
   }
@@ -1993,7 +2109,6 @@ class Launcher {
     }
 
     if (!config.launcher_config || 
-        !('download_multi' in config.launcher_config) ||
         !('theme' in config.launcher_config) ||
         !('closeLauncher' in config.launcher_config) ||
         !('intelEnabledMac' in config.launcher_config) ||

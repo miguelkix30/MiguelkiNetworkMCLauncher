@@ -46,6 +46,12 @@ class Localization {
                 }
             }
             
+            // Verificar que systemLocale no sea undefined o null
+            if (!systemLocale) {
+                console.warn('No se pudo detectar el idioma del sistema, usando fallback');
+                systemLocale = 'es-ES';
+            }
+            
             // Limpiar el locale (remover encoding como .UTF-8)
             systemLocale = systemLocale.split('.')[0];
             
@@ -63,26 +69,58 @@ class Localization {
                 'es-VE': 'es-ES',
                 'en': 'en-EN',
                 'en-US': 'en-EN',
+                'en_US': 'en-EN',  // Agregar formato underscore
                 'en-GB': 'en-EN',
+                'en_GB': 'en-EN',
                 'en-CA': 'en-EN',
+                'en_CA': 'en-EN',
                 'en-AU': 'en-EN',
+                'en_AU': 'en-EN',
                 'en-NZ': 'en-EN',
+                'en_NZ': 'en-EN',
                 'fr': 'fr-FR',
                 'fr-FR': 'fr-FR',
+                'fr_FR': 'fr-FR',
                 'fr-CA': 'fr-FR',
+                'fr_CA': 'fr-FR',
                 'de': 'de-DE',
                 'de-DE': 'de-DE',
+                'de_DE': 'de-DE',
                 'de-AT': 'de-DE',
+                'de_AT': 'de-DE',
                 'de-CH': 'de-DE',
+                'de_CH': 'de-DE',
                 'it': 'it-IT',
                 'it-IT': 'it-IT',
+                'it_IT': 'it-IT',
                 'pt': 'pt-PT',
                 'pt-PT': 'pt-PT',
-                'pt-BR': 'pt-BR'
+                'pt_PT': 'pt-PT',
+                'pt-BR': 'pt-BR',
+                'pt_BR': 'pt-BR'
             };
 
-            const detectedLanguage = languageMap[systemLocale] || languageMap[systemLocale.split('-')[0]] || this.fallbackLanguage;
+            // Intentar mapear directamente primero
+            let detectedLanguage = languageMap[systemLocale];
+            
+            // Si no se encuentra, intentar con la parte base del idioma
+            if (!detectedLanguage) {
+                const baseLanguage = systemLocale.split(/[-_]/)[0];
+                detectedLanguage = languageMap[baseLanguage];
+            }
+            
+            // Si aún no se encuentra, usar fallback
+            if (!detectedLanguage) {
+                detectedLanguage = this.fallbackLanguage;
+            }
             console.log(`Idioma mapeado: ${detectedLanguage}`);
+            
+            // Verificación adicional de que el resultado no sea undefined
+            if (!detectedLanguage) {
+                console.error('Error en la detección del idioma, retornando fallback');
+                return this.fallbackLanguage;
+            }
+            
             return detectedLanguage;
         } catch (error) {
             console.error('Error detectando idioma del sistema:', error);
@@ -123,8 +161,9 @@ class Localization {
                 console.log('No se encontró idioma en configuración, usando detección automática');
                 selectedLanguage = this.systemLanguage;
                 
-                // Guardar la configuración automática
-                await this.saveLanguageToConfig('auto');
+                // NO guardar la configuración automática durante la inicialización
+                // para permitir que el setup inicial se ejecute
+                console.log('ConfigClient no existe, se permitirá al launcher iniciar la configuración inicial');
             }
 
             // Establecer idioma actual
@@ -135,9 +174,9 @@ class Localization {
                 console.warn(`Idioma ${this.currentLanguage} no disponible, usando fallback ${this.fallbackLanguage}`);
                 this.currentLanguage = this.fallbackLanguage;
                 
-                // Actualizar configuración si es necesario
+                // Actualizar configuración si es necesario (solo si ya existe)
                 if (configClient && configClient.language && configClient.language !== 'auto') {
-                    await this.saveLanguageToConfig('auto');
+                    await this.saveLanguageToConfig('auto', false); // No crear durante inicialización
                 }
             }
             
@@ -226,6 +265,65 @@ class Localization {
      */
     isLanguageAvailable(languageCode) {
         return this.availableLanguages && this.availableLanguages[languageCode];
+    }
+
+    /**
+     * Busca un idioma derivado disponible cuando el idioma exacto no está disponible
+     * @param {string} languageCode - Código del idioma
+     * @returns {string|null} Código del idioma derivado encontrado o null
+     */
+    findAvailableLanguageVariant(languageCode) {
+        if (!languageCode || !this.availableLanguages) return null;
+        
+        // Si el idioma exacto está disponible, devolverlo
+        if (this.availableLanguages[languageCode]) {
+            return languageCode;
+        }
+        
+        // Extraer la parte base del idioma (ej: 'es' de 'es-ES')
+        const baseLanguage = languageCode.split(/[-_]/)[0];
+        
+        // Buscar variantes del mismo idioma base
+        const availableKeys = Object.keys(this.availableLanguages);
+        
+        // Primero buscar variantes exactas del idioma base
+        for (const availableCode of availableKeys) {
+            if (availableCode.startsWith(baseLanguage + '-') || availableCode.startsWith(baseLanguage + '_')) {
+                console.log(`Idioma derivado encontrado: ${availableCode} para ${languageCode}`);
+                return availableCode;
+            }
+        }
+        
+        // Si no se encuentra variante, buscar el idioma base solo
+        if (this.availableLanguages[baseLanguage]) {
+            console.log(`Idioma base encontrado: ${baseLanguage} para ${languageCode}`);
+            return baseLanguage;
+        }
+        
+        // Si es un idioma no latino, probar mapeos comunes
+        const commonMappings = {
+            'zh': 'zh-CN',
+            'zh-CN': 'zh-TW',
+            'zh-TW': 'zh-CN',
+            'ja': 'en-EN', // Japonés -> Inglés como fallback
+            'ko': 'en-EN', // Coreano -> Inglés como fallback
+            'ar': 'en-EN', // Árabe -> Inglés como fallback
+            'ru': 'en-EN', // Ruso -> Inglés como fallback
+            'hi': 'en-EN', // Hindi -> Inglés como fallback
+        };
+        
+        if (commonMappings[baseLanguage] && this.availableLanguages[commonMappings[baseLanguage]]) {
+            console.log(`Mapeo alternativo encontrado: ${commonMappings[baseLanguage]} para ${languageCode}`);
+            return commonMappings[baseLanguage];
+        }
+        
+        // Como último recurso, probar inglés
+        if (this.availableLanguages['en-EN']) {
+            console.log(`Usando inglés como fallback para ${languageCode}`);
+            return 'en-EN';
+        }
+        
+        return null;
     }
 
     /**
@@ -430,24 +528,30 @@ class Localization {
     /**
      * Guarda el idioma seleccionado en la configuración
      * @param {string} languageCode - Código del idioma
+     * @param {boolean} createIfNotExists - Si debe crear configClient si no existe (por defecto false)
      */
-    async saveLanguageToConfig(languageCode) {
+    async saveLanguageToConfig(languageCode, createIfNotExists = false) {
         try {
             if (!this.db) return;
             
             let configClient = await this.db.readData('configClient');
             
             if (!configClient) {
-                configClient = {
-                    language: languageCode
-                };
-                await this.db.createData('configClient', configClient);
+                if (createIfNotExists) {
+                    configClient = {
+                        language: languageCode
+                    };
+                    await this.db.createData('configClient', configClient);
+                    console.log(`Idioma ${languageCode} guardado en nueva configuración`);
+                } else {
+                    console.log(`ConfigClient no existe, saltando guardado de idioma durante inicialización`);
+                    return;
+                }
             } else {
                 configClient.language = languageCode;
                 await this.db.updateData('configClient', configClient);
+                console.log(`Idioma ${languageCode} actualizado en configuración existente`);
             }
-            
-            console.log(`Idioma ${languageCode} guardado en configuración`);
             
         } catch (error) {
             console.error('Error guardando idioma en configuración:', error);
@@ -465,6 +569,12 @@ class Localization {
             // Si es automático, usar el idioma del sistema
             if (languageCode === 'auto') {
                 targetLanguage = this.systemLanguage;
+            }
+            
+            // Verificar que el idioma no sea undefined o null
+            if (!targetLanguage) {
+                console.warn(`Idioma ${languageCode} resultó en undefined, usando fallback`);
+                targetLanguage = this.fallbackLanguage;
             }
             
             if (!this.isLanguageAvailable(targetLanguage)) {

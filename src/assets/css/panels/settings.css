@@ -589,7 +589,7 @@ input:disabled::placeholder {
 }
 
 /* Mejoras para botones */
-.java-path-btn, .size-btn, .max-files-btn {
+.java-path-btn, .size-btn {
     padding: 0.5rem 1.2rem;
     background: linear-gradient(135deg, var(--box-button) 0%, var(--box-button-hover) 100%);
     border-radius: 15px;
@@ -604,7 +604,7 @@ input:disabled::placeholder {
     overflow: hidden;
 }
 
-.java-path-btn::before, .size-btn::before, .max-files-btn::before {
+.java-path-btn::before, .size-btn::before {
     content: '';
     position: absolute;
     top: -50%;
@@ -618,17 +618,17 @@ input:disabled::placeholder {
     pointer-events: none;
 }
 
-.java-path-btn:hover, .size-btn:hover, .max-files-btn:hover {
+.java-path-btn:hover, .size-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 }
 
-.java-path-btn:hover::before, .size-btn:hover::before, .max-files-btn:hover::before {
+.java-path-btn:hover::before, .size-btn:hover::before {
     transform: scale(1);
     opacity: 1;
 }
 
-.java-path-btn:active, .size-btn:active, .max-files-btn:active {
+.java-path-btn:active, .size-btn:active {
     transform: translateY(1px);
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
 }
@@ -644,7 +644,7 @@ input:disabled::placeholder {
 }
 
 /* Mejoras para campos numéricos */
-.input-resolution, .input-max-files {
+.input-resolution {
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.25);
     color: white;
@@ -661,16 +661,12 @@ input:disabled::placeholder {
     width: 6rem;
 }
 
-.input-max-files {
-    width: 4rem;
-}
-
-.input-resolution:hover, .input-max-files:hover {
+.input-resolution:hover {
     border-color: rgba(255, 255, 255, 0.5);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-.input-resolution:focus, .input-max-files:focus {
+.input-resolution:focus {
     outline: none;
     border-color: var(--box-button);
     box-shadow: 0 0 8px rgba(0, 120, 189, 0.5);
