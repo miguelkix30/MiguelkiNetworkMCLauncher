@@ -20,6 +20,7 @@ import slider from './utils/slider.js';
 import cleanupManager from './utils/cleanup-manager.js';
 import { getHWID } from './MKLib.js';
 import MinecraftStatus from './utils/minecraft-status.js';
+import localization from './utils/localization.js';
 let username = '';
 let DiscordUsername = '';
 let DiscordPFP = '';
@@ -1773,6 +1774,7 @@ export {
     setStaticBackground as setStaticBackground,
     fileExists as fileExists,
     isImageUrl as isImageUrl,
-    getExecutionKey as getExecutionKey
+    getExecutionKey as getExecutionKey,
+    localization as localization
 }
 window.setVideoSource = setVideoSource;

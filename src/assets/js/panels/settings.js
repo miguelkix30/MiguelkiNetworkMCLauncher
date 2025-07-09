@@ -3,7 +3,7 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 
-import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead, getTermsAndConditions, setPerformanceMode, isPerformanceModeEnabled, getDiscordUsername, getDiscordPFP, setDiscordUsername } from '../utils.js'
+import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead, getTermsAndConditions, setPerformanceMode, isPerformanceModeEnabled, getDiscordUsername, getDiscordPFP, setDiscordUsername, localization } from '../utils.js'
 import { deleteDiscordToken } from '../MKLib.js'
 import { listAvailableJavaInstallations, cleanupUnusedJava, getRuntimePath, getGameStatus } from '../utils/java-manager.js';
 
@@ -27,6 +27,7 @@ class Settings {
         this.socials()
         this.terms()
         this.discordAccount()
+        this.initializeLanguageSelector()
         
         this.applyPerfModeOverridesIfNeeded();
         this.addAccountButtonEffects(); // Añadir efectos de pulsación a los botones de cuentas
@@ -34,6 +35,13 @@ class Settings {
         
         // Make sure the add account button is visible
         this.ensureAddAccountButton();
+        
+        // Aplicar traducciones al cargar el panel
+        setTimeout(() => {
+            if (localization && localization.initialized) {
+                localization.forceApplyTranslations();
+            }
+        }, 100);
     }
     
     // Ensure the "Add Account" button is displayed
@@ -63,7 +71,7 @@ class Settings {
                 <div class="add-profile">
                     <div class="icon-account-add"></div>
                 </div>
-                <div class="add-text-profile">Añadir una cuenta</div>
+                <div class="add-text-profile" data-translate="accounts.add_account"></div>
             `;
             
             // Apply button style
@@ -74,6 +82,13 @@ class Settings {
             
             // Add to the accounts list
             accountsList.appendChild(addAccountBtn);
+            
+            // Apply translations to the new element
+            setTimeout(() => {
+                if (localization && localization.initialized) {
+                    localization.applyTranslationsToElement(addAccountBtn);
+                }
+            }, 50);
             
             // Apply button effects
             this.applyAccountButtonEffect(addAccountBtn);
@@ -360,8 +375,8 @@ class Settings {
                 let id = e.target.id;
                 if (e.target.classList.contains('account')) {
                     popupAccount.openPopup({
-                        title: 'Iniciar sesión',
-                        content: 'Espere, por favor...',
+                        title: localization.t('accounts.logging_in'),
+                        content: localization.t('accounts.please_wait'),
                         color: 'var(--color)'
                     });
 
@@ -383,8 +398,8 @@ class Settings {
                         console.error(`No se encontró cuenta con ID: ${id}`);
                         popupAccount.closePopup();
                         popupAccount.openPopup({
-                            title: 'Error',
-                            content: `No se pudo encontrar la cuenta seleccionada (ID: ${id}). La cuenta podría haber sido eliminada o dañada.`,
+                            title: localization.t('launcher.error'),
+                            content: localization.t('accounts.account_not_found') + ` (ID: ${id}). ` + localization.t('accounts.account_corrupted'),
                             color: 'red',
                             options: true
                         });
@@ -883,7 +898,7 @@ class Settings {
         }
 
         let configClient = await this.db.readData('configClient')
-        let javaPath = configClient?.java_config?.java_path || 'Utilice la versión de java suministrada con el launcher';
+        let javaPath = configClient?.java_config?.java_path || localization.t('java.java_path_launcher');
         let javaPathInputTxt = document.querySelector(".java-path-input-text");
         let javaPathInputFile = document.querySelector(".java-path-input-file");
         
@@ -929,7 +944,7 @@ class Settings {
             javaPathResetBtn.addEventListener("click", async () => {
                 let configClient = await this.db.readData('configClient')
                 if (javaPathInputTxt) {
-                    javaPathInputTxt.value = 'Utilice la versión de java suministrada con el launcher';
+                    javaPathInputTxt.value = localization.t('java.java_path_launcher');
                 }
                 configClient.java_config.java_path = null
                 await this.db.updateData('configClient', configClient);
@@ -975,18 +990,18 @@ class Settings {
             
             
             let infoHTML = `
-                <div class="java-info-title">🔧 Gestión Automática de Java</div>
-                <div class="java-info-description">
+                <div class="java-info-title">🔧 ${localization.t('java.java_management')}</div>
+                <div class="java-info-description" data-translate="java.java_management_info">
                     El launcher descarga automáticamente la versión de Java compatible con cada versión de Minecraft.
                     Las instalaciones se almacenan en la carpeta 'runtime' y se reutilizan automáticamente.
                 </div>
                 <div class="java-runtime-path">
-                    📁 Directorio runtime: <code>${getRuntimePath() || 'No inicializado'}</code>
+                    📁 ${localization.t('java.java_runtime_directory_title')}: <code>${getRuntimePath() || localization.t('java.java_runtime_directory_not_initialized')}</code>
                 </div>
             `;
             
             if (installations.length > 0) {
-                infoHTML += `<div class="java-installations-title">📦 Versiones de Java Instaladas:</div>`;
+                infoHTML += `<div class="java-installations-title">📦 ${localization.t('java.java_installed_versions_title')}:</div>`;
                 infoHTML += `<div class="java-installations-list">`;
                 
                 for (const installation of installations) {
@@ -1001,7 +1016,7 @@ class Settings {
                             </div>
                             <div class="java-installation-path">${installation.path}</div>
                             <div class="java-installation-compatibility">
-                                Compatible con: ${this.getMinecraftCompatibility(installation.version)}
+                                ${localization.t('java.java_installed_versions_compatiblewith')}: ${this.getMinecraftCompatibility(installation.version)}
                             </div>
                         </div>
                     `;
@@ -1012,18 +1027,17 @@ class Settings {
                 // Agregar botón de limpieza
                 infoHTML += `
                     <div class="java-management-buttons">
-                        <button class="java-cleanup-btn" id="java-cleanup-btn">🗑️ Eliminar instalaciones de Java</button>
-                        <button class="java-refresh-btn" id="java-refresh-btn">🔄 Actualizar Lista</button>
+                        <button class="java-cleanup-btn" id="java-cleanup-btn">🗑️ ${localization.t('java.java_delete_installations')}</button>
+                        <button class="java-refresh-btn" id="java-refresh-btn">🔄 ${localization.t('java.java_installed_refresh')}</button>
                     </div>
                 `;
             } else {
                 infoHTML += `
                     <div class="java-installations-empty">
-                        📥 No hay versiones de Java descargadas automáticamente.
-                        Se descargarán automáticamente cuando sea necesario.
+                        📥 ${localization.t('java.java_no_versions_installed')}
                     </div>
                     <div class="java-management-buttons">
-                        <button class="java-refresh-btn" id="java-refresh-btn">🔄 Refrescar Instalaciones</button>
+                        <button class="java-refresh-btn" id="java-refresh-btn">🔄 ${localization.t('java.java_no_versions_installed')}</button>
                     </div>
                 `;
             }
@@ -1117,11 +1131,11 @@ class Settings {
                 // Mostrar advertencia si el juego está ejecutándose
                 const warningResult = await new Promise(resolve => {
                     popup.openDialog({
-                        title: '⚠️ Juego en Progreso',
-                        content: `🎮 Hay un juego ejecutándose actualmente usando Java.<br>La limpieza está bloqueada para evitar problemas con el juego en curso.<br>`,
+                        title: localization.t('java.java_game_in_progress'),
+                        content: `🎮 ${localization.t('java.java_game_warning')}<br>`,
                         options: true,
-                        acceptText: 'Forzar Limpieza',
-                        cancelText: 'Cancelar',
+                        acceptText: localization.t('java.java_cleanup_force'),
+                        cancelText: localization.t('buttons.cancel'),
                         callback: resolve
                     });
                 });
@@ -1137,10 +1151,10 @@ class Settings {
             // Si no hay juego en progreso, mostrar diálogo normal
             const dialogResult = await new Promise(resolve => {
                 popup.openDialog({
-                    title: '🗑️ Limpiar Instalaciones de Java',
-                    content: `¿Estás seguro de que quieres limpiar las instalaciones de Java no utilizadas?<br>
-                    Esta acción eliminará versiones de Java que no se hayan usado recientemente, liberando espacio en disco.<br><br>
-                    ⚠️ Las versiones se volverán a descargar automáticamente cuando sea necesario.`,
+                    title: localization.t('java.java_cleanup'),
+                    content: `${localization.t('java.java_cleanup_confirm')}<br>
+                    ${localization.t('java.java_cleanup_info')}<br><br>
+                    ⚠️ ${localization.t('java.java_cleanup_warning')}`,
                     options: true,
                     callback: resolve
                 });
@@ -1157,8 +1171,8 @@ class Settings {
             console.error('❌ Error en diálogo de limpieza de Java:', error);
             const popup = new (await import('../utils/popup.js')).default();
             popup.openPopup({
-                title: "Error",
-                content: `❌ Error mostrando diálogo de limpieza: ${error.message}`,
+                title: localization.t('errors.java_cleanup_error'),
+                content: `❌ ${localization.t('errors.java_cleanup_error')}: ${error.message}`,
                 color: "red",
                 options: true
             });
@@ -1170,10 +1184,10 @@ class Settings {
             // Mostrar progreso
             popup.closePopup();
             popup.openPopup({
-                title: "Limpiando Java...",
+                title: localization.t('java.java_cleanup_progress'),
                 content: forceClean ? 
-                    "Forzando limpieza de instalaciones Java... ⚠️" :
-                    "Por favor espera mientras se limpian las instalaciones no utilizadas.",
+                    `${localization.t('java.java_cleanup_force')}... ⚠️` :
+                    localization.t('notifications.please_wait'),
                 color: "var(--color)",
                 background: false
             });
@@ -1185,11 +1199,11 @@ class Settings {
             if (result.success) {
                 // Mostrar resultados detallados
                 const results = result.results;
-                let contentMsg = `✅ Limpieza de Java completada.\n\n`;
+                let contentMsg = `✅ ${localization.t('java.java_cleanup_success')}.\n\n`;
                 
                 if (results.cleaned.length > 0) {
-                    contentMsg += `🗑️ Eliminadas: ${results.cleaned.length} instalaciones<br>`;
-                    contentMsg += `💾 Espacio liberado: ${Math.round(results.freedSpace / (1024 * 1024))} MB<br>`;
+                    contentMsg += `🗑️ ${localization.t('accounts.account_deleted')}: ${results.cleaned.length} instalaciones<br>`;
+                    contentMsg += `💾 ${localization.t('launcher_settings.directory_size')}: ${Math.round(results.freedSpace / (1024 * 1024))} MB<br>`;
                 }
                 
                 if (results.skipped.length > 0) {
@@ -1203,7 +1217,7 @@ class Settings {
                 contentMsg += `Tamaño total procesado: ${Math.round(results.totalSize / (1024 * 1024))} MB<br>`;
                 
                 popup.openPopup({
-                    title: "Limpieza Completada",
+                    title: localization.t('java.java_cleanup_success'),
                     content: contentMsg,
                     color: "var(--color)",
                     options: true
@@ -1213,8 +1227,8 @@ class Settings {
                 await this.displayJavaInfo();
             } else {
                 popup.openPopup({
-                    title: "Error en Limpieza",
-                    content: `❌ Error durante la limpieza: ${result.error}`,
+                    title: localization.t('java.java_cleanup_error'),
+                    content: `❌ ${localization.t('java.java_cleanup_error')}: ${result.error}`,
                     color: "red",
                     options: true
                 });
@@ -1298,9 +1312,8 @@ class Settings {
                 let performanceModePopup = new popup();
                 let dialogResult = await new Promise((resolve) => {
                     performanceModePopup.openDialog({
-                      title: performanceModeCheckbox.checked ? 'Modo de rendimiento activado' : 'Modo de rendimiento desactivado',
-                      content:
-                        "Para aplicar completamente los cambios del modo de rendimiento, es necesario reiniciar el launcher. Esto eliminará todas las transiciones y efectos visuales para mejorar el rendimiento. <br><br>¿Desea reiniciar el launcher ahora?",
+                      title: performanceModeCheckbox.checked ? localization.t('launcher_settings.performance_mode_enabled') : localization.t('launcher_settings.performance_mode_disabled'),
+                      content: localization.t('launcher_settings.performance_mode_restart') + "<br><br>" + localization.t('launcher_settings.performance_mode_restart_confirm'),
                       options: true,
                       callback: resolve,
                     });
@@ -1376,8 +1389,8 @@ class Settings {
         const resetPopup = new popup();
         const result = await new Promise(resolve => {
             resetPopup.openDialog({
-                title: 'Reiniciar configuración',
-                content: '¿Estás seguro de que quieres reiniciar toda la configuración del launcher? Esta acción no puede deshacerse y el launcher se reiniciará.<br><br>Los archivos del juego (assets, bibliotecas, instancias) no se eliminarán.',
+                title: localization.t('launcher_settings.reset_config'),
+                content: localization.t('launcher_settings.reset_config_confirm') + '<br><br>' + localization.t('launcher_settings.reset_config_warning'),
                 options: true,
                 callback: resolve
             });
@@ -1390,8 +1403,8 @@ class Settings {
         try {
             const processingPopup = new popup();
             processingPopup.openPopup({
-                title: 'Reiniciando configuración',
-                content: 'Por favor, espera mientras se reinicia la configuración...',
+                title: localization.t('launcher_settings.reset_config_progress'),
+                content: localization.t('notifications.please_wait'),
                 color: 'var(--color)'
             });
             
@@ -1411,8 +1424,8 @@ class Settings {
             console.error('Error resetting config:', error);
             const errorPopup = new popup();
             errorPopup.openPopup({
-                title: 'Error',
-                content: `Ha ocurrido un error al reiniciar la configuración: ${error.message}`,
+                title: localization.t('launcher.error'),
+                content: `${localization.t('launcher_settings.reset_config')}: ${error.message}`,
                 color: 'red',
                 options: true
             });
@@ -1423,8 +1436,8 @@ class Settings {
         const deletePopup = new popup();
         const result = await new Promise(resolve => {
             deletePopup.openDialog({
-                title: 'Eliminar todos los datos',
-                content: '⚠️ ADVERTENCIA ⚠️<br><br>¿Estás seguro de que quieres eliminar TODOS los datos del launcher? Esta acción eliminará:<br>- Todas las configuraciones<br>- Todas las instancias de juego<br>- Todos los assets y bibliotecas descargados<br><br>Esta acción no puede deshacerse y el launcher se reiniciará.',
+                title: localization.t('launcher_settings.delete_all'),
+                content: '⚠️ ' + localization.t('launcher.warning') + ' ⚠️<br><br>' + localization.t('launcher_settings.delete_all_confirm') + '<br>' + localization.t('launcher_settings.delete_all_warning'),
                 options: true,
                 callback: resolve
             });
@@ -1584,7 +1597,7 @@ class Settings {
             const result = await getTermsAndConditions();
         
             const termsContainer = document.querySelector('.info-container');
-            const lastModifiedText = `<strong>Última modificación:</strong> ${result.lastModified === 'desconocida' ? 'Desconocida' : new Date(result.lastModified).toLocaleString()}`;
+            const lastModifiedText = `<strong>${localization.t('info_tab.last_update')}:</strong> ${result.lastModified === 'desconocida' ? 'Desconocida' : new Date(result.lastModified).toLocaleString()}`;
         
             const metaInfoHTML = `
                 <p>${lastModifiedText}</p>
@@ -1702,5 +1715,109 @@ class Settings {
             });
         }
    }
+
+    // Función para inicializar el selector de idioma
+    async initializeLanguageSelector() {
+        try {
+            console.log('Inicializando selector de idioma...');
+            
+            const languageSelect = document.getElementById('language-select');
+            if (!languageSelect) {
+                console.warn('No se encontró el elemento language-select');
+                return;
+            }
+
+            // Limpiar opciones existentes excepto la primera (Automático)
+            const autoOption = languageSelect.querySelector('option[value="auto"]');
+            languageSelect.innerHTML = '';
+            if (autoOption) {
+                languageSelect.appendChild(autoOption);
+            } else {
+                // Crear opción automático si no existe
+                const autoOpt = document.createElement('option');
+                autoOpt.value = 'auto';
+                autoOpt.textContent = 'Automático (Sistema)';
+                languageSelect.appendChild(autoOpt);
+            }
+
+            // Obtener idiomas disponibles
+            const availableLanguages = localization.getAvailableLanguages();
+            console.log('Idiomas disponibles:', availableLanguages);
+
+            // Añadir opciones de idioma
+            Object.entries(availableLanguages).forEach(([code, info]) => {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = `${info.nativeName} (${info.name})`;
+                languageSelect.appendChild(option);
+            });
+
+            // Establecer idioma actual
+            const currentLanguage = localization.getCurrentLanguage();
+            const configClient = await this.db.readData('configClient');
+            
+            if (configClient && configClient.language) {
+                languageSelect.value = configClient.language;
+            } else if (currentLanguage === localization.systemLanguage) {
+                languageSelect.value = 'auto';
+            } else {
+                languageSelect.value = currentLanguage;
+            }
+
+            // Event listener para cambios de idioma
+            languageSelect.addEventListener('change', async (e) => {
+                const selectedLanguage = e.target.value;
+                console.log(`Idioma seleccionado: ${selectedLanguage}`);
+                
+                try {
+                    let targetLanguage = selectedLanguage;
+                    
+                    // Si es automático, usar el idioma del sistema
+                    if (selectedLanguage === 'auto') {
+                        targetLanguage = localization.systemLanguage;
+                    }
+                    
+                    // Cambiar idioma
+                    await localization.changeLanguage(targetLanguage);
+                    
+                    // Guardar configuración
+                    let configClient = await this.db.readData('configClient');
+                    if (!configClient) {
+                        configClient = {};
+                    }
+                    configClient.language = selectedLanguage;
+                    await this.db.updateData('configClient', configClient);
+                    
+                    // Mostrar notificación
+                    const notificationPopup = new popup();
+                    notificationPopup.openPopup({
+                        title: 'Idioma cambiado',
+                        content: `El idioma se ha cambiado a ${availableLanguages[targetLanguage]?.nativeName || targetLanguage}. Algunos cambios pueden requerir reiniciar la aplicación.`,
+                        color: 'var(--color)',
+                        options: true
+                    });
+                    
+                } catch (error) {
+                    console.error('Error cambiando idioma:', error);
+                    
+                    const errorPopup = new popup();
+                    errorPopup.openPopup({
+                        title: 'Error',
+                        content: `Error al cambiar idioma: ${error.message}`,
+                        color: 'red',
+                        options: true
+                    });
+                    
+                    // Revertir selección
+                    languageSelect.value = localization.getCurrentLanguage();
+                }
+            });
+            
+            console.log('Selector de idioma inicializado correctamente');
+            
+        } catch (error) {
+            console.error('Error inicializando selector de idioma:', error);
+        }
+    }
 }
 export default Settings;

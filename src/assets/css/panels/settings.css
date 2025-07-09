@@ -1269,4 +1269,46 @@ body.performance-mode .data-management-btn {
         font-size: 12px;
         color: #ccc;
     }
-    
+
+/* Language selection styles */
+.language-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.language-selection label {
+    font-size: 0.9rem;
+    color: var(--color);
+    margin-bottom: 0.5rem;
+}
+
+.language-dropdown {
+    padding: 0.5rem;
+    border: 1px solid var(--box-button);
+    border-radius: 5px;
+    background-color: var(--background-color);
+    color: var(--color);
+    font-size: 0.9rem;
+    min-width: 200px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.language-dropdown:hover {
+    border-color: var(--box-button-hover);
+    box-shadow: 0px 2px 8px rgba(from var(--box-button) r g b / 0.3);
+}
+
+.language-dropdown:focus {
+    border-color: var(--box-button-hover);
+    box-shadow: 0px 0px 10px rgba(from var(--box-button) r g b / 0.5);
+}
+
+.language-dropdown option {
+    background-color: var(--background-color);
+    color: var(--color);
+    padding: 0.25rem;
+}

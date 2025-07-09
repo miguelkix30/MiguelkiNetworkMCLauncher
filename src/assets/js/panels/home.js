@@ -23,6 +23,7 @@ import {
 	removeUserFromQueue,
 	captureAndSetVideoFrame,
 	getExecutionKey,
+	localization,
 } from "../utils.js";
 import {
 	getHWID,
@@ -113,6 +114,13 @@ class Home {
 		this.addPlayerTooltip();
 		this.addInterfaceTooltips();
 		this.initializeCloseGameButton();
+		
+		// Aplicar traducciones al cargar el panel
+		setTimeout(() => {
+			if (localization && localization.initialized) {
+				localization.forceApplyTranslations();
+			}
+		}, 100);
 	}
 
 	async showstore() {
@@ -122,20 +130,20 @@ class Home {
 			try {
 				const response = await fetch(pkg.store_url).catch((err) =>
 					console.error(
-						"Parece que la tienda no se encuentra online. Ocultando sección de tienda."
+						localization.t('home.store_offline')
 					)
 				);
 				if (response.ok) {
 					document.querySelector(".news-blockshop").style.display = "block";
 				} else {
 					console.error(
-						"Parece que la tienda no se encuentra online. Ocultando sección de tienda..."
+						localization.t('home.store_offline')
 					);
 					document.querySelector(".news-blockshop").style.display = "none";
 				}
 			} catch (error) {
 				console.error(
-					"Parece que la tienda no se encuentra online. Ocultando sección de tienda..."
+					localization.t('home.store_offline')
 				);
 				document.querySelector(".news-blockshop").style.display = "none";
 			}
@@ -145,7 +153,7 @@ class Home {
 		} else {
 			document.querySelector(".news-blockshop").style.display = "none";
 			console.log(
-				"La tienda se encuentra desactivada. Ocultando sección de tienda..."
+				localization.t('home.store_disabled')
 			);
 		}
 	}
@@ -178,26 +186,24 @@ class Home {
 			if (fetchError == false) {
 				if (LogBan == false) {
 					console.error(
-						"Se ha detectado un bloqueo de HWID. No se puede iniciar ninguna instancia."
+						localization.t('home.hwid_blocked_error')
 					);
 					LogBan = true;
 				}
-				notificationTitle.innerHTML = "¡Atención!";
-				notificationContent.innerHTML =
-					"Se ha detectado un bloqueo de dispositivo. No podrá iniciar ninguna instancia hasta que su dispositivo sea desbloqueado.";
+				notificationTitle.innerHTML = localization.t('home.hwid_blocked_title');
+				notificationContent.innerHTML = localization.t('home.hwid_blocked');
 				notification.style.background = colorRed;
 				notificationIcon.src = "assets/images/notification/error.png";
 				await this.showNotification();
 			} else {
 				if (LogBan == false) {
 					console.error(
-						"El anticheat no ha podido verificar la integridad de tu dispositivo y por lo tanto no se podrá jugar a ninguna instancia."
+						localization.t('home.anticheat_verify_error')
 					);
 					LogBan = true;
 				}
-				notificationTitle.innerHTML = "¡Atención!";
-				notificationContent.innerHTML =
-					"No se ha podido conectar con el Anticheat de Miguelki Network y por lo tanto no se podrá jugar a ninguna instancia.";
+				notificationTitle.innerHTML = localization.t('home.hwid_blocked_title');
+				notificationContent.innerHTML = localization.t('home.anticheat_error');
 				notification.style.background = colorRed;
 				notificationIcon.src = "assets/images/notification/error.png";
 				await this.showNotification();
@@ -436,8 +442,8 @@ class Home {
 		if (!instancesList || instancesList.length === 0) {
 			instancesGrid.innerHTML = `
                 <div class="no-instances-message">
-                    <p>No hay instancias disponibles</p>
-                    <p>Contacta con un administrador o usa el botón + para agregar una instancia con código.</p>
+                    <p>${localization.t('home.no_instances')}</p>
+                    <p>${localization.t('home.no_instances_contact')}</p>
                 </div>
             `;
 			if (configClient.instance_selct) {
@@ -521,19 +527,17 @@ class Home {
 					if (fetchError == false) {
 						let popupError = new popup();
 						popupError.openPopup({
-							title: "Error",
-							content:
-								"No puedes seleccionar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Miguelki Network.",
-							color: "red",
+							title: localization.t('launcher.error'),
+							content: localization.t('home.hwid_blocked') + "<br><br>" + localization.t('home.hwid_blocked_ticket'),
+						 color: "red",
 							options: true,
 						});
 						return;
 					} else {
 						let popupError = new popup();
 						popupError.openPopup({
-							title: "Error",
-							content:
-								"No se ha podido conectar con el Anticheat de Miguelki Network y por lo tanto no se podrá seleccionar ninguna instancia.",
+							title: localization.t('launcher.error'),
+							content: localization.t('home.anticheat_error'),
 							color: "red",
 							options: true,
 						});
@@ -550,8 +554,8 @@ class Home {
 				if (!refreshedInstancesList || refreshedInstancesList.length === 0) {
 					instancesGrid.innerHTML = `
                         <div class="no-instances-message">
-                            <p>No hay instancias disponibles</p>
-                            <p>Contacta con un administrador o usa el botón + para agregar una instancia con código.</p>
+                            <p>${localization.t('home.no_instances')}</p>
+                            <p>${localization.t('home.no_instances_contact')}</p>
                         </div>
                     `;
 				} else {
@@ -582,8 +586,8 @@ class Home {
 					if (visibleInstanceCount === 0) {
 						instancesGrid.innerHTML = `
                             <div class="no-instances-message">
-                                <p>No hay instancias disponibles para tu cuenta</p>
-                                <p>Contacta con un administrador o usa el botón + para agregar una instancia con código.</p>
+                                <p>${localization.t('home.no_instances_account')}</p>
+                                <p>${localization.t('home.no_instances_contact')}</p>
                             </div>
                         `;
 					} else {
@@ -808,9 +812,8 @@ class Home {
 				this.enablePlayButton();
 				let popupError = new popup();
 				popupError.openPopup({
-					title: "Error",
-					content:
-						"No puedes iniciar ninguna instancia debido al bloqueo de dispositivo presente.<br><br>Si crees que esto es un error, abre ticket en el discord de Miguelki Network.",
+					title: localization.t('launcher.error'),
+					content: localization.t('home.hwid_blocked') + "<br><br>" + localization.t('home.hwid_blocked_ticket'),
 					color: "red",
 					options: true,
 				});
@@ -819,9 +822,8 @@ class Home {
 				this.enablePlayButton();
 				let popupError = new popup();
 				popupError.openPopup({
-					title: "Error",
-					content:
-						"No se ha podido conectar con el Anticheat de Miguelki Network y por lo tanto no se podrá jugar a ninguna instancia.",
+					title: localization.t('launcher.error'),
+					content: localization.t('home.anticheat_error'),
 					color: "red",
 					options: true,
 				});
@@ -838,12 +840,12 @@ class Home {
 			this.enablePlayButton();
 			let popupError = new popup();
 			popupError.openDialog({
-				title: "Instancia No Encontrada",
-				content: `La instancia "${configClient.instance_selct}" ya no existe en el servidor.
-<br>¿Quieres actualizar la lista de instancias disponibles?`,
+				title: localization.t('home.instance_not_found'),
+				content: localization.t('home.instance_not_found_message', {instance: configClient.instance_selct}) + 
+				'<br>' + localization.t('home.instance_update_list'),
 				options: true,
-				acceptText: "Actualizar Lista",
-				cancelText: "Seleccionar Otra",
+				acceptText: localization.t('home.update_list'),
+				cancelText: localization.t('home.select_other'),
 				callback: async (result) => {
 					if (result === 'accept') {
 						// Recargar lista de instancias
@@ -853,8 +855,8 @@ class Home {
 							console.error("Error al actualizar lista de instancias:", error);
 							let errorPopup = new popup();
 							errorPopup.openPopup({
-								title: "Error de Actualización",
-								content: `No se pudo actualizar la lista de instancias:
+								title: localization.t('home.update_error'),
+								content: localization.t('home.update_error_message') + `:
 ${error.message}`,
 								color: "red",
 								options: true,
@@ -881,14 +883,14 @@ ${error.message}`,
 			let popupError = new popup();
 			if (options.maintenancemsg == "") {
 				popupError.openPopup({
-					title: "Error al iniciar el cliente",
-					content: "El cliente no se encuentra disponible.",
+					title: localization.t('home.game_launch_error'),
+					content: localization.t('home.instance_maintenance'),
 					color: "red",
 					options: true,
 				});
 			} else {
 				popupError.openPopup({
-					title: "Error al iniciar el cliente",
+					title: localization.t('home.game_launch_error'),
 					content: options.maintenancemsg,
 					color: "red",
 					options: true,
@@ -902,8 +904,8 @@ ${error.message}`,
 			this.enablePlayButton();
 			let popupError = new popup();
 			popupError.openPopup({
-				title: "Error",
-				content: "No tienes permiso para iniciar esta instancia.",
+				title: localization.t('launcher.error'),
+				content: localization.t('home.instance_no_permission'),
 				color: "red",
 				options: true,
 			});
@@ -938,9 +940,8 @@ ${error.message}`,
 
 			let popupError = new popup();
 			popupError.openPopup({
-				title: "Error en la cola",
-				content:
-					"Ha ocurrido un error al conectar con el sistema de cola. Por favor, inténtalo de nuevo más tarde.",
+				title: localization.t('home.queue_error'),
+				content: localization.t('home.queue_error_message'),
 				color: "red",
 				options: true,
 			});
@@ -970,7 +971,7 @@ ${error.message}`,
 		const ignoredFiles = [...options.ignored];
 
 		try {
-			infoStarting.innerHTML = `Descargando librerias extra...`;
+			infoStarting.innerHTML = localization.t('home.downloading_libraries');
 			this.setProgressBarIndeterminate();
 			const loaderType = options.loadder.loadder_type;
 			const minecraftVersion = options.loadder.minecraft_version;
@@ -1010,7 +1011,7 @@ ${error.message}`,
 			console.error("Error al instalar las librerias extra:", error);
 		}
 
-		infoStarting.innerHTML = `Conectando...`;
+		infoStarting.innerHTML = localization.t('home.connecting');
 		this.setProgressBarIndeterminate();
 
 		console.log("Obteniendo clave de ejecución...");
@@ -1075,7 +1076,7 @@ ${error.message}`,
 
 		try {
 			console.log(`Iniciando descarga de assets para la instancia: ${options.name}`);
-			infoStarting.innerHTML = `Descargando assets...`;
+			infoStarting.innerHTML = localization.t('home.downloading_assets');
 			this.setProgressBarDeterminate(0, 100);
 
 			// Carpeta de destino para los assets - directamente en la instancia
@@ -1130,10 +1131,10 @@ ${error.message}`,
 				if (infoStarting) {
 					if (safeProgress <= 50) {
 						// Fase de verificación (0-50%)
-						infoStarting.innerHTML = `Verificando assets... ${Math.round(safeProgress)}% (${safeProcessed}/${safeTotal})`;
+						infoStarting.innerHTML = `${localization.t('home.verifying_assets')} ${Math.round(safeProgress)}% (${safeProcessed}/${safeTotal})`;
 					} else {
 						// Fase de descarga (50-100%)
-						infoStarting.innerHTML = `Descargando assets... ${Math.round(safeProgress)}% (${safeProcessed}/${safeTotal})${sizeText}`;
+						infoStarting.innerHTML = `${localization.t('home.downloading_assets')} ${Math.round(safeProgress)}% (${safeProcessed}/${safeTotal})${sizeText}`;
 					}
 				}
 			};
@@ -1141,7 +1142,7 @@ ${error.message}`,
 			// CallbackProgress event received para actualizar el estado - SOLO para mensajes de estado sin progreso
 			const statusCallback = (status) => {
 				// Validar que el status sea una cadena válida
-				const safeStatus = (typeof status === 'string' && status.trim()) ? status.trim() : 'Procesando...';
+				const safeStatus = (typeof status === 'string' && status.trim()) ? status.trim() : localization.t('messages.processing');
 				
 				// SOLO actualizar si NO estamos mostrando progreso o si es un mensaje de finalización
 				if (infoStarting && (!showingProgress || safeStatus.includes('completada') || safeStatus.includes('Limpiando'))) {
@@ -1165,7 +1166,7 @@ ${error.message}`,
 			console.log('✅ downloadAssets function completed successfully');
 
 			console.log(`Descarga de assets completada para la instancia: ${options.name}`);
-			infoStarting.innerHTML = `Assets descargados correctamente`;
+			infoStarting.innerHTML = localization.t('home.assets_download_success');
 			
 			// Mostrar progreso completo por un momento
 			this.setProgressBarDeterminate(100, 100);
@@ -1250,7 +1251,7 @@ ${error.message}`,
 			}`;
 			
 			// Mostrar progreso de configuración
-			infoStarting.innerHTML = `Configurando ${options.loadder.loadder_type}...`;
+			infoStarting.innerHTML = `${localization.t('home.configuring_loader')} ${options.loadder.loadder_type}...`;
 			this.setProgressBarDeterminate(0, 100);
 			
 			const loaderResult = await ipcRenderer.invoke('get-launcher-config', {
@@ -1438,7 +1439,7 @@ ${error.message}`,
 		console.log("☕ Verificando compatibilidad de Java...");
 		console.log(`🎮 Versión de Minecraft: ${options.loadder.minecraft_version}`);
 		console.log(`📍 Java configurado actualmente: ${javaPath}`);
-		infoStarting.innerHTML = `Verificando Java para Minecraft ${options.loadder.minecraft_version}...`;
+		infoStarting.innerHTML = `${localization.t('home.java_checking_for_mc')} ${options.loadder.minecraft_version}...`;
 		this.setProgressBarIndeterminate();
 
 		try {
@@ -1492,7 +1493,7 @@ ${error.message}`,
 			// Si se descargó una nueva versión de Java, actualizar la configuración para uso futuro
 			if (compatibleJavaPath !== configClient.java_config.java_path && 
 				(configClient.java_config.java_path === null || 
-				 configClient.java_config.java_path === 'Utilice la versión de java suministrada con el launcher')) {
+				 configClient.java_config.java_path === 'launcher')) {
 				
 				// Solo actualizar si el usuario no había configurado una ruta personalizada
 				console.log(`📝 Actualizando configuración de Java con nueva ruta automática`);
@@ -1617,7 +1618,7 @@ ${error.message}`,
 				// Directorio donde están los archivos del Minecraft jar y version json
 				directory: launchConfig.directory || path.join(rootPath, 'versions', options.loadder.minecraft_version),
 				// Directorio de nativos
-				natives: path.join(rootPath, 'natives'),
+				natives: path.join(rootPath, 'bin', 'natives'),
 				// Directorio de assets
 				assetRoot: path.join(rootPath, 'assets'),
 				// Directorio de librerías
@@ -1627,27 +1628,7 @@ ${error.message}`,
 				detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
 			}
 		};
-		
-		// Log final de configuración para debug
-		console.log(`🎯 Configuración final del launcher:`, {
-			root: opt.root,
-			gameDirectory: opt.overrides?.gameDirectory,
-			loaderType: opt.loader?.type,
-			loaderEnabled: opt.loader?.enable,
-			hasGameDirectory: !!launchConfig.gameDirectory,
-			hasForgeConfig: !!launchConfig.forge,
-			instanceDirectory: instanceGameDirectory,
-			overridesKeys: Object.keys(opt.overrides || {}),
-			modsDirectory: path.join(instanceGameDirectory, 'mods'),
-			modsDirectoryExists: fs.existsSync(path.join(instanceGameDirectory, 'mods')),
-			// Añadir información de Java
-			javaPath: opt.javaPath,
-			java: opt.java,
-			javaPathExists: fs.existsSync(opt.javaPath || ''),
-			javaPathType: typeof opt.javaPath,
-			originalJavaConfig: configClient.java_config.java_path,
-			downloadedJavaPath: javaPath
-		});
+	
 		
 		// Verificar que el directorio de mods existe y tiene permisos de escritura
 		const modsDir = path.join(instanceGameDirectory, 'mods');
@@ -1694,14 +1675,14 @@ ${error.message}`,
 		
 		
 		
-		infoStarting.innerHTML = `Verificando archivos...`;
+		infoStarting.innerHTML = localization.t('home.verifying_files');
 		//barra de carga indeterminada
 		this.setProgressBarIndeterminate();
 
 		launcher.on("extract", (extract) => {
 			console.log('Extract event received:', extract);
 			ipcRenderer.send("main-window-progress-load");
-			infoStarting.innerHTML = `Extrayendo archivos...`;
+			infoStarting.innerHTML = localization.t('home.extracting_files');
 		});
 		// emitir todos los conteniddos de el evento progress
 		// no solo el porcentaje
@@ -1712,7 +1693,7 @@ ${error.message}`,
 				const safeTotal = (typeof total === 'number' && isFinite(total)) ? Math.max(1, total) : 1;
 				const safePercentage = safeTotal > 0 ? ((safeTask / safeTotal) * 100).toFixed(0) : '0';
 				
-				infoStarting.innerHTML = `Descargando asstes... ${safePercentage}% (${safeTask}/${safeTotal})`;
+				infoStarting.innerHTML = `${localization.t('home.downloading_assets')} ${safePercentage}% (${safeTask}/${safeTotal})`;
 				ipcRenderer.send("main-window-progress", { progress: safeTask, size: safeTotal });
 				this.setProgressBarDeterminate(safeTask, safeTotal);
 			} else if (type === "assets-copy") {
@@ -1720,7 +1701,7 @@ ${error.message}`,
 				const safeTask = (typeof task === 'number' && isFinite(task)) ? Math.max(0, task) : 0;
 				const safeTotal = (typeof total === 'number' && isFinite(total)) ? Math.max(1, total) : 1;
 				const safePercentage = safeTotal > 0 ? ((safeTask / safeTotal) * 100).toFixed(0) : '0';
-				infoStarting.innerHTML = `Copiando assets... ${safePercentage}% (${safeTask}/${safeTotal})`;
+				infoStarting.innerHTML = `${localization.t('home.copying_assets')} ${safePercentage}% (${safeTask}/${safeTotal})`;
 				ipcRenderer.send("main-window-progress", { progress: safeTask, size: safeTotal });
 				this.setProgressBarDeterminate(safeTask, safeTotal);
 			} else if (type === "natives") {
@@ -1728,11 +1709,11 @@ ${error.message}`,
 				const safeTask = (typeof task === 'number' && isFinite(task)) ? Math.max(0, task) : 0;
 				const safeTotal = (typeof total === 'number' && isFinite(total)) ? Math.max(1, total) : 1;
 				const safePercentage = safeTotal > 0 ? ((safeTask / safeTotal) * 100).toFixed(0) : '0';
-				infoStarting.innerHTML = `Descargando nativos... ${safePercentage}% (${safeTask}/${safeTotal})`;
+				infoStarting.innerHTML = `${localization.t('home.downloading_natives')} ${safePercentage}% (${safeTask}/${safeTotal})`;
 				ipcRenderer.send("main-window-progress", { progress: safeTask, size: safeTotal });
 				this.setProgressBarDeterminate(safeTask, safeTotal);
 			} else {
-				infoStarting.innerHTML = `Verificando...`;
+				infoStarting.innerHTML = localization.t('home.verifying');
 				ipcRenderer.send("main-window-progress-load");
 				//barra de carga indeterminada
 				this.setProgressBarIndeterminate();
@@ -1742,23 +1723,23 @@ ${error.message}`,
 
 		launcher.on("download_status", (name, type, current, total) => {
 			if (type === "version-jar") {
-				infoStarting.innerHTML = `Descargando versión... ${name} (${current}/${total})`;
+				infoStarting.innerHTML = `${localization.t('home.downloading_mc_version')} ${name}... (${current}/${total})`;
 				ipcRenderer.send("main-window-progress", { progress: current, size: total });
 				this.setProgressBarDeterminate(current, total);
 			} else if (type === "asset-json") {
-				infoStarting.innerHTML = `Descargando JSON de assets... ${name} (${current}/${total})`;
+				infoStarting.innerHTML = `${localization.t('home.downloading_assets_json')} ${name}... (${current}/${total})`;
 				ipcRenderer.send("main-window-progress", { progress: current, size: total });
 				this.setProgressBarDeterminate(current, total);
 			} else if (type === "assets") {
-				infoStarting.innerHTML = `Descargando assets nativos... ${name} (${current}/${total})`;
+				infoStarting.innerHTML = `${localization.t('home.downloading_natives')} ${name} (${current}/${total})`;
 				ipcRenderer.send("main-window-progress", { progress: current, size: total });
 				this.setProgressBarDeterminate(current, total);
 			} else if (type === "log4j") {
-				infoStarting.innerHTML = `Descargando Log4j... ${name} (${current}/${total})`;
+				infoStarting.innerHTML = `${localization.t('home.downloading_log4j')} ${name} (${current}/${total})`;
 				ipcRenderer.send("main-window-progress", { progress: current, size: total });
 				this.setProgressBarDeterminate(current, total);
 			} else {
-				infoStarting.innerHTML = `Descargando... ${name} (${current}/${total})`;
+				infoStarting.innerHTML = `${localization.t('downloading')} ${name} (${current}/${total})`;
 				ipcRenderer.send("main-window-progress", { progress: current, size: total });
 				this.setProgressBarDeterminate(current, total);
 			}
@@ -1770,7 +1751,7 @@ ${error.message}`,
 			const safeSize = (typeof size === 'number' && isFinite(size)) ? Math.max(1, size) : 1;
 			const safePercentage = safeSize > 0 ? Math.min(100, ((safeProgress / safeSize) * 100)) : 0;
 			
-			infoStarting.innerHTML = `Verificando...`;
+			infoStarting.innerHTML = localization.t('home.verifying');
 			ipcRenderer.send("main-window-progress", { progress: safeProgress, size: safeSize });
 			this.setProgressBarDeterminate(safeProgress, safeSize);
 		});
@@ -1782,7 +1763,7 @@ ${error.message}`,
 				if (rpcActive) {
 					username = await getUsername();
 					RPC.setActivity({
-						state: `Jugando a ${configClient.instance_selct}`,
+						state: `${localization.t('rpc.playing')} ${configClient.instance_selct}`,
 						startTimestamp: startingTime,
 						largeImageKey: "icon",
 						smallImageKey: `https://minotar.net/helm/${username}/512.png`,
@@ -1838,7 +1819,7 @@ ${error.message}`,
 			if (!modsApplied) {
 				modsApplied = true;
 				try {
-					infoStarting.innerHTML = "Aplicando mods opcionales...";
+					infoStarting.innerHTML = localization.t('home.applying_optional_mods');
 					await this.applyOptionalMods(options.name);
 					console.log(`Mods opcionales aplicados para: ${options.name}`);
 				} catch (error) {
@@ -1886,13 +1867,13 @@ ${error.message}`,
 			}
 
 			ipcRenderer.send("main-window-progress-load");
-			infoStarting.innerHTML = `Jugando...`;
+			infoStarting.innerHTML = localization.t('home.playing');
 		});
 
 		launcher.on("patch", (patch) => {
 			console.log(patch);
 			ipcRenderer.send("main-window-progress-load");
-			infoStarting.innerHTML = `Parcheando...`;
+			infoStarting.innerHTML = localization.t('home.patching');
 		});
 
 		launcher.on("close", async (code) => {
@@ -1907,7 +1888,7 @@ ${error.message}`,
 			playInstanceBTN.style.display = "flex";
 			instanceSelectBTN.disabled = false;
 			instanceSelectBTN.classList.remove("disabled");
-			infoStarting.innerHTML = `Cerrando...`;
+			infoStarting.innerHTML = localization.t('home.closing');
 			console.log("Close");
 
 			if (closeGameButton) {
@@ -2045,7 +2026,7 @@ ${error.message}`,
 
 			// Resetear notificación y estado
 			this.notification();
-			infoStarting.innerHTML = `Verificando...`;
+			infoStarting.innerHTML = localization.t('home.verifying');
 		});
 		
 		} catch (error) {
@@ -2227,11 +2208,11 @@ ${error.message}`,
 								.querySelector(".info-starting-game")
 								.removeChild(cancelButton);
 						}
-						infoStarting.innerHTML = `Preparando lanzamiento...`;
+						infoStarting.innerHTML = localization.t('home.preparing_launch');
 						resolve({ cancelled: false });
 						return;
 					} else if (data.status === "on_queue") {
-						infoStarting.innerHTML = `En cola, posición: ${data.position} / ${data.total_in_queue}`;
+						infoStarting.innerHTML = `${localization.t('home.queue_position')}: ${data.position} / ${data.total_in_queue}`;
 
 						if (!cancelled) {
 							setTimeout(checkStatus, 30000);
@@ -2697,12 +2678,12 @@ ${error.message}`,
 
 		const addInstanceButton = document.querySelector(".add-instance");
 		if (addInstanceButton) {
-			this.addTooltipToElement(addInstanceButton, "Añadir instancia");
+			this.addTooltipToElement(addInstanceButton, localization.t('tooltips.add_instance'));
 		}
 
 		const instanceSelectButton = document.querySelector(".instance-select");
 		if (instanceSelectButton) {
-			this.addTooltipToElement(instanceSelectButton, "Seleccionar instancia");
+			this.addTooltipToElement(instanceSelectButton, localization.t('tooltips.select_instance'));
 		}
 
 		const musicButton = document.querySelector(".action-button:nth-child(1)");
@@ -2711,21 +2692,21 @@ ${error.message}`,
 				musicButton
 					.querySelector(".music-btn")
 					.classList.contains("icon-speaker-on")
-					? "Silenciar música"
-					: "Activar música"
+					? localization.t('tooltips.mute_music')
+					: localization.t('tooltips.play_music')
 			);
 		}
 
 		const modsButton = document.querySelector(".action-button:nth-child(2)");
 		if (modsButton) {
-			this.addTooltipToElement(modsButton, "Gestionar mods");
+			this.addTooltipToElement(modsButton, localization.t('tooltips.manage_mods'));
 		}
 
 		const settingsButton = document.querySelector(
 			".action-button:nth-child(3)"
 		);
 		if (settingsButton) {
-			this.addTooltipToElement(settingsButton, "Configuración");
+			this.addTooltipToElement(settingsButton, localization.t('tooltips.settings'));
 		}
 	}
 
@@ -2771,7 +2752,7 @@ ${error.message}`,
 
 			const closeGameButton = document.createElement("div");
 			closeGameButton.className = "force-close-button";
-			closeGameButton.innerHTML = "Cerrar Juego";
+			closeGameButton.innerHTML = localization.t('home.close_game');
 			closeGameButton.style.display = "none";
 
 			closeGameButton.addEventListener("click", () => this.closeRunningGame());
@@ -2789,9 +2770,9 @@ ${error.message}`,
 		try {
 			const closeGamePopup = new popup();
 			closeGamePopup.openDialog({
-				title: "Cerrar juego",
+				title: localization.t('home.close_game'),
 				content:
-					"¿Estás seguro de que quieres cerrar el juego actual? Se perderá todo progreso no guardado.",
+					localization.t('home.close_game_confirmation'),
 				options: true,
 				callback: async (result) => {
 					if (result === "cancel") {
@@ -2801,8 +2782,8 @@ ${error.message}`,
 					try {
 						console.log("Intentando cerrar el proceso de Minecraft...");
 						closeGamePopup.openPopup({
-							title: "Cerrando juego...",
-							content: "Por favor, espera mientras se cierra el juego.",
+							title: localization.t('home.closing'),
+							content: localization.t('home.closing_game_info'),
 							color: "var(--color)",
 							options: false,
 						});
@@ -2814,8 +2795,8 @@ ${error.message}`,
 
 							const successPopup = new popup();
 							successPopup.openPopup({
-								title: "Juego cerrado",
-								content: "El juego se ha cerrado correctamente.",
+								title: localization.t('home.game_closed'),
+								content: localization.t('home.game_closed_info'),
 								color: "var(--color)",
 								options: true,
 							});
@@ -2826,7 +2807,7 @@ ${error.message}`,
 							errorPopup.openPopup({
 								title: "Error",
 								content:
-									"No se pudo cerrar el juego. Por favor, ciérralo manualmente.",
+									localization.t('home.game_closed_error'),
 								color: "red",
 								options: true,
 							});
@@ -2836,9 +2817,9 @@ ${error.message}`,
 
 						const errorPopup = new popup();
 						errorPopup.openPopup({
-							title: "Error",
+							title: localization.t('launcher.error'),
 							content:
-								"No se pudo cerrar el juego. Intenta cerrarlo manualmente.",
+								localization.t('home.game_closed_error'),
 						 color: "red",
 							options: true,
 						});
@@ -2847,102 +2828,6 @@ ${error.message}`,
 			});
 		} catch (error) {
 			console.error("Error al intentar cerrar el juego:", error);
-		}
-	}
-
-	// Función para limpiar caché del sistema
-	async cleanSystemCache() {
-		try {
-			console.log("Iniciando limpieza de caché...");
-			
-			// Mostrar popup de confirmación
-			let confirmPopup = new popup();
-			const confirmed = await new Promise(resolve => {
-				confirmPopup.openDialog({
-					title: "Limpiar Caché del Sistema",
-					content: `Esta acción eliminará:
-- Caché de Electron
-- Caché de GPU
-- Archivos temporales del launcher
-
-Esto puede mejorar el rendimiento pero requerirá descargar algunos archivos nuevamente.
-
-¿Continuar?`,
-					options: true,
-					acceptText: "Limpiar",
-					cancelText: "Cancelar",
-					callback: resolve
-				});
-			});
-
-			if (confirmed !== 'accept') {
-				return { success: false, cancelled: true };
-			}
-
-			// Mostrar progreso
-			let progressPopup = new popup();
-			progressPopup.openPopup({
-				title: "Limpiando Caché",
-				content: "Eliminando archivos temporales...",
-				color: "var(--color)",
-				background: false,
-			});
-
-			// Ejecutar limpieza
-			const cleanupResult = await ipcRenderer.invoke('cleanup-cache', {
-				cleanLogs: true
-			});
-
-			progressPopup.closePopup();
-
-			if (!cleanupResult.success) {
-				throw new Error(cleanupResult.error);
-			}
-
-			const results = cleanupResult.results;
-			const totalSizeMB = (results.totalSize / 1024 / 1024).toFixed(1);
-			
-			let report = `LIMPIEZA COMPLETADA
-
-Archivos eliminados: ${results.cleaned.length}
-Espacio liberado: ${totalSizeMB} MB
-
-DETALLES:`;
-
-			results.cleaned.forEach(item => {
-				const sizeMB = (item.size / 1024 / 1024).toFixed(1);
-				report += `\n- ${path.basename(item.path)}: ${sizeMB} MB`;
-			});
-
-			if (results.errors.length > 0) {
-				report += `\n\nERRORES:`;
-				results.errors.forEach(error => {
-					report += `\n- ${path.basename(error.path)}: ${error.error}`;
-				});
-			}
-
-			let resultsPopup = new popup();
-			resultsPopup.openPopup({
-				title: "Limpieza Completada",
-				content: report,
-				color: "green",
-				options: true,
-			});
-
-			return { success: true, results };
-
-		} catch (error) {
-			console.error("Error en limpieza de caché:", error);
-			
-			let errorPopup = new popup();
-			errorPopup.openPopup({
-				title: "Error en Limpieza",
-				content: `No se pudo completar la limpieza de caché:\n\n${error.message}`,
-				color: "red",
-				options: true,
-			});
-
-			return { success: false, error: error.message };
 		}
 	}
 

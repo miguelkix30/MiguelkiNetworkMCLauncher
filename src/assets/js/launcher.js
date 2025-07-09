@@ -31,7 +31,8 @@ import {
   showTermsAndConditions,
   setBackgroundMusic,
   setPerformanceMode,
-  patchLoader
+  patchLoader,
+  localization
 } from "./utils.js";
 import {
   getHWID,
@@ -65,6 +66,14 @@ class Launcher {
     
     this.shortcut();
     this.db = new database();
+    
+    // Inicializar sistema de localización
+    console.log("Inicializando sistema de localización...");
+    try {
+      await localization.initialize(this.db);
+    } catch (error) {
+      console.error("Error inicializando sistema de localización:", error);
+    }
     
     // Consolidar archivos de almacenamiento que puedan estar en múltiples ubicaciones
     console.log("Consolidando archivos de almacenamiento...");
@@ -689,6 +698,7 @@ class Launcher {
             terms_accepted: false,
             termsAcceptedDate: null,
             discord_token: null,
+            language: 'auto',
             java_config: {
               java_path: null,
               java_memory: {
@@ -933,9 +943,24 @@ class Launcher {
     if (!configClient) {
       console.log("No existe configuración. Se utilizará la configuración inicial.");
       return false;
-    } else if (configClient.terms_accepted === undefined) {
-      configClient.terms_accepted = false;
-      await this.db.updateData("configClient", configClient);
+    } else {
+      let needsUpdate = false;
+      
+      if (configClient.terms_accepted === undefined) {
+        configClient.terms_accepted = false;
+        needsUpdate = true;
+      }
+      
+      // Añadir campo de idioma si no existe
+      if (!('language' in configClient)) {
+        configClient.language = 'auto';
+        needsUpdate = true;
+        console.log("Campo 'language' añadido a configClient");
+      }
+      
+      if (needsUpdate) {
+        await this.db.updateData("configClient", configClient);
+      }
     }
     return true;
   }
@@ -1275,7 +1300,7 @@ class Launcher {
             <div class="add-profile">
                 <div class="icon-account-add"></div>
             </div>
-            <div class="add-text-profile">Añadir una cuenta</div>
+            <div class="add-text-profile" data-translate="accounts.add_account">${localization.t('accounts.add_account')}</div>
         `;
         
         // Apply button style
@@ -1976,6 +2001,12 @@ class Launcher {
         !('performance_mode' in config.launcher_config)) {
       console.error("Estructura incorrecta en launcher_config");
       return false;
+    }
+
+    // Verificar que existe el campo de idioma (puede ser undefined)
+    if (!('language' in config)) {
+      console.warn("Campo 'language' no existe en configClient, se agregará automáticamente");
+      config.language = 'auto';
     }
 
     return true;

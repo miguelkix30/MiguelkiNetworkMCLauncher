@@ -11,7 +11,8 @@ const fetch = require('node-fetch');
 const { ipcRenderer } = require('electron');
 import { 
     config,
-    appdata
+    appdata,
+    localization
 } from '../utils.js';
 import { 
     verifyFileHash,
@@ -383,9 +384,9 @@ async function downloadAndInstallJava(minecraftVersion, progressCallback = null,
         const platform = process.platform;
         const arch = process.arch;
         
-        console.log(`☕ Descargando ${requiredJava} para ${platform}-${arch}...`);
+        console.log(`☕ ${localization.t('home.downloading')} ${requiredJava} ${localization.t('misc.for')} ${platform}-${arch}...`);
         
-        if (statusCallback) statusCallback(`Descargando ${requiredJava}...`);
+        if (statusCallback) statusCallback(`${localization.t('home.downloading')} ${requiredJava}...`);
         
         // Obtener URL de descarga
         const downloadInfo = await getDownloadInfo(requiredJava, platform, arch);
@@ -407,7 +408,7 @@ async function downloadAndInstallJava(minecraftVersion, progressCallback = null,
             const compatibility = await isJavaCompatible(existingJavaPath, minecraftVersion);
             if (compatibility.compatible) {
                 console.log(`✅ Java ${requiredJava} ya está instalado y es compatible`);
-                if (statusCallback) statusCallback(`Java ${requiredJava} ya está disponible`);
+                if (statusCallback) statusCallback(`Java ${requiredJava}`);
                 return existingJavaPath;
             }
         }
@@ -429,12 +430,12 @@ async function downloadAndInstallJava(minecraftVersion, progressCallback = null,
         
         // Si es descarga dinámica y no tenemos hash, intentar obtenerlo desde la API
         if (downloadInfo.dynamic && !expectedHash) {
-            if (statusCallback) statusCallback(`Obteniendo checksum para ${requiredJava}...`);
+            if (statusCallback) statusCallback(`${localization.t('home.java_obtaining_checksum')} ${requiredJava}...`);
             expectedHash = await getChecksumFromAPI(requiredJava, platform, arch);
         }
         
         if (expectedHash) {
-            if (statusCallback) statusCallback(`Verificando integridad del archivo Java ${requiredJava}...`);
+            if (statusCallback) statusCallback(`${localization.t('home.java_integrity_check')} ${requiredJava}...`);
             
             const hashValid = await verifyFileHash(downloadPath, expectedHash);
             if (!hashValid) {
@@ -452,7 +453,7 @@ async function downloadAndInstallJava(minecraftVersion, progressCallback = null,
         }
         
         // Extraer archivo
-        if (statusCallback) statusCallback(`Extrayendo Java ${requiredJava}...`);
+        if (statusCallback) statusCallback(`${localization.t('home.extracting')} ${requiredJava}...`);
         const extractedPath = await extractJavaArchive(downloadPath, javaVersionPath);
         
         // Limpiar archivo descargado para ahorrar espacio
@@ -474,7 +475,7 @@ async function downloadAndInstallJava(minecraftVersion, progressCallback = null,
         }
 
         console.log(`✅ Java ${requiredJava} descargado e instalado correctamente`);
-        if (statusCallback) statusCallback(`Java ${requiredJava} instalado correctamente`);
+        if (statusCallback) statusCallback(`Java ${requiredJava} ${localization.t('home.installed_successfully')}`);
         
         return javaExecutable;
         
@@ -718,7 +719,7 @@ async function getJavaForMinecraft(minecraftVersion, currentJavaPath = null, pro
         console.log(`☕ Verificando Java para Minecraft ${minecraftVersion}...`);
         
         // Si hay una ruta personalizada de Java, verificar si es la versión óptima
-        if (currentJavaPath && currentJavaPath !== 'Utilice la versión de java suministrada con el launcher') {
+        if (currentJavaPath && currentJavaPath !== 'launcher') {
             const compatibility = await isJavaCompatible(currentJavaPath, minecraftVersion);
             if (compatibility.compatible) {
                 if (compatibility.optimal) {
