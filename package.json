@@ -1,8 +1,8 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "productname": "Miguelki Network MC Launcher",
-    "version": "4.0.0",
-    "sub_version": "EXPERIMENTAL-BUILD2",
+    "version": "3.4.0",
+    "sub_version": "EXPERIMENTAL-BUILD3",
     "changelog": "Reescrito el core de ejecución del juego.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",

@@ -152,6 +152,11 @@
     overflow-x: hidden;
 }
 
+/* Permitir que el dropdown de idioma sobresalga */
+.settings-elements-box:has(.dropdown-language-select) {
+    overflow: visible;
+}
+
 .settings-elements {
     display: flex;
     flex-wrap: wrap;
@@ -843,6 +848,7 @@ input:disabled::placeholder {
 .launcher-behavior-option {
     display: flex;
     align-items: center;
+    margin: 5px;
     padding: 15px;
     background-color: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
@@ -885,8 +891,8 @@ input:disabled::placeholder {
 }
 
 .launcher-behavior-option.selected {
-    background-color: rgba(var(--box-button-rgb), 0.15);
-    box-shadow: 0 0 10px rgba(var(--color-rgb), 0.3);
+    background-color: rgba(from var(--box-button-hover) r g b / 0.75);
+    box-shadow: 0 0 10px rgba(from var(--color) r g b / 0.3);
 }
 
 .launcher-behavior-radio {
@@ -1273,6 +1279,8 @@ body.performance-mode .data-management-btn {
     align-items: center;
     gap: 0.5rem;
     width: 100%;
+    position: relative; /* Agregar posición relativa */
+    z-index: 50; /* Agregar z-index */
 }
 
 .language-selection label {
@@ -1281,30 +1289,310 @@ body.performance-mode .data-management-btn {
     margin-bottom: 0.5rem;
 }
 
-.language-dropdown {
-    padding: 0.5rem;
-    border: 1px solid var(--box-button);
-    border-radius: 5px;
-    background-color: var(--background-color);
-    color: var(--color);
-    font-size: 0.9rem;
-    min-width: 200px;
+/* Selector de idioma estilo botón */
+.language-selection {
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+}
+
+.language-select-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--box-button) 0%, var(--box-button-hover) 100%);
+    color: white;
+    margin: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     cursor: pointer;
-    transition: all 0.2s ease;
+    font-size: 16px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
 }
 
-.language-dropdown:hover {
-    border-color: var(--box-button-hover);
-    box-shadow: 0px 2px 8px rgba(from var(--box-button) r g b / 0.3);
+.language-select-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
 }
 
-.language-dropdown:focus {
-    border-color: var(--box-button-hover);
-    box-shadow: 0px 0px 10px rgba(from var(--box-button) r g b / 0.5);
+.language-select-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 5px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
-.language-dropdown option {
-    background-color: var(--background-color);
-    color: var(--color);
-    padding: 0.25rem;
+.language-select-btn:hover::before {
+    left: 100%;
+}
+
+.language-select-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.language-btn-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    justify-content: center;
+    min-height: 28px;
+}
+
+.flag-icon {
+    width: 40px;
+    height: 30px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.flag-icon img {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 6px !important;
+    object-fit: cover !important;
+    flex-shrink: 0 !important;
+    box-shadow: none !important;
+}
+
+.language-text {
+    font-size: 16px;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Popup de selección de idiomas */
+.language-popup {
+    position: absolute;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.5s;
+    background: rgba( 0, 0, 0, 0.05 );
+    backdrop-filter: blur( 5px );
+    -webkit-backdrop-filter: blur( 5px );
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.language-popup.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.language-selection-tab {
+    position: relative;
+    border-radius: 10px;
+    padding: 1rem 3rem;
+    transition: all 0.5s;
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    transition: all 0.2s;
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    max-height: 90vh;
+    width: 80%;
+    overflow: hidden;
+}
+
+.languages-grid-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 30rem;
+    padding-right: 8px; 
+    scrollbar-width: thin; 
+    scrollbar-color: white transparent;
+    position: relative;
+}
+
+.languages-grid-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.languages-grid-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.languages-grid-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.languages-grid-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.languages-grid-container::-webkit-scrollbar-button {
+    display: none;
+}
+
+.languages-grid-container::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+.languages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    justify-content: center;
+    width: 100%;
+    margin: 0 auto;
+    place-items: center;
+}
+
+@media (max-width: 850px) {
+    .languages-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+}
+
+@media (min-width: 850px) {
+    .languages-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+}
+
+.language-element {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    width: 280px;
+    height: 80px;
+    position: relative;
+}
+
+.language-element:hover {
+    background: rgba(from var(--box-button) r g b / 0.2);
+    border: 1px solid rgba(from var(--box-button) r g b / 0.3);
+}
+
+.language-element.active-language {
+    background: rgba(from var(--box-button) r g b / 0.4);
+    border: 1px solid rgba(from var(--box-button) r g b / 0.3);
+}
+
+.language-element-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    justify-content: center;
+}
+
+.language-element .flag-icon {
+    width: 48px;
+    height: 36px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.language-element .language-text {
+    font-size: 16px;
+    color: #fff;
+    text-align: center;
+    font-weight: 500;
+}
+
+.language-selection-tab p {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: #fff;
+}
+
+/* Estilos específicos para el emoji de idioma automático */
+.language-element .auto-language-icon {
+    width: 48px !important;
+    height: 36px !important;
+    font-size: 28px !important;
+    border-radius: 6px !important;
+    background: linear-gradient(135deg, #4CAF50 0%, #2196F3 100%) !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+    overflow: visible !important;
+    text-align: center !important;
+    line-height: 1 !important;
+}
+
+.auto-language-icon:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Mejorar la visibilidad del dropdown cuando está abierto */
+.dropdown-language-select.open .dropdown-language-options {
+    max-height: 350px !important;
+    opacity: 1 !important;
+    overflow-y: auto !important;
+    transform: translateY(0) !important;
+    pointer-events: all !important;
+}
+
+/* Asegurar que el dropdown sea visible por encima de otros elementos */
+.dropdown-language-select {
+    position: relative !important;
+    z-index: 9999 !important;
+}
+
+.dropdown-language-options {
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 10000 !important;
+    pointer-events: none;
+}
+
+.dropdown-language-select.open .dropdown-language-options {
+    pointer-events: all !important;
+}
+
+.language-selection {
+    overflow: visible !important;
 }

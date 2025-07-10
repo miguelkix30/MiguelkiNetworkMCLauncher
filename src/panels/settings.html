@@ -142,10 +142,12 @@
                     </div>
                     <div class="settings-elements content-center">
                         <div class="language-selection">
-                            <label for="language-select" data-translate="launcher_settings.language_title">Idioma:</label>
-                            <select id="language-select" class="language-dropdown">
-                                <option value="auto" data-translate="launcher_settings.language_auto">Automático (Sistema)</option>
-                            </select>
+                            <div class="language-select-btn">
+                                <div class="language-btn-content">
+                                    <span class="flag-icon">🌐</span>
+                                    <span class="language-text">Automático (Sistema)</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -163,7 +165,7 @@
 
                 <div class="titre-tab" data-translate="launcher_settings.data_management_title">Gestión de datos</div>
                 <div class="settings-elements-box">
-                    <div class="setting-text">
+                    <div class="setting-text" data-translate="launcher_settings.data_management_info">
                         Estas opciones te permiten reiniciar la configuración o eliminar todos los datos del
                         launcher. Úsalas con precaución.
                     </div>
@@ -259,6 +261,20 @@
                 <div class="titre-tab" data-translate="info_tab.terms">Términos y condiciones</div>
                 <div class="info-container" id="terms-container" >
                     <span data-translate="info_tab.terms_error">Ha ocurrido un error al cargar los términos y condiciones.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Popup de selección de idiomas -->
+    <div class="language-popup">
+        <div class="language-selection-tab">
+            <div class="close-popup icon-close"></div>
+            <p><span data-translate="launcher_settings.language_select">Seleccionar idioma</span>:</p>
+            
+            <div class="languages-grid-container">
+                <div class="languages-grid">
+                    <!-- Los idiomas se generarán dinámicamente -->
                 </div>
             </div>
         </div>

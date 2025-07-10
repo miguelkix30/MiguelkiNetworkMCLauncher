@@ -518,12 +518,18 @@ class Home {
 			this.instanceSelectClickHandler = async () => {
 				if (instanceSelectBTN.disabled) return;
 
-				// Verificar si hay bloqueo de dispositivo u otros errores antes de mostrar la ventana
+				// Mostrar el popup inmediatamente con estado de carga
+				this.showInstancePopupWithLoading();
+
+				// Verificar si hay bloqueo de dispositivo u otros errores
 				let hwid = await getHWID();
 				let check = await checkHWID(hwid);
 				let fetchError = await getFetchError();
 
 				if (check) {
+					// Ocultar el popup de carga y mostrar error
+					instancePopup.classList.remove("show");
+					
 					if (fetchError == false) {
 						let popupError = new popup();
 						popupError.openPopup({
@@ -547,62 +553,85 @@ class Home {
 
 				let username = await getUsername();
 
-				let refreshedInstancesList = await config.getInstanceList();
+				try {
+					let refreshedInstancesList = await config.getInstanceList();
 
-				instancesGrid.innerHTML = "";
+					// Agregar una pequeña demora solo en desarrollo para que se vea el efecto de carga
+					if (dev) {
+						await new Promise(resolve => setTimeout(resolve, 800));
+					} else {
+						await new Promise(resolve => setTimeout(resolve, 300));
+					}
 
-				if (!refreshedInstancesList || refreshedInstancesList.length === 0) {
-					instancesGrid.innerHTML = `
-                        <div class="no-instances-message">
-                            <p>${localization.t('home.no_instances')}</p>
-                            <p>${localization.t('home.no_instances_contact')}</p>
-                        </div>
-                    `;
-				} else {
-					let visibleInstanceCount = 0;
+					// Ocultar elementos de loading y mostrar las instancias reales
+					this.hideInstanceLoading();
+					
+					// Limpiar y llenar el contenido de instancias
+					instancesGrid.innerHTML = "";
 
-					for (let instance of refreshedInstancesList) {
-						let color = instance.maintenance ? "red" : "green";
-						let whitelist =
-							instance.whitelistActive && instance.whitelist.includes(username);
-						let imageUrl =
-							instance.thumbnail || "assets/images/default/placeholder.jpg";
-						if (!instance.whitelistActive || whitelist) {
-							instancesGrid.innerHTML += `
-                                <div id="${
-																	instance.name
-																}" class="instance-element ${
-								instance.name === instanceSelect ? "active-instance" : ""
-							}">
-                                    <div class="instance-image" style="background-image: url('${imageUrl}');"></div>
-                                    <div class="instance-name">${
+					if (!refreshedInstancesList || refreshedInstancesList.length === 0) {
+						instancesGrid.innerHTML = `
+						<div class="no-instances-message">
+							<p>${localization.t('home.no_instances')}</p>
+							<p>${localization.t('home.no_instances_contact')}</p>
+						</div>
+					`;
+					} else {
+						let visibleInstanceCount = 0;
+
+						for (let instance of refreshedInstancesList) {
+							let color = instance.maintenance ? "red" : "green";
+							let whitelist =
+								instance.whitelistActive && instance.whitelist.includes(username);
+							let imageUrl =
+								instance.thumbnail || "assets/images/default/placeholder.jpg";
+							if (!instance.whitelistActive || whitelist) {
+								instancesGrid.innerHTML += `
+								<div id="${
+																		instance.name
+																	}" class="instance-element ${
+									instance.name === instanceSelect ? "active-instance" : ""
+								}">
+									<div class="instance-image" style="background-image: url('${imageUrl}');"></div>
+									<div class="instance-name">${
 																			instance.name
 																		}<div class="instance-mkid" style="background-color: ${color};"></div></div>
-                                </div>`;
-							visibleInstanceCount++;
+								</div>`;
+								visibleInstanceCount++;
+							}
+						}
+
+						if (visibleInstanceCount === 0) {
+							instancesGrid.innerHTML = `
+							<div class="no-instances-message">
+								<p>${localization.t('home.no_instances_account')}</p>
+								<p>${localization.t('home.no_instances_contact')}</p>
+							</div>
+						`;
+						} else {
+							const remainder = visibleInstanceCount % 3;
+							instancesGrid.classList.remove("one-item", "two-items");
+
+							if (remainder === 1) {
+								instancesGrid.classList.add("one-item");
+							} else if (remainder === 2) {
+								instancesGrid.classList.add("two-items");
+							}
 						}
 					}
 
-					if (visibleInstanceCount === 0) {
-						instancesGrid.innerHTML = `
-                            <div class="no-instances-message">
-                                <p>${localization.t('home.no_instances_account')}</p>
-                                <p>${localization.t('home.no_instances_contact')}</p>
-                            </div>
-                        `;
-					} else {
-						const remainder = visibleInstanceCount % 3;
-						instancesGrid.classList.remove("one-item", "two-items");
-
-						if (remainder === 1) {
-							instancesGrid.classList.add("one-item");
-						} else if (remainder === 2) {
-							instancesGrid.classList.add("two-items");
-						}
-					}
+				} catch (error) {
+					console.error("Error al cargar las instancias:", error);
+					
+					// Ocultar loading y mostrar error
+					this.hideInstanceLoading();
+					instancesGrid.innerHTML = `
+						<div class="no-instances-message">
+							<p>${localization.t('home.error_loading_instances') || 'Error al cargar las instancias'}</p>
+							<p>${localization.t('home.error_loading_instances_info') || 'Por favor, inténtalo de nuevo más tarde'}</p>
+						</div>
+					`;
 				}
-
-				instancePopup.classList.add("show");
 			};
 
 			instanceSelectBTN.addEventListener(
@@ -1713,7 +1742,7 @@ ${error.message}`,
 				ipcRenderer.send("main-window-progress", { progress: safeTask, size: safeTotal });
 				this.setProgressBarDeterminate(safeTask, safeTotal);
 			} else {
-				infoStarting.innerHTML = localization.t('home.verifying');
+				infoStarting.innerHTML = `${localization.t('home.verifying')}...`;
 				ipcRenderer.send("main-window-progress-load");
 				//barra de carga indeterminada
 				this.setProgressBarIndeterminate();
@@ -1751,7 +1780,7 @@ ${error.message}`,
 			const safeSize = (typeof size === 'number' && isFinite(size)) ? Math.max(1, size) : 1;
 			const safePercentage = safeSize > 0 ? Math.min(100, ((safeProgress / safeSize) * 100)) : 0;
 			
-			infoStarting.innerHTML = localization.t('home.verifying');
+			infoStarting.innerHTML = `${localization.t('home.verifying')}...`;
 			ipcRenderer.send("main-window-progress", { progress: safeProgress, size: safeSize });
 			this.setProgressBarDeterminate(safeProgress, safeSize);
 		});
@@ -2026,7 +2055,7 @@ ${error.message}`,
 
 			// Resetear notificación y estado
 			this.notification();
-			infoStarting.innerHTML = localization.t('home.verifying');
+			infoStarting.innerHTML = `${localization.t('home.verifying')}...`;
 		});
 		
 		} catch (error) {
@@ -2863,6 +2892,56 @@ ${error.message}`,
 		if (progressBar) {
 			progressBar.style.display = "block";
 		}
+	}
+
+	// Función para mostrar el popup con estado de carga
+	showInstancePopupWithLoading() {
+		let instancePopup = document.querySelector(".instance-popup");
+		let instancesGrid = document.querySelector(".instances-grid");
+		let skeletonGrid = document.querySelector(".skeleton-grid");
+		let loadingContainer = document.querySelector(".loading-container");
+		let instancesGridContainer = document.querySelector(".instances-grid-container");
+		
+		// Mostrar el popup inmediatamente
+		instancePopup.classList.add("show");
+		
+		// Ocultar el contenedor de instancias reales
+		if (instancesGridContainer) {
+			instancesGridContainer.style.display = "none";
+		}
+		
+		// Limpiar el contenido del instances-grid
+		instancesGrid.innerHTML = "";
+		
+		// Mostrar el skeleton loading y el spinner
+		if (skeletonGrid) {
+			skeletonGrid.style.display = "grid";
+			console.log("Skeleton grid mostrado");
+		}
+		if (loadingContainer) {
+			loadingContainer.style.display = "flex";
+			console.log("Loading container mostrado");
+		}
+	}
+
+	// Función para ocultar el loading y mostrar las instancias reales
+	hideInstanceLoading() {
+		let instancesGrid = document.querySelector(".instances-grid");
+		let skeletonGrid = document.querySelector(".skeleton-grid");
+		let loadingContainer = document.querySelector(".loading-container");
+		let instancesGridContainer = document.querySelector(".instances-grid-container");
+		
+		// Ocultar elementos de loading
+		if (skeletonGrid) skeletonGrid.style.display = "none";
+		if (loadingContainer) loadingContainer.style.display = "none";
+		
+		// Mostrar el contenedor de instancias reales
+		if (instancesGridContainer) {
+			instancesGridContainer.style.display = "flex";
+		}
+		
+		// Mostrar el grid de instancias reales
+		instancesGrid.style.display = "grid";
 	}
 }
 export default Home;

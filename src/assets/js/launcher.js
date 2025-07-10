@@ -67,14 +67,6 @@ class Launcher {
     this.shortcut();
     this.db = new database();
     
-    // Inicializar sistema de localización
-    console.log("Inicializando sistema de localización...");
-    try {
-      await localization.initialize(this.db);
-    } catch (error) {
-      console.error("Error inicializando sistema de localización:", error);
-    }
-    
     // Consolidar archivos de almacenamiento que puedan estar en múltiples ubicaciones
     console.log("Consolidando archivos de almacenamiento...");
     try {
@@ -91,23 +83,47 @@ class Launcher {
       console.error("Error migrating accounts to new auth system:", error);
     }
     
+    // Verificar la configuración del cliente ANTES de inicializar localización
+    const configClient = await this.db.readData("configClient");
+    let isFirstRun = !configClient;
+    let needsLanguageSetup = false;
+    
+    // Inicializar sistema de localización
+    console.log("Inicializando sistema de localización...");
+    try {
+      await localization.initialize(this.db);
+      
+      // Verificar si se necesita configuración inicial basada en el idioma
+      needsLanguageSetup = localization.needsInitialLanguageSetup ? localization.needsInitialLanguageSetup() : (localization.needsInitialSetup || false);
+      if (needsLanguageSetup) {
+        console.log("🔧 Se detectó que se necesita configuración inicial");
+      }
+    } catch (error) {
+      console.error("Error inicializando sistema de localización:", error);
+      // Si hay error con localización, también forzar configuración inicial
+      needsLanguageSetup = true;
+    }
+    
+    // Consolidar los flags de configuración inicial
+    const needsInitialSetup = isFirstRun || needsLanguageSetup;
+    
     this.config = await config
       .GetConfig()
       .then((res) => res)
       .catch((err) => err);
     if (await this.config.error) return this.errorConnect();
     await this.loadColors();
-    // Ahora que la migración ha terminado (si era necesaria), verificamos la configuración
-    const configClient = await this.db.readData("configClient");
-    const isFirstRun = !configClient;
     
-    console.log(`ConfigClient existe: ${!!configClient}, Primera ejecución: ${isFirstRun}`);
+    console.log(`ConfigClient existe: ${!!configClient}, Primera ejecución: ${isFirstRun}, Necesita config de idioma: ${needsLanguageSetup}`);
     
-    if (isFirstRun) {
-      console.log("Primera ejecución detectada. Iniciando configuración inicial...");
+    if (needsInitialSetup) {
+      console.log("Configuración inicial necesaria. Iniciando configuración inicial...");
+      
       try {
         await this.showInitialSetup();
         console.log("Configuración inicial completada exitosamente");
+        // Limpiar flag de configuración inicial en localization
+        localization.clearInitialSetupFlag();
       } catch (error) {
         console.error("Error durante la configuración inicial:", error);
       }
@@ -593,8 +609,8 @@ class Launcher {
         
         const setupSlider = new SetupSlider(setupSliderElementCheck, defaultMinRam, defaultMaxRam);
         
-        let currentStep = 1;
-        const totalSteps = 3;
+        let currentStep = 0; // Comenzar desde 0 (idioma)
+        const totalSteps = 4; // Total de pasos: 0, 1, 2, 3 (4 pasos en total)
         
         const prevBtn = document.querySelector('.setup-prev-btn');
         const nextBtn = document.querySelector('.setup-next-btn');
@@ -621,13 +637,17 @@ class Launcher {
           });
           
           let currentSection = document.querySelector(`#setup-step-${step}`);
-          currentSection.classList.remove('prev', 'next');
-          currentSection.classList.add('active');
+          if (currentSection) {
+            currentSection.classList.remove('prev', 'next');
+            currentSection.classList.add('active');
+          }
           
-          for (let i = 1; i < step; i++) {
+          for (let i = 0; i < step; i++) {
             let prevSection = document.querySelector(`#setup-step-${i}`);
-            prevSection.classList.remove('active', 'next');
-            prevSection.classList.add('prev');
+            if (prevSection) {
+              prevSection.classList.remove('active', 'next');
+              prevSection.classList.add('prev');
+            }
           }
           
           stepIndicators.forEach(indicator => {
@@ -638,24 +658,27 @@ class Launcher {
             }
           });
           
-          prevBtn.style.display = step > 1 ? 'block' : 'none';
-          nextBtn.style.display = step < totalSteps ? 'block' : 'none';
-          finishBtn.style.display = step === totalSteps ? 'block' : 'none';
+          prevBtn.style.display = step > 0 ? 'block' : 'none';
+          nextBtn.style.display = step < (totalSteps - 1) ? 'block' : 'none';
+          finishBtn.style.display = step === (totalSteps - 1) ? 'block' : 'none';
         };
         
-        updateStepUI(1);
+        updateStepUI(0); // Comenzar en el paso 0 (idioma)
+        
+        // Configurar selector de idioma
+        let selectedLanguage = 'es-ES'; // Usar español como idioma inicial por defecto
+        this.selectedSetupLanguage = selectedLanguage; // Guardar en propiedad de clase
+        this.setupLanguageSelector(selectedLanguage);
         
         prevBtn.addEventListener('click', () => {
-          if (currentStep > 1) {
+          if (currentStep > 0) {
             currentStep--;
             updateStepUI(currentStep);
           }
         });
         
-
-        
         nextBtn.addEventListener('click', () => {
-          if (currentStep < totalSteps) {
+          if (currentStep < (totalSteps - 1)) {
             currentStep++;
             updateStepUI(currentStep);
           }
@@ -687,6 +710,12 @@ class Launcher {
           const ramMax = setupSlider.getMaxValue();
           const performanceMode = document.querySelector("#setup-performance-mode").checked;
           
+          // Obtener idioma seleccionado
+          const selectedLanguageOption = document.querySelector('.setup-language-option.selected');
+          const selectedLanguageCode = selectedLanguageOption ? 
+            selectedLanguageOption.dataset.language : 
+            (this.selectedSetupLanguage || 'es-ES');
+          
           document.querySelector('.setup-modal').style.display = 'none';
           
           const loadingOverlay = document.querySelector('.loading-overlay');
@@ -703,7 +732,7 @@ class Launcher {
             terms_accepted: false,
             termsAcceptedDate: null,
             discord_token: null,
-            language: 'auto',
+            language: selectedLanguageCode,
             java_config: {
               java_path: null,
               java_memory: {
@@ -725,6 +754,16 @@ class Launcher {
               performance_mode: performanceMode
             },
           });
+          
+          console.log(`Configuración inicial completada con idioma: ${selectedLanguageCode}`);
+          
+          // Establecer el idioma definitivamente en el sistema de localización
+          try {
+            await localization.changeLanguage(selectedLanguageCode);
+            console.log(`Idioma establecido definitivamente: ${selectedLanguageCode}`);
+          } catch (error) {
+            console.error("Error estableciendo idioma final:", error);
+          }
           
           if (performanceMode) {
             setPerformanceMode(true);
@@ -860,8 +899,12 @@ class Launcher {
     
     ipcRenderer.on('process-cleanup-queue', async () => {
       console.log('Processing cleanup queue before app close...');
-      await cleanupManager.processQueue();
-      cleanupManager.stopAllLogWatchers();
+      try {
+        await cleanupManager.processQueue();
+        console.log('Cleanup queue processed successfully');
+      } catch (error) {
+        console.error('Error processing cleanup queue:', error);
+      }
     });
     
     console.info(`Versión del Launcher: ${pkg.version}${pkg.sub_version ? `-${pkg.sub_version}` : ''}`);
@@ -1895,28 +1938,17 @@ class Launcher {
       console.log('Consola solicita configuración del servidor, enviando...');
       try {
         const res = await config.GetConfig();
-        console.log('Configuración obtenida del servidor:', {
-          patchToolkit: res.patchToolkit,
-          patchToolkitType: typeof res.patchToolkit,
-          patchToolkitValue: res.patchToolkit === true
-        });
         
         const configForConsole = {
           patchToolkit: res.patchToolkit === true // Solo true si es específicamente true
         };
         
         ipcRenderer.send('apply-server-config', configForConsole);
-        console.log('Configuración del servidor enviada a la consola:', configForConsole);
       } catch (error) {
         console.warn('Error enviando configuración del servidor a la consola:', error);
         // Enviar configuración por defecto (toolkit deshabilitado) en caso de error
         ipcRenderer.send('apply-server-config', { patchToolkit: false });
       }
-    });
-
-    // Enviar cleanup queue cuando se cierre la aplicación
-    ipcRenderer.on('process-cleanup-queue', async () => {
-      await this.processCleanupQueue();
     });
 
     // Ya no necesitamos configurar la consola interna,
@@ -2064,7 +2096,7 @@ User Agent: ${navigator.userAgent}`;
     
     const settingsContainers = document.querySelectorAll('.container-settings');
     settingsContainers.forEach(container => {
-      container.style.transition = 'none';
+           container.style.transition = 'none';
       container.style.transform = 'none';
     });
     
@@ -2125,6 +2157,159 @@ User Agent: ${navigator.userAgent}`;
     }
 
     return true;
+  }
+
+  async setupLanguageSelector(defaultLanguage) {
+    try {
+      console.log("Configurando selector de idioma para configuración inicial");
+      
+      // Variable para tracking del idioma seleccionado
+      let selectedLanguage = defaultLanguage;
+      
+      // Asegurar que la propiedad de clase esté definida
+      this.selectedSetupLanguage = selectedLanguage;
+      
+      // Cargar idiomas disponibles si no están cargados
+      if (!localization.availableLanguages) {
+        await localization.loadAvailableLanguages();
+      }
+      
+      const languageOptionsContainer = document.querySelector('.setup-language-options');
+      if (!languageOptionsContainer) {
+        console.error("No se encontró el contenedor de opciones de idioma");
+        return;
+      }
+      
+      // Mapa de códigos de país para flagsapi.com (coincide con el de settings.js)
+      const languageCountryCodes = {
+        'es-ES': 'ES',
+        'en-EN': 'GB', // Inglés usa bandera británica
+        'fr-FR': 'FR',
+        'de-DE': 'DE',
+        'it-IT': 'IT',
+        'pt-BR': 'BR',
+        'pt-PT': 'PT',
+        'ru-RU': 'RU',
+        'ja-JP': 'JP',
+        'ko-KR': 'KR',
+        'zh-CN': 'CN',
+        'zh-TW': 'TW',
+        'pl-PL': 'PL',
+        'nl-NL': 'NL',
+        'sv-SE': 'SE',
+        'da-DK': 'DK',
+        'fi-FI': 'FI',
+        'no-NO': 'NO',
+        'cs-CZ': 'CZ',
+        'hu-HU': 'HU',
+        'tr-TR': 'TR',
+        'ar-SA': 'SA',
+        'he-IL': 'IL',
+        'th-TH': 'TH',
+        'vi-VN': 'VN',
+        'id-ID': 'ID',
+        'ms-MY': 'MY',
+        'uk-UA': 'UA',
+        'bg-BG': 'BG',
+        'ro-RO': 'RO',
+        'hr-HR': 'HR',
+        'sr-RS': 'RS',
+        'sl-SI': 'SI',
+        'sk-SK': 'SK',
+        'lt-LT': 'LT',
+        'lv-LV': 'LV',
+        'et-EE': 'EE'
+      };
+      
+      // Limpiar opciones existentes
+      languageOptionsContainer.innerHTML = '';
+      
+      // Obtener idiomas disponibles del sistema de localización
+      const availableLanguages = localization.getAvailableLanguages();
+      
+      // Si no hay idiomas disponibles, usar los básicos
+      const languagesToShow = Object.keys(availableLanguages).length > 0 
+        ? Object.keys(availableLanguages) 
+        : ['es-ES', 'en-EN', 'fr-FR', 'de-DE', 'it-IT', 'pt-PT', 'pt-BR'];
+      
+      // Crear opciones de idioma dinámicamente con banderas de flagsapi.com
+      languagesToShow.forEach(langCode => {
+        const langInfo = availableLanguages[langCode];
+        const countryCode = languageCountryCodes[langCode];
+        
+        // Usar información del idioma disponible o fallback
+        const displayName = langInfo ? langInfo.name : langCode;
+        const nativeName = langInfo ? langInfo.nativeName : langCode;
+        
+        const option = document.createElement('div');
+        option.className = 'setup-language-option';
+        option.dataset.language = langCode;
+        
+        if (langCode === defaultLanguage) {
+          option.classList.add('selected');
+        }
+        
+        // Crear contenido de la opción con bandera dinámica
+        const flagContent = countryCode 
+          ? `<img src="https://flagsapi.com/${countryCode}/flat/64.png" alt="${countryCode} flag" 
+                  style="width: 24px; height: 18px; border-radius: 3px; object-fit: cover;"
+                  onerror="this.style.display='none'; this.parentNode.innerHTML='🏳️';">`
+          : '🏳️'; // Fallback para idiomas sin código de país
+        
+        option.innerHTML = `
+          <div class="setup-language-flag">
+            ${flagContent}
+          </div>
+          <div class="setup-language-info">
+            <div class="setup-language-name">${displayName}</div>
+            <div class="setup-language-native">${nativeName}</div>
+          </div>
+        `;
+        
+        option.addEventListener('click', async () => {
+          // Actualizar propiedades de clase para mantener estado
+          this.selectedSetupLanguage = langCode;
+          
+          // Remover selección anterior
+          document.querySelectorAll('.setup-language-option').forEach(opt => {
+            opt.classList.remove('selected');
+          });
+          
+          // Seleccionar nueva opción
+          option.classList.add('selected');
+          selectedLanguage = langCode;
+          
+          // Cambiar idioma inmediatamente y aplicar traducciones
+          try {
+            console.log(`Cambiando idioma a ${langCode} durante configuración inicial`);
+            await localization.changeLanguage(langCode);
+            localization.forceApplyTranslations();
+            console.log("Traducciones aplicadas en configuración inicial");
+          } catch (error) {
+            console.error("Error al cambiar idioma durante configuración inicial:", error);
+          }
+        });
+        
+        languageOptionsContainer.appendChild(option);
+      });
+      
+      // Establecer el idioma seleccionado inicialmente
+      if (defaultLanguage) {
+        try {
+          console.log(`Estableciendo idioma inicial a ${defaultLanguage}`);
+          await localization.changeLanguage(defaultLanguage);
+          localization.forceApplyTranslations();
+          console.log("Idioma inicial establecido y traducciones aplicadas");
+        } catch (error) {
+          console.error("Error al establecer idioma inicial:", error);
+        }
+      }
+      
+      console.log("Selector de idioma configurado exitosamente con banderas dinámicas");
+      
+    } catch (error) {
+      console.error("Error configurando selector de idioma:", error);
+    }
   }
 }
 

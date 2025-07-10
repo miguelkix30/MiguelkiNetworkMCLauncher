@@ -208,8 +208,8 @@ class Login {
 		connectOffline.addEventListener("click", async () => {
 			connectOffline.disabled = true;
 			popupLogin.openPopup({
-				title: "Iniciando sesión...",
-				content: "Por favor, espere...",
+				title: localization.t("login.logging_in"),
+				content: localization.t("messages.please_wait"),
 				color: "var(--color)",
 			});
 
@@ -218,8 +218,8 @@ class Login {
 				if (emailOffline.value.length < 3) {
 					popupLogin.closePopup();
 					popupLogin.openPopup({
-						title: "Error",
-						content: "Tu nombre de usuario debe tener al menos 3 caracteres.",
+						title: localization.t("login.error"),
+						content: localization.t("login.user_too_short"),
 						options: true,
 					});
 					connectOffline.disabled = false;
@@ -229,8 +229,8 @@ class Login {
 				if (emailOffline.value.match(/ /g)) {
 					popupLogin.closePopup();
 					popupLogin.openPopup({
-						title: "Error",
-						content: "Su nombre de usuario no debe contener espacios.",
+						title: localization.t("launcher.error"),
+						content: localization.t("login.user_with_space"),
 						options: true,
 					});
 					connectOffline.disabled = false;
@@ -245,19 +245,19 @@ class Login {
 					
 					popupLogin.closePopup();
 					popupLogin.openDialog({
-						title: "Nombre truncado",
-						content: `Tu nombre de usuario era demasiado largo y fue truncado a: "${username}".<br>¿Deseas continuar con este nombre?`,
+						title: localization.t("login.truncated_username"),
+						content: `${localization.t('login.truncated_username_info')} "${username}".<br>${localization.t('login.truncated_username_confirm')}`,
 						color: "orange",
-						acceptText: "Continuar",
-						cancelText: "Cancelar",
+						acceptText: localization.t("buttons.continue"),
+						cancelText: localization.t("buttons.cancel"),
 						callback: async (result) => {
 							if (result === 'accept') {
 								try {
 									await this.createOfflineAccount(username, popupLogin);
 								} catch (error) {
 									popupLogin.openPopup({
-										title: "Error",
-										content: "Ocurrió un error al crear la cuenta offline. Intente nuevamente.",
+										title: localization.t("launcher.error"),
+										content: localization.t("login.error_creating_account"),
 										options: true,
 									});
 								}
@@ -275,9 +275,9 @@ class Login {
 				console.error("Error during offline login:", error);
 				popupLogin.closePopup();
 				popupLogin.openPopup({
-					title: "Error",
+					title: localization.t("launcher.error"),
 					content:
-						"Ocurrió un error al crear la cuenta offline. Intente nuevamente.",
+						localization.t("login.error_creating_account"),
 					options: true,
 				});
 				connectOffline.disabled = false;
@@ -308,8 +308,8 @@ class Login {
 		// Microsoft login through AZauth using new system
 		loginMicrosoftAzauth.addEventListener("click", async () => {
 			popupLogin.openPopup({
-				title: "Iniciar sesión",
-				content: "Iniciando sesión con Microsoft...",
+				title: localization.t("login.login"),
+				content: localization.t("login.logging_in_microsoft"),
 				color: "var(--color)",
 			});
 

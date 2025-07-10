@@ -811,6 +811,10 @@ body:has(.patch-toolkit[hidden]) .scroll-to-bottom {
   font-weight: bold;
 }
 
+.step[data-step="0"] {
+  font-size: 1.1rem; /* Icono de globo un poco más grande */
+}
+
 .step-line {
   height: 2px;
   width: 60px;
@@ -1346,7 +1350,7 @@ body.performance-mode .settings-content {
   pointer-events: auto;
 }
 
-#setup-step-4 .setup-select-container {
+#setup-step-3 .setup-select-container {
   display: none;
 }
 
@@ -1414,7 +1418,7 @@ body.performance-mode .settings-content {
   pointer-events: auto;
 }
 
-#setup-step-4 .setup-select-container {
+#setup-step-3 .setup-select-container {
   display: none;
 }
 
@@ -1652,5 +1656,77 @@ body.performance-mode .loading-overlay {
 .log .report-issue .tooltip {
     font-size: 0.85rem;
     padding: 0.4rem 0.6rem;
+}
+
+/* Setup Language Selector Styles */
+.setup-language-selector {
+    margin: 2rem 0;
+}
+
+.setup-language-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+.setup-language-option {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    user-select: none;
+}
+
+.setup-language-option:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.setup-language-option.selected {
+    background: var(--box-button);
+    border-color: var(--box-button-hover);
+    color: white;
+}
+
+.setup-language-option.selected:hover {
+    background: var(--box-button-hover);
+}
+
+.setup-language-flag {
+    width: 24px;
+    height: 18px;
+    border-radius: 3px;
+    margin-right: 0.75rem;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+}
+
+.setup-language-info {
+    flex: 1;
+}
+
+.setup-language-name {
+    font-weight: bold;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.setup-language-native {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.setup-language-option.selected .setup-language-native {
+    opacity: 1;
 }
 

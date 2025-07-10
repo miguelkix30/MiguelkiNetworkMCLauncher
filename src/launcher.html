@@ -79,7 +79,9 @@
               <h2 data-translate="setup.welcome_title">Configuración Inicial de Miguelki Network MC Launcher</h2>
               <p data-translate="setup.welcome_message">Bienvenido! Vamos a configurar algunos parámetros para optimizar tu experiencia.</p>
               <div class="setup-step-indicator">
-                <span class="step active-step" data-step="1">1</span>
+                <span class="step active-step" data-step="0">🌐</span>
+                <span class="step-line"></span>
+                <span class="step" data-step="1">1</span>
                 <span class="step-line"></span>
                 <span class="step" data-step="2">2</span>
                 <span class="step-line"></span>
@@ -88,8 +90,19 @@
             </div>
             
             <div class="setup-content">
+              <!-- Language Selection (Step 0) -->
+              <div class="setup-section active" id="setup-step-0">
+                <h3 data-translate="setup.step_0">Selección de Idioma</h3>
+                <p data-translate="setup.language_info">Selecciona tu idioma preferido. Esta configuración se puede cambiar más tarde en los ajustes del launcher.</p>
+                <div class="setup-language-selector">
+                  <div class="setup-language-options">
+                    <!-- Las opciones se llenarán dinámicamente -->
+                  </div>
+                </div>
+              </div>
+
               <!-- Performance Mode (Step 1) -->
-              <div class="setup-section active" id="setup-step-1">
+              <div class="setup-section next" id="setup-step-1">
                 <h3 data-translate="setup.step_1">Modo de Rendimiento</h3>
                 <p data-translate="setup.performance_info">Activa esta opción para mejorar el rendimiento en equipos con recursos limitados.</p>
                 <div class="setup-checkbox-container">
@@ -100,7 +113,6 @@
                   Esta opción desactiva los fondos de video animados y las transiciones visuales para reducir el consumo de recursos.
                 </p>
               </div>
-
 
               <!-- RAM Configuration (Step 2) -->
               <div class="setup-section next" id="setup-step-2">

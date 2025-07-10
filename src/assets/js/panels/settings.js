@@ -155,6 +155,12 @@ class Settings {
                 }
             });
         });
+
+        // Aplicar efectos al dropdown de idioma
+        const languageSelectBtn = document.querySelector('.language-select-btn');
+        if (languageSelectBtn) {
+            this.applyButtonPressEffect(languageSelectBtn);
+        }
     }
 
 
@@ -1688,72 +1694,181 @@ class Settings {
         try {
             console.log('Inicializando selector de idioma...');
             
-            const languageSelect = document.getElementById('language-select');
-            if (!languageSelect) {
-                console.warn('No se encontró el elemento language-select');
-                return;
-            }
+            // Mapa de códigos de país para flagsapi.com
+            const languageCountryCodes = {
+                'auto': null, // Para automático usaremos un icono especial
+                'es-ES': 'ES',
+                'en-EN': 'GB', // Corregido: inglés usa bandera británica
+                'fr-FR': 'FR',
+                'de-DE': 'DE',
+                'it-IT': 'IT',
+                'pt-BR': 'BR',
+                'pt-PT': 'PT',
+                'ru-RU': 'RU',
+                'ja-JP': 'JP',
+                'ko-KR': 'KR',
+                'zh-CN': 'CN',
+                'zh-TW': 'TW',
+                'nl-NL': 'NL',
+                'sv-SE': 'SE',
+                'no-NO': 'NO',
+                'da-DK': 'DK',
+                'fi-FI': 'FI',
+                'pl-PL': 'PL',
+                'cs-CZ': 'CZ',
+                'hu-HU': 'HU',
+                'tr-TR': 'TR',
+                'ar-SA': 'SA',
+                'he-IL': 'IL',
+                'th-TH': 'TH',
+                'vi-VN': 'VN',
+                'id-ID': 'ID',
+                'ms-MY': 'MY',
+                'uk-UA': 'UA',
+                'bg-BG': 'BG',
+                'ro-RO': 'RO',
+                'hr-HR': 'HR',
+                'sr-RS': 'RS',
+                'sl-SI': 'SI',
+                'sk-SK': 'SK',
+                'lt-LT': 'LT',
+                'lv-LV': 'LV',
+                'et-EE': 'EE'
+            };
 
-            // Limpiar opciones existentes excepto la primera (Automático)
-            const autoOption = languageSelect.querySelector('option[value="auto"]');
-            languageSelect.innerHTML = '';
-            if (autoOption) {
-                languageSelect.appendChild(autoOption);
-            } else {
-                // Crear opción automático si no existe
-                const autoOpt = document.createElement('option');
-                autoOpt.value = 'auto';
-                autoOpt.textContent = 'Automático (Sistema)';
-                languageSelect.appendChild(autoOpt);
+            // Función para crear elemento de bandera
+            const createFlagElement = (countryCode, isButton = false) => {
+                if (!countryCode) {
+                    // Para la opción automática, usar un icono especial
+                    const icon = document.createElement('div');
+                    icon.className = 'flag-icon';
+                    icon.textContent = '🌐';
+                    icon.style.background = 'linear-gradient(45deg, #4CAF50, #2196F3)';
+                    icon.style.color = 'white';
+                    icon.style.fontSize = isButton ? '18px' : '16px';
+                    return icon;
+                }
+                
+                const flagImg = document.createElement('img');
+                flagImg.className = 'flag-icon';
+                flagImg.src = `https://flagsapi.com/${countryCode}/flat/64.png`;
+                flagImg.alt = `${countryCode} flag`;
+                flagImg.loading = 'lazy';
+                
+                // Fallback en caso de error cargando la imagen
+                flagImg.onerror = function() {
+                    const fallbackIcon = document.createElement('div');
+                    fallbackIcon.className = 'flag-icon';
+                    fallbackIcon.textContent = '🏳️';
+                    fallbackIcon.style.background = 'rgba(255, 255, 255, 0.1)';
+                    fallbackIcon.style.color = 'white';
+                    fallbackIcon.style.fontSize = isButton ? '18px' : '16px';
+                    this.parentNode.replaceChild(fallbackIcon, this);
+                };
+                
+                return flagImg;
+            };
+
+            const languageBtn = document.querySelector('.language-select-btn');
+            const languagePopup = document.querySelector('.language-popup');
+            const languagesGrid = document.querySelector('.languages-grid');
+            const closePopupBtn = document.querySelector('.language-popup .close-popup');
+        
+            
+            if (!languageBtn || !languagePopup || !languagesGrid) {
+                console.warn('No se encontraron los elementos del selector de idioma');
+                return;
             }
 
             // Obtener idiomas disponibles
             const availableLanguages = localization.getAvailableLanguages();
-            console.log('Idiomas disponibles:', availableLanguages);
 
-            // Añadir opciones de idioma
-            Object.entries(availableLanguages).forEach(([code, info]) => {
-                const option = document.createElement('option');
-                option.value = code;
-                option.textContent = `${info.nativeName} (${info.name})`;
-                languageSelect.appendChild(option);
-            });
+            // Función para poblar el grid de idiomas
+            const populateLanguagesGrid = () => {
+                languagesGrid.innerHTML = '';
+
+                Object.entries(availableLanguages).forEach(([code, info]) => {
+                    const element = document.createElement('div');
+                    element.className = 'language-element';
+                    element.dataset.value = code;
+                    
+                    const content = document.createElement('div');
+                    content.className = 'language-element-content';
+                    
+                    const flag = createFlagElement(languageCountryCodes[code]);
+                    const text = document.createElement('span');
+                    text.className = 'language-text';
+                    text.textContent = `${info.nativeName} (${info.name})`;
+                    
+                    content.appendChild(flag);
+                    content.appendChild(text);
+                    element.appendChild(content);
+                    languagesGrid.appendChild(element);
+                });
+            };
 
             // Establecer idioma actual
             const currentLanguage = localization.getCurrentLanguage();
             const configClient = await this.db.readData('configClient');
             
             // Determinar qué valor mostrar en el selector
-            let selectedValue = 'auto'; // Por defecto automático
+            let selectedValue = currentLanguage; // Usar el idioma actual por defecto
             
             if (configClient && configClient.language) {
                 selectedValue = configClient.language;
-            } else if (currentLanguage !== localization.systemLanguage) {
-                // Si el idioma actual no coincide con el del sistema, no es automático
-                selectedValue = currentLanguage;
             }
             
             console.log(`Estableciendo valor del selector a: ${selectedValue}`);
-            languageSelect.value = selectedValue;
+            console.log(`Idioma actual: ${currentLanguage}`);
+            
+            // Actualizar la apariencia del botón
+            this.updateLanguageButton(selectedValue, availableLanguages, languageCountryCodes, createFlagElement);
 
-            // Event listener para cambios de idioma
-            languageSelect.addEventListener('change', async (e) => {
-                const selectedLanguage = e.target.value;
+            // Event listener para abrir popup
+            languageBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                populateLanguagesGrid();
+                this.updateLanguageSelection(selectedValue);
+                languagePopup.classList.add('show');
+            });
+
+            // Event listener para cerrar popup
+            closePopupBtn.addEventListener('click', () => {
+                languagePopup.classList.remove('show');
+            });
+
+            // Cerrar popup al hacer click en el fondo
+            languagePopup.addEventListener('click', (e) => {
+                if (e.target === languagePopup) {
+                    languagePopup.classList.remove('show');
+                }
+            });
+
+            // Event listeners para las opciones de idioma
+            languagesGrid.addEventListener('click', async (e) => {
+                const element = e.target.closest('.language-element');
+                if (!element) return;
+
+                const selectedLanguage = element.dataset.value;
                 console.log(`Idioma seleccionado: ${selectedLanguage}`);
+                
+                // Cerrar popup
+                languagePopup.classList.remove('show');
+                
+                // Actualizar selección visual
+                selectedValue = selectedLanguage;
+                this.updateLanguageSelection(selectedValue);
+                
+                // Actualizar la apariencia del botón INMEDIATAMENTE
+                this.updateLanguageButton(selectedLanguage, availableLanguages, languageCountryCodes, createFlagElement);
                 
                 try {
                     let targetLanguage = selectedLanguage;
                     
-                    // Si es automático, usar el idioma del sistema
+                    // Si es automático, usar fallback y mostrar advertencia
                     if (selectedLanguage === 'auto') {
-                        targetLanguage = localization.systemLanguage;
-                        console.log(`Idioma del sistema detectado: ${targetLanguage}`);
-                        
-                        // Verificar que el idioma del sistema no sea undefined
-                        if (!targetLanguage) {
-                            targetLanguage = localization.fallbackLanguage || 'es-ES';
-                            console.warn(`Idioma del sistema no definido, usando fallback: ${targetLanguage}`);
-                        }
+                        targetLanguage = localization.fallbackLanguage || 'es-ES';
+                        console.warn('Idioma automático ya no es compatible, usando fallback');
                     }
                     
                     // Verificar que el idioma objetivo esté disponible
@@ -1770,7 +1885,7 @@ class Settings {
                     if (!configClient) {
                         configClient = {};
                     }
-                    configClient.language = selectedLanguage; // Guardar la selección original (incluye 'auto')
+                    configClient.language = selectedLanguage;
                     await this.db.updateData('configClient', configClient);
                     
                     // Mostrar notificación
@@ -1792,14 +1907,6 @@ class Settings {
                         color: 'red',
                         options: true
                     });
-                    
-                    // Revertir selección al valor anterior
-                    const configClient = await this.db.readData('configClient');
-                    if (configClient && configClient.language) {
-                        languageSelect.value = configClient.language;
-                    } else {
-                        languageSelect.value = 'auto'; // Default a automático si no hay configuración
-                    }
                 }
             });
             
@@ -1808,6 +1915,54 @@ class Settings {
         } catch (error) {
             console.error('Error inicializando selector de idioma:', error);
         }
+    }
+
+    // Función para actualizar la selección visual en el grid
+    updateLanguageSelection(selectedValue) {
+        const elements = document.querySelectorAll('.language-element');
+        elements.forEach(element => {
+            element.classList.remove('active-language');
+            if (element.dataset.value === selectedValue) {
+                element.classList.add('active-language');
+            }
+        });
+    }
+
+    // Función auxiliar para actualizar la apariencia del botón
+    updateLanguageButton(selectedValue, availableLanguages, languageCountryCodes, createFlagElement) {
+        const languageText = document.querySelector('.language-btn-content .language-text');
+        const flagIcon = document.querySelector('.language-btn-content .flag-icon');
+        
+        if (!languageText || !flagIcon) {
+            console.warn('No se encontraron elementos del botón para actualizar');
+            return;
+        }
+        const languageInfo = availableLanguages[selectedValue];
+        if (languageInfo) {
+            languageText.textContent = `${languageInfo.nativeName} (${languageInfo.name})`;
+            const countryCode = languageCountryCodes[selectedValue];
+            
+            if (countryCode) {
+                // Limpiar estilos previos
+                flagIcon.style.background = '';
+                flagIcon.style.color = '';
+                flagIcon.style.fontSize = '';
+                flagIcon.textContent = '';
+                
+                // Crear nueva imagen de bandera
+                flagIcon.innerHTML = `<img src="https://flagsapi.com/${countryCode}/flat/64.png" alt="${countryCode} flag" loading="lazy" style="width: 28px; height: 21px; border-radius: 4px; object-fit: cover;" onerror="this.style.display='none'; this.parentNode.textContent='🏳️';">`;
+            } else {
+                flagIcon.textContent = '🏳️';
+                flagIcon.innerHTML = '';
+            }
+        } else {
+            console.warn(`Información de idioma no encontrada para: ${selectedValue}`);
+            languageText.textContent = selectedValue;
+            flagIcon.textContent = '🏳️';
+            flagIcon.innerHTML = '';
+        }
+        
+        console.log(`Botón actualizado para idioma: ${selectedValue}`);
     }
 }
 export default Settings;

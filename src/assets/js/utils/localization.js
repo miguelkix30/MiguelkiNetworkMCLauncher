@@ -17,115 +17,10 @@ class Localization {
         this.githubRepo = 'https://raw.githubusercontent.com/miguelkix30/MCLauncher-Langs/main';
         this.cacheDirectory = null;
         this.initialized = false;
-        this.systemLanguage = this.detectSystemLanguage();
         this.fallbackLanguage = 'es-ES';
         this.mutationObserver = null;
         this.availableLanguages = null;
-    }
-
-    /**
-     * Detecta el idioma del sistema operativo
-     * @returns {string} Código del idioma detectado
-     */
-    detectSystemLanguage() {
-        try {
-            // Obtener el idioma del sistema
-            let systemLocale;
-            
-            if (app) {
-                // En entorno Electron
-                systemLocale = app.getLocale();
-            } else {
-                // Fallback para otros entornos
-                if (os.platform() === 'win32') {
-                    // En Windows, intentar obtener de variables de entorno
-                    systemLocale = process.env.LANG || process.env.LANGUAGE || process.env.LC_ALL || 'es-ES';
-                } else {
-                    // En Unix/Linux/macOS
-                    systemLocale = process.env.LANG || process.env.LANGUAGE || process.env.LC_ALL || 'es-ES';
-                }
-            }
-            
-            // Verificar que systemLocale no sea undefined o null
-            if (!systemLocale) {
-                console.warn('No se pudo detectar el idioma del sistema, usando fallback');
-                systemLocale = 'es-ES';
-            }
-            
-            // Limpiar el locale (remover encoding como .UTF-8)
-            systemLocale = systemLocale.split('.')[0];
-            
-            console.log(`Idioma del sistema detectado: ${systemLocale}`);
-            
-            // Convertir códigos de idioma comunes al formato esperado
-            const languageMap = {
-                'es': 'es-ES',
-                'es-ES': 'es-ES',
-                'es-MX': 'es-ES',
-                'es-AR': 'es-ES',
-                'es-CL': 'es-ES',
-                'es-CO': 'es-ES',
-                'es-PE': 'es-ES',
-                'es-VE': 'es-ES',
-                'en': 'en-EN',
-                'en-US': 'en-EN',
-                'en_US': 'en-EN',  // Agregar formato underscore
-                'en-GB': 'en-EN',
-                'en_GB': 'en-EN',
-                'en-CA': 'en-EN',
-                'en_CA': 'en-EN',
-                'en-AU': 'en-EN',
-                'en_AU': 'en-EN',
-                'en-NZ': 'en-EN',
-                'en_NZ': 'en-EN',
-                'fr': 'fr-FR',
-                'fr-FR': 'fr-FR',
-                'fr_FR': 'fr-FR',
-                'fr-CA': 'fr-FR',
-                'fr_CA': 'fr-FR',
-                'de': 'de-DE',
-                'de-DE': 'de-DE',
-                'de_DE': 'de-DE',
-                'de-AT': 'de-DE',
-                'de_AT': 'de-DE',
-                'de-CH': 'de-DE',
-                'de_CH': 'de-DE',
-                'it': 'it-IT',
-                'it-IT': 'it-IT',
-                'it_IT': 'it-IT',
-                'pt': 'pt-PT',
-                'pt-PT': 'pt-PT',
-                'pt_PT': 'pt-PT',
-                'pt-BR': 'pt-BR',
-                'pt_BR': 'pt-BR'
-            };
-
-            // Intentar mapear directamente primero
-            let detectedLanguage = languageMap[systemLocale];
-            
-            // Si no se encuentra, intentar con la parte base del idioma
-            if (!detectedLanguage) {
-                const baseLanguage = systemLocale.split(/[-_]/)[0];
-                detectedLanguage = languageMap[baseLanguage];
-            }
-            
-            // Si aún no se encuentra, usar fallback
-            if (!detectedLanguage) {
-                detectedLanguage = this.fallbackLanguage;
-            }
-            console.log(`Idioma mapeado: ${detectedLanguage}`);
-            
-            // Verificación adicional de que el resultado no sea undefined
-            if (!detectedLanguage) {
-                console.error('Error en la detección del idioma, retornando fallback');
-                return this.fallbackLanguage;
-            }
-            
-            return detectedLanguage;
-        } catch (error) {
-            console.error('Error detectando idioma del sistema:', error);
-            return this.fallbackLanguage;
-        }
+        this.needsInitialSetup = false; // Flag para indicar si se necesita configuración inicial
     }
 
     /**
@@ -152,39 +47,30 @@ class Localization {
                 selectedLanguage = configClient.language;
                 console.log(`Idioma configurado encontrado: ${selectedLanguage}`);
                 
-                // Si es automático, usar detección del sistema
-                if (selectedLanguage === 'auto') {
-                    selectedLanguage = this.systemLanguage;
-                    console.log(`Usando detección automática: ${selectedLanguage}`);
+                // Verificar si el idioma configurado está disponible
+                if (!this.isLanguageAvailable(selectedLanguage)) {
+                    console.warn(`Idioma configurado ${selectedLanguage} no está disponible, se requiere configuración inicial`);
+                    this.needsInitialSetup = true;
+                    selectedLanguage = this.fallbackLanguage;
                 }
             } else {
-                console.log('No se encontró idioma en configuración, usando detección automática');
-                selectedLanguage = this.systemLanguage;
-                
-                // NO guardar la configuración automática durante la inicialización
-                // para permitir que el setup inicial se ejecute
-                console.log('ConfigClient no existe, se permitirá al launcher iniciar la configuración inicial');
+                console.log('No se encontró configuración de idioma, se requiere configuración inicial');
+                this.needsInitialSetup = true;
+                selectedLanguage = this.fallbackLanguage;
             }
 
             // Establecer idioma actual
             this.currentLanguage = selectedLanguage;
-            
-            // Verificar si el idioma seleccionado está disponible
-            if (!this.isLanguageAvailable(this.currentLanguage)) {
-                console.warn(`Idioma ${this.currentLanguage} no disponible, usando fallback ${this.fallbackLanguage}`);
-                this.currentLanguage = this.fallbackLanguage;
-                
-                // Actualizar configuración si es necesario (solo si ya existe)
-                if (configClient && configClient.language && configClient.language !== 'auto') {
-                    await this.saveLanguageToConfig('auto', false); // No crear durante inicialización
-                }
-            }
             
             // Cargar traducciones
             await this.loadTranslations(this.currentLanguage);
             
             this.initialized = true;
             console.log(`Sistema de localización inicializado con idioma: ${this.currentLanguage}`);
+            
+            if (this.needsInitialSetup) {
+                console.log('🔧 Se requiere configuración inicial del idioma');
+            }
             
             // Aplicar traducciones después de un breve delay para asegurar que el DOM esté listo
             setTimeout(() => {
@@ -197,6 +83,7 @@ class Localization {
             console.error('Error inicializando sistema de localización:', error);
             // Cargar traducciones de fallback
             await this.loadFallbackTranslations();
+            this.needsInitialSetup = true;
             this.initialized = true;
         }
     }
@@ -245,7 +132,6 @@ class Localization {
             }
             
             this.availableLanguages = await response.json();
-            console.log('Idiomas disponibles cargados desde GitHub:', Object.keys(this.availableLanguages));
             
         } catch (error) {
             console.error('Error cargando idiomas disponibles:', error);
@@ -491,6 +377,7 @@ class Localization {
             launcher: {
                 title: "Miguelki Network MC Launcher",
                 loading: "Cargando...",
+                starting: "Iniciando Launcher...",
                 error: "Error",
                 success: "Éxito",
                 warning: "Advertencia",
@@ -521,6 +408,24 @@ class Localization {
                 disconnected: "Desconectado",
                 failed: "Falló",
                 completed: "Completado"
+            },
+            setup: {
+                welcome_title: "Configuración Inicial de Miguelki Network MC Launcher",
+                welcome_message: "¡Bienvenido! Vamos a configurar algunos parámetros para optimizar tu experiencia.",
+                step_1_language: "Selección de Idioma",
+                language_info: "Selecciona tu idioma preferido. Esta configuración se puede cambiar más tarde en los ajustes del launcher.",
+                step_2_performance: "Modo de Rendimiento",
+                performance_info: "Activa esta opción para mejorar el rendimiento en equipos con recursos limitados.",
+                enable_performance_mode: "Activar modo de rendimiento",
+                performance_note: "Esta opción desactiva los fondos de video animados y las transiciones visuales para reducir el consumo de recursos.",
+                step_3_ram: "Configuración de Memoria RAM",
+                total_ram: "RAM Total: ",
+                minimum_ram: "RAM Mínima:",
+                maximum_ram: "RAM Máxima:",
+                step_4_behavior: "Comportamiento del Launcher",
+                close_launcher: "Cerrar el launcher después de iniciar el juego (Recomendado)",
+                keep_launcher_open: "Mantener abierto el launcher",
+                close_all: "Cerrar el juego al cerrar el launcher"
             }
         };
     }
@@ -566,9 +471,11 @@ class Localization {
         try {
             let targetLanguage = languageCode;
             
-            // Si es automático, usar el idioma del sistema
+            // Si es automático, requerir configuración inicial
             if (languageCode === 'auto') {
-                targetLanguage = this.systemLanguage;
+                console.warn('Idioma configurado como automático, se requiere configuración manual');
+                this.needsInitialSetup = true;
+                targetLanguage = this.fallbackLanguage;
             }
             
             // Verificar que el idioma no sea undefined o null
@@ -788,14 +695,24 @@ class Localization {
      */
     forceApplyTranslations() {
         try {
-            // Esperar un poco para que el DOM se estabilice
+            // Aplicar inmediatamente
+            this.applyTranslations();
+            
+            // Esperar un poco para que el DOM se estabilice y aplicar nuevamente
             setTimeout(() => {
                 this.applyTranslations();
             }, 50);
             
-            // Aplicar nuevamente después de un tiempo mayor
+            // Aplicar nuevamente después de un tiempo mayor para asegurar que todas las traducciones se apliquen
             setTimeout(() => {
                 this.applyTranslations();
+                
+                // Para la configuración inicial, aplicar traducciones específicamente al modal de setup
+                const setupModal = document.querySelector('.setup-modal');
+                if (setupModal && setupModal.style.display !== 'none') {
+                    this.applyTranslationsToElement(setupModal);
+                }
+                
             }, 200);
             
         } catch (error) {
@@ -881,6 +798,22 @@ class Localization {
         } catch (error) {
             console.error('Error deteniendo observador de mutaciones:', error);
         }
+    }
+
+    /**
+     * Verifica si se necesita configuración inicial del idioma
+     * @returns {boolean} True si se necesita configuración inicial
+     */
+    needsInitialLanguageSetup() {
+        return this.needsInitialSetup;
+    }
+
+    /**
+     * Marca que ya no se necesita configuración inicial
+     */
+    clearInitialSetupFlag() {
+        this.needsInitialSetup = false;
+        console.log('Flag de configuración inicial limpiado');
     }
 }
 
