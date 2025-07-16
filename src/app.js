@@ -752,33 +752,6 @@ ipcMain.handle('validate-launcher-config', async (event, options) => {
 ipcMain.on('main-window-hide', () => MainWindow.getWindow().hide());
 ipcMain.on('main-window-show', () => MainWindow.getWindow().show());
 
-ipcMain.on('create-store-window', () => {
-    let storewin = new BrowserWindow({
-        width: 1280,
-        height: 795,
-        minimizable: false,
-        maximizable: false,
-        resizable: false,
-        webPreferences: {
-            nodeIntegration: true,
-        }
-    });
-    storewin.loadURL(pkg.store_url);
-});
-
-ipcMain.on('create-skin-window', () => {
-    let skinwin = new BrowserWindow({
-        width: 500,
-        height: 800,
-        minimizable: false,
-        maximizable: false,
-        resizable: false,
-        webPreferences: {
-            nodeIntegration: true,
-        }
-    });
-    skinwin.loadURL(pkg.azuriom_url + 'skin-api');
-});
 
 ipcMain.on('create-register-window', () => {
     let registerWin = new BrowserWindow({

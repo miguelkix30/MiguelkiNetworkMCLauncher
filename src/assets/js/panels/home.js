@@ -33,8 +33,7 @@ import {
 	playquitMSG,
 	addInstanceMSG,
 	installMKLibMods,
-	hideFolder,
-	killMinecraftProcess,
+	killMinecraftProcess
 } from "../MKLib.js";
 import cleanupManager from "../utils/cleanup-manager.js";
 import { downloadAssets } from "../utils/instance-manager.js";
@@ -124,37 +123,49 @@ class Home {
 	}
 
 	async showstore() {
-		let storebutton = document.querySelector(".storebutton");
 		let res = await config.GetConfig();
-		if (res.store_enabled) {
+		const shopButton = document.getElementById("shop");
+		
+		// Función para ocultar el botón
+		const hideShopButton = () => {
+			shopButton.style.display = "none";
+			shopButton.setAttribute("hidden", "");
+		};
+		
+		// Función para mostrar el botón
+		const showShopButton = () => {
+			shopButton.dataset.url = res.store_url;
+			shopButton.style.display = "flex";
+			shopButton.removeAttribute("hidden");
+		};
+		
+		// Verificar si la tienda está habilitada y la URL está disponible
+		if (res.store_enabled && res.store_url && res.store_url.trim() !== "") {
 			try {
-				const response = await fetch(pkg.store_url).catch((err) =>
-					console.error(
-						localization.t('home.store_offline')
-					)
-				);
+				console.log(`Verificando accesibilidad de la tienda: ${res.store_url}`);
+				const response = await fetch(res.store_url).catch((err) => {
+					console.error(localization.t('home.store_offline'));
+					throw err;
+				});
+				
 				if (response.ok) {
-					document.querySelector(".news-blockshop").style.display = "block";
+					showShopButton();
+					console.log("Botón de la tienda mostrado correctamente");
 				} else {
-					console.error(
-						localization.t('home.store_offline')
-					);
-					document.querySelector(".news-blockshop").style.display = "none";
+					console.error(localization.t('home.store_offline'));
+					hideShopButton();
 				}
 			} catch (error) {
-				console.error(
-					localization.t('home.store_offline')
-				);
-				document.querySelector(".news-blockshop").style.display = "none";
+				console.error(localization.t('home.store_offline'));
+				hideShopButton();
 			}
-			storebutton.addEventListener("click", (e) => {
-				ipcRenderer.send("create-store-window");
-			});
 		} else {
-			document.querySelector(".news-blockshop").style.display = "none";
-			console.log(
-				localization.t('home.store_disabled')
-			);
+			hideShopButton();
+			if (!res.store_enabled) {
+				console.log(localization.t('home.store_disabled'));
+			} else if (!res.store_url || res.store_url.trim() === "") {
+				console.log("URL de la tienda no configurada");
+			}
 		}
 	}
 
@@ -413,7 +424,15 @@ class Home {
 
 		socials.forEach((social) => {
 			social.addEventListener("click", (e) => {
-				shell.openExternal(e.target.dataset.url);
+				// Buscar el elemento que tenga el data-url, ya sea el target o su parent
+				let targetElement = e.target;
+				while (targetElement && !targetElement.dataset.url) {
+					targetElement = targetElement.parentElement;
+				}
+				
+				if (targetElement && targetElement.dataset.url) {
+					shell.openExternal(targetElement.dataset.url);
+				}
 			});
 		});
 	}

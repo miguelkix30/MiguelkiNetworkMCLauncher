@@ -1,9 +1,9 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "productname": "Miguelki Network MC Launcher",
-    "version": "3.4.0",
-    "sub_version": "EXPERIMENTAL-BUILD3",
-    "changelog": "Reescrito el core de ejecución del juego.",
+    "version": "3.4.1",
+    "sub_version": "EXP1",
+    "changelog": "Arreglos menores",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
@@ -12,7 +12,6 @@
         "url": "https://github.com/miguelkix30"
     },
     "url": "http://mclauncherapi.miguelkiwebservices.com/",
-    "store_url": "https://minecraft.miguelkinetwork.info/shop/",
     "azuriom_url": "https://minecraft.miguelkinetwork.info/",
     "discord_url": "https://dsc.gg/miguelkinetwork",
     "discord_client_id": "1307003977442787451",
