@@ -1511,6 +1511,7 @@ class Settings {
             const loaderPath = path.join(dataPath, 'loader');
             const versionsPath = path.join(dataPath, 'versions');
             const runtimePath = path.join(dataPath, 'runtime');
+            const resourcesPath = path.join(dataPath, 'resources');
             console.log('Eliminando directorios de assets, instancias, bibliotecas, loader, versiones y runtime...');
             // Eliminar los directorios de assets, instancias, bibliotecas, loader, versiones y runtime
             await this.recursiveDelete(assetsPath);
@@ -1519,6 +1520,7 @@ class Settings {
             await this.recursiveDelete(loaderPath);
             await this.recursiveDelete(versionsPath);
             await this.recursiveDelete(runtimePath);
+            await this.recursiveDelete(resourcesPath);
             
             // Wait a moment before restarting
             await new Promise(resolve => setTimeout(resolve, 1000));

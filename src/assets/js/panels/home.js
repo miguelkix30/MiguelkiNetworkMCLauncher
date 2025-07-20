@@ -11,8 +11,6 @@ import {
 	setInstanceBackground,
 	pkg,
 	popup,
-	clickHead,
-	getClickeableHead,
 	toggleModsForInstance,
 	discordAccount,
 	toggleMusic,
@@ -1297,7 +1295,13 @@ ${error.message}`,
 					? this.config.dataDirectory
 					: `.${this.config.dataDirectory}`
 			}`;
-			
+
+			const resourcePath = path.join(
+				rootPath,
+				"resources",
+				`${options.loadder.loadder_type}-${options.loadder.minecraft_version}`
+			);
+
 			// Mostrar progreso de configuración
 			infoStarting.innerHTML = `${localization.t('home.configuring_loader')} ${options.loadder.loadder_type}...`;
 			this.setProgressBarDeterminate(0, 100);
@@ -1305,7 +1309,7 @@ ${error.message}`,
 			const loaderResult = await ipcRenderer.invoke('get-launcher-config', {
 				loaderType: options.loadder.loadder_type,
 				gameVersion: options.loadder.minecraft_version,
-				rootPath: rootPath
+				rootPath: resourcePath
 			});
 			
 			if (!loaderResult.success) {
@@ -1411,13 +1415,16 @@ ${error.message}`,
 
 		let opt;
 		/* if (options.loadder.loadder_type == "forge") { */
-		
-		// Definir rootPath al inicio para uso en toda la configuración
 		const rootPath = `${await appdata()}/${
 			process.platform == "darwin"
 				? this.config.dataDirectory
 				: `.${this.config.dataDirectory}`
 		}`;
+		const resourcePath = path.join(
+			rootPath,
+			"resources",
+			`${options.loadder.loadder_type}-${options.loadder.minecraft_version}`
+		);
 		
 		// Establecer el gameDirectory correcto para la instancia
 		const instanceGameDirectory = `${rootPath}/instances/${options.name}`;
@@ -1442,7 +1449,8 @@ ${error.message}`,
 			path.join(instanceGameDirectory, 'resourcepacks'),
 			path.join(instanceGameDirectory, 'screenshots'),
 			path.join(instanceGameDirectory, 'logs'),
-			path.join(instanceGameDirectory, 'crash-reports')
+			path.join(instanceGameDirectory, 'crash-reports'),
+			resourcePath
 		];
 		
 		for (const dir of requiredDirs) {
@@ -1465,16 +1473,16 @@ ${error.message}`,
 				// Forzar el uso de OpenGL software rendering como fallback
 				'-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=true',
 				// Configurar biblioteca nativa LWJGL
-				'-Dorg.lwjgl.librarypath=' + path.join(rootPath, 'bin', 'natives'),
+				'-Dorg.lwjgl.librarypath=' + path.join(resourcePath, 'natives', options.loadder.minecraft_version),
 				// Deshabilitar verificaciones de compatibilidad de LWJGL que pueden fallar
 				'-Dorg.lwjgl.util.NoChecks=true',
 				// Configurar OpenAL para compatibilidad
-				'-Dopenal.library=' + path.join(rootPath, 'bin', 'natives', process.platform === 'win32' ? 'OpenAL32.dll' : 'libopenal.so'),
+				'-Dopenal.library=' + path.join(resourcePath, 'natives', options.loadder.minecraft_version, process.platform === 'win32' ? 'OpenAL32.dll' : 'libopenal.so'),
 				// Argumentos para prevenir errores de memoria de LWJGL
 				'-Dorg.lwjgl.util.Debug=false',
 				// Configurar DirectX/OpenGL para Windows
 				...(process.platform === 'win32' ? [
-					'-Djava.library.path=' + path.join(rootPath, 'bin', 'natives'),
+					'-Djava.library.path=' + path.join(resourcePath, 'natives', options.loadder.minecraft_version),
 					'-Dsun.java2d.d3d=false',
 					'-Dsun.java2d.opengl=false'
 				] : [])
@@ -1597,6 +1605,8 @@ ${error.message}`,
 		
 		// Configuración específica para minecraft-launcher-core
 		opt = {
+			// Directorio raíz donde se almacenan los archivos del launcher
+			root: resourcePath,
 			// Configuración base de tomate-loaders
 			...launchConfig,
 			
@@ -1606,32 +1616,30 @@ ${error.message}`,
 			// Timeout para conexiones
 			timeout: 10000,
 			
-			// Directorio raíz donde se almacenan los archivos del launcher
-			root: instanceGameDirectory,
 			
 			// Nombre de la instancia
 			instance: options.name,
 			
-			// Configuración de versión
+			/* // Configuración de versión
 			version: {
 				number: options.loadder.minecraft_version,
 				type: "release",
 				custom: options.loadder.custom_version
-			},
+			}, */
 			
 			// Configuración de proceso separado
 			detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
 
-			// Configuración del loader (Forge/Fabric/Quilt)
+			/* // Configuración del loader (Forge/Fabric/Quilt)
 			loader: {
 				type: options.loadder.loadder_type,
 				build: options.loadder.loadder_version,
 				enable: options.loadder.loadder_type !== "none" && options.loadder.loadder_type !== "vanilla"
-			},
+			}, */
 			
-			// Para Forge específicamente, usar el campo forge si está disponible
+			/* // Para Forge específicamente, usar el campo forge si está disponible
 			...(options.loadder.loadder_type === "forge" && launchConfig.forge ? { forge: launchConfig.forge } : {}),
-
+ */
 			// Configuración de Java - usar la ruta verificada/descargada
 			javaPath: javaPath,
 			
@@ -1664,13 +1672,13 @@ ${error.message}`,
 				// Directorio donde el juego genera saves, resource packs, etc.
 				gameDirectory: instanceGameDirectory,
 				// Directorio donde están los archivos del Minecraft jar y version json
-				directory: launchConfig.directory || path.join(rootPath, 'versions', options.loadder.minecraft_version),
+				/* directory: launchConfig.directory || path.join(rootPath, 'versions', options.loadder.minecraft_version),
 				// Directorio de nativos
 				natives: path.join(rootPath, 'bin', 'natives'),
 				// Directorio de assets
 				assetRoot: path.join(rootPath, 'assets'),
 				// Directorio de librerías
-				libraryRoot: path.join(rootPath, 'libraries'),
+				libraryRoot: path.join(rootPath, 'libraries'), */
 				// Directorio de trabajo para el proceso Java
 				cwd: instanceGameDirectory,
 				detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
