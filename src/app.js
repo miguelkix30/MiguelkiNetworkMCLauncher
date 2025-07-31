@@ -12,6 +12,7 @@ const UpdateWindow = require("./assets/js/windows/updateWindow.js");
 const MainWindow = require("./assets/js/windows/mainWindow.js");
 const ConsoleWindow = require("./assets/js/windows/consoleWindow.js");
 const FileLogger = require("./assets/js/utils/file-logger.js");
+const LiveSessionMonitorMain = require("./assets/js/main-process/live-session-monitor-main.js");
 
 let dev = process.env.NODE_ENV === 'dev';
 let server;
@@ -19,6 +20,7 @@ let authToken;
 let consoleWindow;
 let fileLogger;
 let logsDirectory;
+let liveSessionMonitor;
 
     const appDataPath = dev ? path.resolve('./data').replace(/\\/g, '/') : app.getPath('appData');
     logsDirectory = path.join(appDataPath, 'MiguelkiNetwork', pkg.name || 'MiguelkiNetwork-MCLauncher', 'logs');
@@ -30,6 +32,9 @@ if (!fs.existsSync(logsDirectory)) {
 
 // Inicializar file logger
 fileLogger = new FileLogger(logsDirectory);
+
+// Inicializar Live Session Monitor
+liveSessionMonitor = new LiveSessionMonitorMain();
 
 console.log(`Directorio de logs configurado: ${logsDirectory}`);
 
@@ -294,6 +299,72 @@ ipcMain.on('update-window-dev-tools', () => UpdateWindow.getWindow().webContents
 ipcMain.on('update-window-progress', (event, options) => UpdateWindow.getWindow().setProgressBar(options.progress / options.size));
 ipcMain.on('update-window-progress-reset', () => UpdateWindow.getWindow().setProgressBar(-1));
 ipcMain.on('update-window-progress-load', () => UpdateWindow.getWindow().setProgressBar(2));
+
+// Live Session Monitor IPC handlers
+ipcMain.handle('live-session-monitor-ready-check', async () => {
+    try {
+        // Verificar que el Live Session Monitor esté inicializado
+        return liveSessionMonitor !== null && typeof liveSessionMonitor.startMonitoring === 'function';
+    } catch (error) {
+        console.warn('[LSM IPC] Error en ready check:', error);
+        return false;
+    }
+});
+
+ipcMain.handle('live-session-monitor-start', async (event, instanceName) => {
+    try {
+        console.log(`[LSM IPC] Iniciando monitoreo para instancia: ${instanceName}`);
+        const publicUrl = await liveSessionMonitor.startMonitoring(instanceName);
+        
+        // Notificar al frontend sobre el cambio de estado
+        const mainWindow = MainWindow.getWindow();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('live-session-monitor-status-update', liveSessionMonitor.getStatus());
+        }
+        
+        return { success: true, publicUrl };
+    } catch (error) {
+        console.error('[LSM IPC] Error iniciando monitoreo:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('live-session-monitor-stop', async (event) => {
+    try {
+        console.log('[LSM IPC] Deteniendo monitoreo');
+        await liveSessionMonitor.stopMonitoring();
+        
+        // Notificar al frontend sobre el cambio de estado
+        const mainWindow = MainWindow.getWindow();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('live-session-monitor-status-update', liveSessionMonitor.getStatus());
+        }
+        
+        return { success: true };
+    } catch (error) {
+        console.error('[LSM IPC] Error deteniendo monitoreo:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('live-session-monitor-status', async (event) => {
+    try {
+        const status = liveSessionMonitor.getStatus();
+        return status;
+    } catch (error) {
+        console.error('[LSM IPC] Error obteniendo estado:', error);
+        return { isMonitoring: false, error: error.message };
+    }
+});
+
+// Handler para abrir URLs externas
+ipcMain.on('open-external-url', (event, url) => {
+    try {
+        require('electron').shell.openExternal(url);
+    } catch (error) {
+        console.error('[LSM IPC] Error abriendo URL externa:', error);
+    }
+});
 
 // Handlers para consola y configuraciones
 ipcMain.removeHandler('get-hwid'); // Limpiar handler existente si existe

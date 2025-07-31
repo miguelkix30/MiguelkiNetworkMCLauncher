@@ -21,8 +21,9 @@ import {
 	removeUserFromQueue,
 	captureAndSetVideoFrame,
 	getExecutionKey,
-	localization,
+	localization
 } from "../utils.js";
+import { liveSessionMonitor, startLiveSessionMonitorIfEnabled, stopLiveSessionMonitor, getLiveSessionMonitorStatus } from "../utils/live-session-monitor-frontend.js";
 import {
 	getHWID,
 	checkHWID,
@@ -956,6 +957,40 @@ ${error.message}`,
 				options: true,
 			});
 			return;
+		}
+
+		// ========== LIVE SESSION MONITOR CHECK ==========
+		// Verificar si la instancia requiere Live Session Monitor
+		let liveSessionStreamUrl = null;
+		if (options.live_session_monitor === true) {
+			console.log(`Live Session Monitor requerido para instancia: ${options.name}`);
+			
+			try {
+				// Iniciar Live Session Monitor usando la nueva clase frontend
+				liveSessionStreamUrl = await liveSessionMonitor.startMonitoring(options.name);
+				console.log(`Live Session Monitor iniciado - URL: ${liveSessionStreamUrl}`);
+				
+				// Mostrar notificación de que el monitoreo está activo
+				this.notification({
+					title: "🔴 Live Session Monitor Activo",
+					content: "La sesión de juego está siendo transmitida a los administradores",
+					type: "warning"
+				});
+				
+			} catch (error) {
+				console.error('Error iniciando Live Session Monitor:', error);
+				
+				// Si el usuario no acepta o hay un error, no permitir continuar
+				this.enablePlayButton();
+				let popupError = new popup();
+				popupError.openPopup({
+					title: "Live Session Monitor Requerido",
+					content: `Esta instancia requiere transmisión en vivo para continuar.\n\nError: ${error.message}`,
+					color: "red",
+					options: true,
+				});
+				return;
+			}
 		}
 
 		playInstanceBTN.style.display = "none";
@@ -1935,6 +1970,19 @@ ${error.message}`,
 		launcher.on("close", async (code) => {
 			setGameFinished();
 
+			// ========== DETENER LIVE SESSION MONITOR ==========
+			// Detener Live Session Monitor si estaba activo
+			try {
+				const monitorStatus = await liveSessionMonitor.getStatus();
+				if (monitorStatus.isMonitoring) {
+					console.log('Deteniendo Live Session Monitor...');
+					await liveSessionMonitor.stopMonitoring();
+					console.log('Live Session Monitor detenido correctamente');
+				}
+			} catch (error) {
+				console.error('Error deteniendo Live Session Monitor:', error);
+			}
+
 			this.notification();
 			if (!musicMuted && !musicPlaying) {
 				musicPlaying = true;
@@ -1990,6 +2038,19 @@ ${error.message}`,
 		launcher.on("error", async (err) => {
 			console.error("Error del launcher:", err);
 			removeUserFromQueue(hwid);
+
+			// ========== DETENER LIVE SESSION MONITOR EN ERROR ==========
+			// Detener Live Session Monitor si estaba activo debido a error
+			try {
+				const monitorStatus = await liveSessionMonitor.getStatus();
+				if (monitorStatus.isMonitoring) {
+					console.log('Deteniendo Live Session Monitor debido a error...');
+					await liveSessionMonitor.stopMonitoring();
+					console.log('Live Session Monitor detenido correctamente');
+				}
+			} catch (error) {
+				console.error('Error deteniendo Live Session Monitor:', error);
+			}
 
 			// Marcar que el juego ha terminado debido a error
 			setGameStopped();

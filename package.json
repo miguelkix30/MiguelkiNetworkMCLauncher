@@ -36,6 +36,7 @@
         "electron-updater": "^6.1.8",
         "express": "^4.19.2",
         "html2canvas": "^1.4.1",
+        "localtunnel": "^2.0.2",
         "marked": "^14.1.2",
         "minecraft-launcher-core": "^3.18.2",
         "msmc": "^5.0.5",
@@ -43,6 +44,7 @@
         "node-machine-id": "^1.0.0",
         "systeminformation": "^5.25.11",
         "tomate-loaders": "^2.0.2",
+        "ws": "^8.18.3",
         "xml-js": "^1.6.11"
     },
     "devDependencies": {

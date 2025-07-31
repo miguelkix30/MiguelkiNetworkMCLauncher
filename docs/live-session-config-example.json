@@ -1,0 +1,82 @@
+{
+  "example_instances": {
+    "survival_monitored": {
+      "name": "Survival Monitoreado",
+      "minecraft_version": "1.20.1",
+      "loadder": {
+        "loadder_type": "forge",
+        "loadder_version": "latest",
+        "minecraft_version": "1.20.1"
+      },
+      "live_session_monitor": true,
+      "description": "Servidor survival con monitoreo activo",
+      "background": "https://example.com/survival-bg.jpg",
+      "backgroundMusic": "https://example.com/survival-music.mp3",
+      "whitelistActive": false,
+      "whitelist": [],
+      "serverIP": "survival.miguelkinetwork.fun",
+      "serverPort": 25565
+    },
+    "creative_normal": {
+      "name": "Creative Normal",
+      "minecraft_version": "1.20.1",
+      "loadder": {
+        "loadder_type": "fabric",
+        "loadder_version": "latest",
+        "minecraft_version": "1.20.1"
+      },
+      "live_session_monitor": false,
+      "description": "Servidor creativo sin monitoreo",
+      "background": "https://example.com/creative-bg.jpg",
+      "backgroundMusic": "https://example.com/creative-music.mp3",
+      "whitelistActive": false,
+      "whitelist": [],
+      "serverIP": "creative.miguelkinetwork.fun",
+      "serverPort": 25565
+    },
+    "pvp_competitive": {
+      "name": "PvP Competitivo",
+      "minecraft_version": "1.19.4",
+      "loadder": {
+        "loadder_type": "fabric",
+        "loadder_version": "latest", 
+        "minecraft_version": "1.19.4"
+      },
+      "live_session_monitor": true,
+      "description": "Arena PvP con monitoreo para competencias",
+      "background": "https://example.com/pvp-bg.jpg",
+      "backgroundMusic": "https://example.com/pvp-music.mp3",
+      "whitelistActive": true,
+      "whitelist": ["player1", "player2", "player3"],
+      "serverIP": "pvp.miguelkinetwork.fun",
+      "serverPort": 25565
+    }
+  },
+  "live_session_config": {
+    "webhook_url": "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN",
+    "stream_quality": 0.7,
+    "frame_rate": 30,
+    "capture_timeout": 5000,
+    "notification_settings": {
+      "notify_on_start": true,
+      "notify_on_stop": true,
+      "notify_on_error": true
+    }
+  },
+  "admin_notes": {
+    "live_session_monitor_usage": [
+      "Para activar el monitoreo en una instancia, establecer 'live_session_monitor': true",
+      "El usuario debe aceptar un diálogo de consentimiento antes de iniciar",
+      "Se genera una URL temporal para acceder al stream",
+      "El monitoreo se detiene automáticamente al cerrar el juego",
+      "Solo se captura video de la ventana del juego, no audio",
+      "Útil para supervisión, soporte técnico y eventos especiales"
+    ],
+    "security_considerations": [
+      "Las URLs de stream son temporales y únicas por sesión",
+      "Acceso limitado a administradores autorizados",
+      "No se almacenan grabaciones en el servidor",
+      "Respeta la privacidad del usuario (solo ventana del juego)"
+    ]
+  }
+}
