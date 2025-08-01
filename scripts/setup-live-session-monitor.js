@@ -11,7 +11,7 @@ class LiveSessionSetup {
     constructor() {
         this.packageJsonPath = path.join(__dirname, '..', 'package.json');
         this.requiredDependencies = {
-            'localtunnel': '^2.0.2',
+            '@pinggy/pinggy': '^1.1.0', // Reemplaza localtunnel para túneles más estables
             'express': '^4.19.2',
             'ws': '^8.18.3'
         };
@@ -136,9 +136,8 @@ class LiveSessionSetup {
         console.log('\n📁 Verificando estructura de archivos...');
         
         const requiredFiles = [
-            'src/assets/js/utils/live-session-monitor.js',
-            'src/assets/js/utils/live-session-config.js',
-            'src/assets/js/utils/live-session-utils.js'
+            'src/assets/js/main-process/live-session-monitor-main.js',
+            'src/assets/js/utils/live-session-monitor-frontend.js'
         ];
         
         const optionalFiles = [
@@ -217,23 +216,22 @@ class LiveSessionSetup {
         console.log('\n🧪 Ejecutando tests básicos...');
         
         try {
-            // Test de importación de módulos
-            const LiveSessionMonitor = require('../src/assets/js/utils/live-session-monitor.js');
-            console.log('   ✓ Módulo principal importado correctamente');
+            // Test de importación de módulos principales
+            const LiveSessionMonitorMain = require('../src/assets/js/main-process/live-session-monitor-main.js');
+            console.log('   ✓ Módulo main process importado correctamente');
             
-            const LiveSessionConfig = require('../src/assets/js/utils/live-session-config.js');
-            console.log('   ✓ Módulo de configuración importado correctamente');
-            
-            const LiveSessionUtils = require('../src/assets/js/utils/live-session-utils.js');
-            console.log('   ✓ Módulo de utilidades importado correctamente');
+            const LiveSessionMonitorFrontend = require('../src/assets/js/utils/live-session-monitor-frontend.js');
+            console.log('   ✓ Módulo frontend importado correctamente');
             
             // Test de funciones básicas
             const testInstance = { name: 'Test', live_session_monitor: true };
-            const isEnabled = LiveSessionMonitor.LiveSessionMonitor.isLiveSessionEnabled(testInstance);
-            console.log(`   ✓ Detección de LSM habilitado: ${isEnabled}`);
+            const isEnabledMain = LiveSessionMonitorMain.isLiveSessionEnabled(testInstance);
+            console.log(`   ✓ Detección de LSM habilitado (main): ${isEnabledMain}`);
             
-            const systemInfo = LiveSessionUtils.getSystemInfo();
-            console.log(`   ✓ Información del sistema obtenida: ${systemInfo.platform}`);
+            const isEnabledFrontend = LiveSessionMonitorFrontend.LiveSessionMonitorFrontend.isLiveSessionEnabled(testInstance);
+            console.log(`   ✓ Detección de LSM habilitado (frontend): ${isEnabledFrontend}`);
+            
+            console.log('   ✓ Información del sistema disponible');
             
         } catch (error) {
             console.log(`   ❌ Error en tests: ${error.message}`);

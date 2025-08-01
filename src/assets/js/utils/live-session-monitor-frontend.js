@@ -2,9 +2,266 @@
  * @author Miguel
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  * 
- * Live Session Monitor - Frontend
- * Interfaz frontend que se comunica con el main process via IPC
+ * Live Session Monitor - Frontend & Utilities
+ * Sistema completo de monitoreo en tiempo real con configuración incorporada
  */
+
+// ============================
+// CONFIGURACIÓN INCORPORADA
+// ============================
+const LiveSessionConfig = {
+    // Configuración de captura de video
+    capture: {
+        frameRate: 30,              // FPS para la captura (10-60)
+        quality: 0.7,               // Calidad JPEG (0.1-1.0)
+        maxWidth: 1920,             // Ancho máximo de captura
+        maxHeight: 1080,            // Alto máximo de captura
+        minWidth: 640,              // Ancho mínimo de captura
+        minHeight: 480,             // Alto mínimo de captura
+        timeout: 5000,              // Timeout para encontrar ventana (ms)
+        retryAttempts: 3,           // Intentos de reconexión
+        retryDelay: 2000            // Delay entre intentos (ms)
+    },
+    
+    // Configuración del servidor
+    server: {
+        host: 'localhost',          // Host del servidor local
+        portRange: {                // Rango de puertos disponibles
+            min: 3000,
+            max: 9999
+        },
+        maxClients: 10,             // Máximo de clientes conectados
+        heartbeatInterval: 30000,   // Interval de heartbeat (ms)
+        connectionTimeout: 10000    // Timeout de conexión (ms)
+    },
+    
+    // Configuración del túnel público
+    tunnel: {
+        provider: 'pinggy',         // Proveedor de túnel
+        subdomain: {
+            prefix: 'lsm',          // Prefijo para subdomain
+            includeTimestamp: true,  // Incluir timestamp en subdomain
+            includeInstance: false   // Incluir nombre de instancia
+        },
+        retryAttempts: 3,           // Intentos de creación de túnel
+        retryDelay: 5000,           // Delay entre intentos (ms)
+        maxTunnelAge: 3600000      // Edad máxima del túnel (1 hora)
+    },
+    
+    // Configuración de notificaciones
+    notifications: {
+        showUserNotifications: true,    // Mostrar notificaciones al usuario
+        showAdminNotifications: true,   // Enviar notificaciones a admins
+        webhookEnabled: true,           // Usar webhooks para notificar
+        includeStreamUrl: true,         // Incluir URL en notificaciones
+        includeSystemInfo: false        // Incluir info del sistema
+    },
+    
+    // Configuración de seguridad
+    security: {
+        requireConsent: true,           // Requerir consentimiento del usuario
+        allowScreenshotCapture: true,   // Permitir capturas de pantalla
+        allowVideoRecording: false,     // Permitir grabación (no implementado)
+        allowAudioCapture: false,       // Permitir captura de audio
+        encryptStream: false,           // Encriptar stream (no implementado)
+        accessTokenRequired: false      // Requerir token de acceso
+    },
+    
+    // Configuración de la interfaz web
+    webInterface: {
+        theme: 'dark',                  // Tema de la interfaz (dark/light)
+        showFPS: true,                  // Mostrar contador de FPS
+        showTimestamp: true,            // Mostrar timestamp
+        showInstanceInfo: true,         // Mostrar info de instancia
+        allowFullscreen: true,          // Permitir pantalla completa
+        showControls: false,            // Mostrar controles (no implementado)
+        autoReconnect: true,            // Reconexión automática
+        reconnectDelay: 3000            // Delay de reconexión (ms)
+    },
+    
+    // Mensajes personalizables
+    messages: {
+        consentDialog: {
+            title: 'Live Session Monitor',
+            subtitle: '⚠️ Transmisión de Contenido Requerida',
+            description: 'Esta instancia requiere la activación del Live Session Monitor.',
+            acceptText: 'Aceptar y Continuar',
+            cancelText: 'Cancelar',
+            showPrivacyInfo: true,
+            showSecurityInfo: true
+        },
+        notifications: {
+            monitoringStarted: '🔴 Live Session Monitor Activo',
+            monitoringStopped: '⚪ Live Session Monitor Detenido',
+            errorOccurred: '❌ Error en Live Session Monitor'
+        }
+    }
+};
+
+// ============================
+// UTILIDADES INCORPORADAS
+// ============================
+class LiveSessionUtils {
+    /**
+     * Obtiene información del sistema para debugging
+     */
+    static getSystemInfo() {
+        try {
+            const os = require('os');
+            return {
+                platform: process.platform,
+                arch: process.arch,
+                nodeVersion: process.version,
+                electronVersion: process.versions?.electron,
+                chromeVersion: process.versions?.chrome,
+                memory: {
+                    total: Math.round(os.totalmem() / 1024 / 1024 / 1024 * 100) / 100, // GB
+                    free: Math.round(os.freemem() / 1024 / 1024 / 1024 * 100) / 100    // GB
+                },
+                cpu: {
+                    model: os.cpus()[0]?.model || 'Unknown',
+                    cores: os.cpus().length
+                },
+                hostname: os.hostname(),
+                uptime: Math.round(os.uptime() / 60) // minutos
+            };
+        } catch (error) {
+            return {
+                platform: 'unknown',
+                arch: 'unknown',
+                error: error.message
+            };
+        }
+    }
+    
+    /**
+     * Genera un ID único para la sesión de monitoreo
+     */
+    static generateSessionId(instanceName) {
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substr(2, 9);
+        const cleanInstanceName = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        return `${cleanInstanceName}-${timestamp}-${random}`;
+    }
+    
+    /**
+     * Formatea el tamaño de datos en formato legible
+     */
+    static formatDataSize(bytes) {
+        if (bytes === 0) return '0 B';
+        
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    /**
+     * Formatea la duración en formato legible
+     */
+    static formatDuration(milliseconds) {
+        const seconds = Math.floor(milliseconds / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        
+        if (hours > 0) {
+            return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+        } else if (minutes > 0) {
+            return `${minutes}m ${seconds % 60}s`;
+        } else {
+            return `${seconds}s`;
+        }
+    }
+    
+    /**
+     * Valida la configuración de una instancia para Live Session Monitor
+     */
+    static validateInstanceForLSM(instance) {
+        const errors = [];
+        const warnings = [];
+        
+        if (!instance) {
+            errors.push('La instancia no puede ser null o undefined');
+            return { isValid: false, errors, warnings };
+        }
+        
+        if (!instance.name || typeof instance.name !== 'string') {
+            errors.push('La instancia debe tener un nombre válido');
+        }
+        
+        if (instance.live_session_monitor !== true) {
+            errors.push('La instancia no tiene live_session_monitor habilitado');
+        }
+        
+        if (instance.maintenance === true) {
+            warnings.push('La instancia está en modo mantenimiento');
+        }
+        
+        return {
+            isValid: errors.length === 0,
+            errors,
+            warnings
+        };
+    }
+    
+    /**
+     * Logs estructurados para el sistema
+     */
+    static log(level, message, data = {}) {
+        const timestamp = new Date().toISOString();
+        const logEntry = {
+            timestamp,
+            level: level.toUpperCase(),
+            component: 'LiveSessionMonitor',
+            message,
+            ...data
+        };
+        
+        // Console logging con colores
+        const colors = {
+            ERROR: '\x1b[31m',
+            WARN: '\x1b[33m',
+            INFO: '\x1b[36m',
+            DEBUG: '\x1b[35m',
+            RESET: '\x1b[0m'
+        };
+        
+        const color = colors[level.toUpperCase()] || colors.INFO;
+        console.log(`${color}[LSM] ${message}${colors.RESET}`, data);
+    }
+}
+
+/**
+ * Función para obtener configuración específica de instancia
+ */
+function getInstanceConfig(instanceName) {
+    // Por ahora retornamos la configuración base
+    // En el futuro se pueden agregar overrides específicos por instancia
+    return { ...LiveSessionConfig };
+}
+
+/**
+ * Función para validar configuración
+ */
+function validateConfig(config) {
+    const errors = [];
+    
+    // Validar frameRate
+    if (config.capture?.frameRate < 1 || config.capture?.frameRate > 60) {
+        errors.push('frameRate debe estar entre 1 y 60');
+    }
+    
+    // Validar quality
+    if (config.capture?.quality < 0.1 || config.capture?.quality > 1.0) {
+        errors.push('quality debe estar entre 0.1 y 1.0');
+    }
+    
+    return {
+        isValid: errors.length === 0,
+        errors: errors
+    };
+}
 
 /**
  * Función helper para obtener ipcRenderer de manera compatible
@@ -598,41 +855,32 @@ function getLiveSessionMonitorStatus() {
     return liveSessionMonitor.getStatus();
 }
 
-// Exportaciones compatibles con ES6 modules y CommonJS
-if (typeof module !== 'undefined' && module.exports) {
-    // CommonJS (Node.js)
-    module.exports = {
-        LiveSessionMonitorFrontend,
-        liveSessionMonitor,
-        startLiveSessionMonitorIfEnabled,
-        stopLiveSessionMonitor,
-        getLiveSessionMonitorStatus
-    };
-}
+// ============================
+// EXPORTACIONES
+// ============================
 
 // Browser/Electron renderer - hacer disponible globalmente
 if (typeof window !== 'undefined') {
     window.LiveSessionMonitorFrontend = LiveSessionMonitorFrontend;
+    window.LiveSessionConfig = LiveSessionConfig;
+    window.LiveSessionUtils = LiveSessionUtils;
     window.liveSessionMonitor = liveSessionMonitor;
     window.startLiveSessionMonitorIfEnabled = startLiveSessionMonitorIfEnabled;
     window.stopLiveSessionMonitor = stopLiveSessionMonitor;
     window.getLiveSessionMonitorStatus = getLiveSessionMonitorStatus;
 }
 
-// Para uso directo en scripts
-if (typeof global !== 'undefined') {
-    global.LiveSessionMonitorFrontend = LiveSessionMonitorFrontend;
-    global.liveSessionMonitor = liveSessionMonitor;
-    global.startLiveSessionMonitorIfEnabled = startLiveSessionMonitorIfEnabled;
-    global.stopLiveSessionMonitor = stopLiveSessionMonitor;
-    global.getLiveSessionMonitorStatus = getLiveSessionMonitorStatus;
-}
-
-// Exportaciones ES6 para modules
+// Exportaciones ES6 para módulos
 export {
     LiveSessionMonitorFrontend,
+    LiveSessionConfig,
+    LiveSessionUtils,
+    getInstanceConfig,
+    validateConfig,
     liveSessionMonitor,
     startLiveSessionMonitorIfEnabled,
     stopLiveSessionMonitor,
     getLiveSessionMonitorStatus
 };
+
+
