@@ -1,5 +1,17 @@
 /**
- * Configuraciones avanzadas para Live Session Monitor
+     // Configuración de captura de video
+    capture: {
+        frameRate: 20,              // FPS para la captura (reducido para mejor rendimiento)
+        quality: 0.7,               // Calidad JPEG (0.1-1.0)
+        maxWidth: 1280,             // Ancho máximo de captura (optimizado)
+        maxHeight: 720,             // Alto máximo de captura (optimizado)
+        minWidth: 640,              // Ancho mínimo de captura
+        minHeight: 480,             // Alto mínimo de captura
+        timeout: 5000,              // Timeout para encontrar ventana (ms)
+        retryAttempts: 3,           // Intentos de reintento
+        retryDelay: 2000,           // Delay entre reintentos (ms)
+        captureMode: 'screen'       // Modo de captura: 'screen' para pantalla principal
+    },iones avanzadas para Live Session Monitor
  * Este archivo permite personalizar el comportamiento del monitoreo
  */
 
@@ -31,7 +43,7 @@ const LiveSessionConfig = {
     
     // Configuración del túnel público
     tunnel: {
-        provider: 'localtunnel',    // Proveedor de túnel
+        provider: 'pinggy',         // Proveedor de túnel (cambió de localtunnel a pinggy)
         subdomain: {
             prefix: 'lsm',          // Prefijo para subdomain
             includeTimestamp: true,  // Incluir timestamp en subdomain

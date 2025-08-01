@@ -122,12 +122,177 @@ class LiveSessionMonitorFrontend {
     }
 
     /**
+     * Muestra un diálogo de consentimiento antes de iniciar el monitoreo
+     * @param {string} instanceName - Nombre de la instancia
+     * @returns {Promise<boolean>} - true si acepta, false si rechaza
+     */
+    async showConsentDialog(instanceName) {
+        return new Promise((resolve) => {
+            // Crear elementos del modal
+            const modalOverlay = document.createElement('div');
+            modalOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Poppins', Arial, sans-serif;
+            `;
+
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                background: #2a2a2a;
+                border: 2px solid #4a4a4a;
+                border-radius: 15px;
+                padding: 30px;
+                max-width: 600px;
+                max-height: 80vh;
+                overflow-y: auto;
+                color: white;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            `;
+
+            modal.innerHTML = `
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <h2 style="color: #ff6b6b; margin: 0 0 10px 0; font-size: 24px;">⚠️ Live Session Monitor</h2>
+                    <h3 style="color: #ffd93d; margin: 0; font-size: 18px;">Consentimiento Requerido</h3>
+                </div>
+                
+                <div style="background: #1a1a1a; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #ff6b6b;">
+                    <p style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold;">
+                        La instancia "${instanceName}" requiere activar el Live Session Monitor.
+                    </p>
+                </div>
+
+                <div style="background: #3a1a1a; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <h4 style="color: #ff6b6b; margin: 0 0 15px 0;">🔴 INFORMACIÓN IMPORTANTE:</h4>
+                    <ul style="margin: 0; padding-left: 20px; line-height: 1.6;">
+                        <li>Su sesión de juego será transmitida en tiempo real</li>
+                        <li>Solo se captura la ventana del juego (no audio)</li>
+                        <li>La transmisión es temporal y no se almacena</li>
+                        <li>Los administradores pueden acceder al stream para:
+                            <ul style="margin-top: 5px;">
+                                <li>Soporte técnico</li>
+                                <li>Moderación</li>
+                                <li>Supervisión de seguridad</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div style="background: #1a3a1a; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <h4 style="color: #6bff6b; margin: 0 0 15px 0;">🛡️ PRIVACIDAD Y SEGURIDAD:</h4>
+                    <ul style="margin: 0; padding-left: 20px; line-height: 1.6;">
+                        <li>Solo se captura la ventana de Minecraft</li>
+                        <li>No se graba audio ni contenido fuera del juego</li>
+                        <li>La URL de transmisión es temporal y única</li>
+                        <li>El monitoreo se detiene al cerrar el juego</li>
+                        <li>No se almacenan grabaciones permanentes</li>
+                    </ul>
+                </div>
+
+                <div style="background: #3a3a1a; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: center;">
+                    <p style="margin: 0; font-weight: bold; color: #ffd93d;">
+                        ⚠️ Al continuar acepta que su sesión de juego sea monitoreada según estas condiciones.
+                    </p>
+                </div>
+
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+                    <button id="lsm-accept-btn" style="
+                        background: #4CAF50;
+                        color: white;
+                        border: none;
+                        padding: 12px 25px;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        transition: background 0.3s;
+                    ">✅ Acepto y Continuar</button>
+                    
+                    <button id="lsm-cancel-btn" style="
+                        background: #f44336;
+                        color: white;
+                        border: none;
+                        padding: 12px 25px;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        transition: background 0.3s;
+                    ">❌ Cancelar</button>
+                </div>
+            `;
+
+            modalOverlay.appendChild(modal);
+            document.body.appendChild(modalOverlay);
+
+            // Agregar eventos a los botones
+            const acceptBtn = modal.querySelector('#lsm-accept-btn');
+            const cancelBtn = modal.querySelector('#lsm-cancel-btn');
+
+            acceptBtn.addEventListener('mouseenter', () => {
+                acceptBtn.style.background = '#45a049';
+            });
+            acceptBtn.addEventListener('mouseleave', () => {
+                acceptBtn.style.background = '#4CAF50';
+            });
+
+            cancelBtn.addEventListener('mouseenter', () => {
+                cancelBtn.style.background = '#da190b';
+            });
+            cancelBtn.addEventListener('mouseleave', () => {
+                cancelBtn.style.background = '#f44336';
+            });
+
+            acceptBtn.addEventListener('click', () => {
+                document.body.removeChild(modalOverlay);
+                resolve(true);
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                document.body.removeChild(modalOverlay);
+                resolve(false);
+            });
+
+            // Cerrar con Escape
+            const handleKeyPress = (e) => {
+                if (e.key === 'Escape') {
+                    document.body.removeChild(modalOverlay);
+                    document.removeEventListener('keydown', handleKeyPress);
+                    resolve(false);
+                }
+            };
+            document.addEventListener('keydown', handleKeyPress);
+        });
+    }
+
+    /**
      * Inicia el monitoreo de una sesión
      * @param {string} instanceName - Nombre de la instancia
      * @returns {Promise<string>} - URL pública del stream
      */
     async startMonitoring(instanceName) {
         console.log(`[LSM Frontend] Intentando iniciar monitoreo para: ${instanceName}`);
+        
+        // Mostrar diálogo de consentimiento primero
+        const userAccepted = await this.showConsentDialog(instanceName);
+        
+        if (!userAccepted) {
+            console.log('[LSM Frontend] Usuario rechazó el consentimiento');
+            this.showNotification(
+                '⚠️ Monitoreo cancelado: Es necesario aceptar el consentimiento para jugar esta instancia',
+                'warning'
+            );
+            throw new Error('Usuario no aceptó el monitoreo requerido');
+        }
+        
+        console.log('[LSM Frontend] Usuario aceptó el consentimiento, continuando...');
         
         // Asegurar que IPC esté disponible
         await this.ensureIPCAvailable();
@@ -151,6 +316,13 @@ class LiveSessionMonitorFrontend {
             
             if (result && result.success) {
                 console.log(`[LSM Frontend] Monitoreo iniciado exitosamente: ${result.publicUrl}`);
+                
+                // Mostrar notificación de éxito
+                this.showNotification(
+                    `🔴 Live Session Monitor activo para ${instanceName}`, 
+                    'success'
+                );
+                
                 return result.publicUrl;
             } else {
                 const errorMsg = result?.error || 'Error desconocido iniciando monitoreo';
@@ -160,12 +332,29 @@ class LiveSessionMonitorFrontend {
         } catch (error) {
             console.error('[LSM Frontend] Error iniciando monitoreo:', error);
             
-            // Proporcionar información más específica del error
-            if (error.message.includes('invoke')) {
+            // Mostrar notificación de error específica
+            if (error.message.includes('no aceptó el monitoreo')) {
+                this.showNotification(
+                    '⚠️ Monitoreo cancelado: Es necesario aceptar el consentimiento para jugar esta instancia',
+                    'warning'
+                );
+            } else if (error.message.includes('invoke')) {
+                this.showNotification(
+                    '❌ Error de comunicación con el sistema de monitoreo',
+                    'error'
+                );
                 throw new Error('Error de comunicación IPC. El main process puede no estar respondiendo.');
             } else if (error.message.includes('ready')) {
+                this.showNotification(
+                    '❌ Sistema de monitoreo no disponible',
+                    'error'
+                );
                 throw new Error('El sistema Live Session Monitor no está listo en el main process.');
             } else {
+                this.showNotification(
+                    `❌ Error iniciando Live Session Monitor: ${error.message}`,
+                    'error'
+                );
                 throw error;
             }
         }

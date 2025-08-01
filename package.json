@@ -27,9 +27,11 @@
         "ignore": "**/test"
     },
     "dependencies": {
+        "@pinggy/pinggy": "^0.1.4",
         "adm-zip": "^0.5.10",
         "axios": "^0.27.2",
         "azuriom-auth": "^1.0.1",
+        "canvas": "^3.1.2",
         "detect-gpu": "^5.0.70",
         "discord-rpc": "^4.0.1",
         "discord-webhook-node": "^1.0.0",
