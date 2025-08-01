@@ -855,6 +855,54 @@ function getLiveSessionMonitorStatus() {
     return liveSessionMonitor.getStatus();
 }
 
+async function requestConsentOnly(instanceName) {
+    return liveSessionMonitor.showConsentDialog(instanceName);
+}
+
+async function startMonitoringOnly(instanceName) {
+    // Inicia el monitoreo sin mostrar el diálogo de consentimiento
+    // (asumiendo que ya se pidió anteriormente)
+    console.log(`[LSM Frontend] Iniciando monitoreo para: ${instanceName} (consentimiento ya obtenido)`);
+    
+    // Asegurar que IPC esté disponible
+    await liveSessionMonitor.ensureIPCAvailable();
+
+    try {
+        const result = await liveSessionMonitor.ipcRenderer.invoke('live-session-monitor-start', instanceName);
+        
+        if (result && result.success) {
+            console.log(`[LSM Frontend] Monitoreo iniciado exitosamente: ${result.publicUrl}`);
+            
+            // Mostrar notificación de éxito
+            liveSessionMonitor.showNotification(
+                `🟢 Live Session Monitor activo para ${instanceName}`,
+                'success'
+            );
+            
+            // Emitir evento de estado actualizado
+            liveSessionMonitor.onStatusUpdate({
+                isMonitoring: true,
+                instanceName: instanceName,
+                publicUrl: result.publicUrl,
+                sessionId: result.sessionId,
+                startTime: Date.now()
+            });
+            
+            return result.publicUrl;
+        } else {
+            throw new Error(result.error || 'Error desconocido al iniciar el monitoreo');
+        }
+        
+    } catch (error) {
+        console.error(`[LSM Frontend] Error iniciando monitoreo: ${error.message}`);
+        liveSessionMonitor.showNotification(
+            `❌ Error iniciando Live Session Monitor: ${error.message}`,
+            'error'
+        );
+        throw error;
+    }
+}
+
 // ============================
 // EXPORTACIONES
 // ============================
@@ -868,6 +916,8 @@ if (typeof window !== 'undefined') {
     window.startLiveSessionMonitorIfEnabled = startLiveSessionMonitorIfEnabled;
     window.stopLiveSessionMonitor = stopLiveSessionMonitor;
     window.getLiveSessionMonitorStatus = getLiveSessionMonitorStatus;
+    window.requestConsentOnly = requestConsentOnly;
+    window.startMonitoringOnly = startMonitoringOnly;
 }
 
 // Exportaciones ES6 para módulos
@@ -880,7 +930,9 @@ export {
     liveSessionMonitor,
     startLiveSessionMonitorIfEnabled,
     stopLiveSessionMonitor,
-    getLiveSessionMonitorStatus
+    getLiveSessionMonitorStatus,
+    requestConsentOnly,
+    startMonitoringOnly
 };
 
 

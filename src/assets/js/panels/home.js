@@ -23,7 +23,7 @@ import {
 	getExecutionKey,
 	localization
 } from "../utils.js";
-import { liveSessionMonitor, startLiveSessionMonitorIfEnabled, stopLiveSessionMonitor, getLiveSessionMonitorStatus } from "../utils/live-session-monitor-frontend.js";
+import { liveSessionMonitor, startLiveSessionMonitorIfEnabled, stopLiveSessionMonitor, getLiveSessionMonitorStatus, requestConsentOnly, startMonitoringOnly } from "../utils/live-session-monitor-frontend.js";
 import {
 	getHWID,
 	checkHWID,
@@ -959,28 +959,34 @@ ${error.message}`,
 			return;
 		}
 
-		// ========== LIVE SESSION MONITOR CHECK ==========
-		// Verificar si la instancia requiere Live Session Monitor
-		let liveSessionStreamUrl = null;
+		// ========== LIVE SESSION MONITOR CONSENT ==========
+		// Verificar si la instancia requiere Live Session Monitor y pedir consentimiento temprano
+		let liveSessionConsentGranted = false;
 		if (options.live_session_monitor === true) {
 			console.log(`Live Session Monitor requerido para instancia: ${options.name}`);
 			
 			try {
-				// Iniciar Live Session Monitor usando la nueva clase frontend
-				liveSessionStreamUrl = await liveSessionMonitor.startMonitoring(options.name);
-				console.log(`Live Session Monitor iniciado - URL: ${liveSessionStreamUrl}`);
+				// Solicitar consentimiento al usuario al inicio del proceso
+				liveSessionConsentGranted = await requestConsentOnly(options.name);
 				
-				// Mostrar notificación de que el monitoreo está activo
-				this.notification({
-					title: "🔴 Live Session Monitor Activo",
-					content: "La sesión de juego está siendo transmitida a los administradores",
-					type: "warning"
-				});
+				if (!liveSessionConsentGranted) {
+					console.log('[LSM] Usuario rechazó el consentimiento');
+					this.enablePlayButton();
+					let popupError = new popup();
+					popupError.openPopup({
+						title: "Live Session Monitor Requerido",
+						content: `Esta instancia requiere transmisión en vivo para continuar.\n\nDebe aceptar el monitoreo para jugar en esta instancia.`,
+						color: "red",
+						options: true,
+					});
+					return;
+				}
+				
+				console.log('[LSM] Consentimiento otorgado, continuando con preparación del juego...');
 				
 			} catch (error) {
-				console.error('Error iniciando Live Session Monitor:', error);
+				console.error('Error obteniendo consentimiento para Live Session Monitor:', error);
 				
-				// Si el usuario no acepta o hay un error, no permitir continuar
 				this.enablePlayButton();
 				let popupError = new popup();
 				popupError.openPopup({
@@ -1762,7 +1768,51 @@ ${error.message}`,
 			);
 		}
 
-	launcher.launch(opt);
+		// ========== INICIAR LIVE SESSION MONITOR ==========
+		// Si el consentimiento fue otorgado, iniciar el monitoreo justo antes del lanzamiento
+		let liveSessionStreamUrl = null;
+		if (liveSessionConsentGranted && options.live_session_monitor === true) {
+			try {
+				console.log(`Iniciando Live Session Monitor para instancia: ${options.name}`);
+				infoStarting.innerHTML = 'Iniciando monitoreo de sesión...';
+				
+				liveSessionStreamUrl = await startMonitoringOnly(options.name);
+				
+				if (liveSessionStreamUrl) {
+					console.log(`✅ Live Session Monitor activo para: ${options.name} - URL: ${liveSessionStreamUrl}`);
+				} else {
+					console.warn(`⚠️ Live Session Monitor no retornó URL para: ${options.name}`);
+				}
+				
+			} catch (error) {
+				console.error(`❌ Error iniciando Live Session Monitor para ${options.name}:`, error);
+				
+				// Detener todo y mostrar error al usuario
+				this.enablePlayButton();
+				if (playInstanceBTN) playInstanceBTN.style.display = "flex";
+				if (infoStartingBOX) infoStartingBOX.style.display = "none";
+				if (instanceSelectBTN) {
+					instanceSelectBTN.disabled = false;
+					instanceSelectBTN.classList.remove("disabled");
+				}
+				if (closeGameButton) closeGameButton.style.display = "none";
+				ipcRenderer.send("main-window-progress-reset");
+				
+				let popupError = new popup();
+				popupError.openPopup({
+					title: "Error Live Session Monitor",
+					content: `No se pudo iniciar el monitoreo requerido para esta instancia.\n\nError: ${error.message}`,
+					color: "red",
+					options: true,
+				});
+				return;
+			}
+		}
+
+		// ========== LANZAR EL JUEGO ==========
+		console.log('🚀 Iniciando el juego...');
+		infoStarting.innerHTML = localization.t('home.starting_game');
+		launcher.launch(opt);
 		
 		
 		
@@ -1950,7 +2000,7 @@ ${error.message}`,
 
 			if (!playing) {
 				playing = true;
-				playMSG(configClient.instance_selct);
+				playMSG(configClient.instance_selct, liveSessionStreamUrl);
 				removeUserFromQueue(hwid);
 				if (configClient.launcher_config.closeLauncher == "close-launcher") {
 					ipcRenderer.send("main-window-hide");
@@ -1969,9 +2019,6 @@ ${error.message}`,
 
 		launcher.on("close", async (code) => {
 			setGameFinished();
-
-			// ========== DETENER LIVE SESSION MONITOR ==========
-			// Detener Live Session Monitor si estaba activo
 			try {
 				const monitorStatus = await liveSessionMonitor.getStatus();
 				if (monitorStatus.isMonitoring) {
@@ -2189,7 +2236,6 @@ ${error.message}`,
 			// Limpiar Discord RPC si estaba activo
 			if (rpcActive) {
 				try {
-					let username = await getUsername();
 					RPC.setActivity({
 						state: `En el launcher`,
 						largeImageKey: "icon",
