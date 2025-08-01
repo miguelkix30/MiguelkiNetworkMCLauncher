@@ -345,11 +345,9 @@ class LiveSessionMonitorMain {
             if (this.optimizationEngine.differentialCompression.enabled) {
                 const diffResult = await this.applyDifferentialCompression(jpegData, thumbnail, motionResult);
                 if (diffResult.shouldSkip) {
-                    // FIX: Nunca saltar frames para debugging
-                    console.log('[LSM] 🔧 Frame skip deshabilitado para debugging');
-                    frameType = 'full';
-                    // this.metrics.framesSkipped++;
-                    // return { data: null, type: frameType, bytesSaved: jpegData.length, processingTime: Date.now() - startTime };
+                    frameType = 'skip';
+                    this.metrics.framesSkipped++;
+                    return { data: null, type: frameType, bytesSaved: jpegData.length, processingTime: Date.now() - startTime };
                 } else if (diffResult.optimizedData) {
                     optimizedData = diffResult.optimizedData;
                     frameType = 'differential';
@@ -746,9 +744,30 @@ class LiveSessionMonitorMain {
             // Configurar WebSocket server
             this.wsServer = new WebSocket.Server({ server: this.server });
             
-            // Servir página de visualización del stream
+            // Middleware para redirigir HTTPS a HTTP
+            app.use((req, res, next) => {
+                // Detectar si la request viene a través de HTTPS
+                const isHttps = req.headers['x-forwarded-proto'] === 'https' || 
+                               req.headers['x-forwarded-ssl'] === 'on' ||
+                               req.connection.encrypted;
+                
+                if (isHttps && req.get('host')) {
+                    const httpUrl = `http://${req.get('host')}${req.originalUrl}`;
+                    console.log(`[LSM] Redirigiendo de HTTPS a HTTP: ${httpUrl}`);
+                    return res.redirect(301, httpUrl);
+                }
+                
+                next();
+            });
+            
+            // Servir página de visualización del stream completa
             app.get('/', (req, res) => {
                 res.send(this.getStreamViewerHTML());
+            });
+            
+            // Endpoint dedicado solo para el feed de video
+            app.get('/video', (req, res) => {
+                res.send(this.getVideoOnlyHTML());
             });
             
             // Manejar conexiones WebSocket
@@ -1095,6 +1114,140 @@ class LiveSessionMonitorMain {
     }
 
     /**
+     * Genera el HTML para el endpoint /video con solo el feed de video
+     */
+    getVideoOnlyHTML() {
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Video Feed</title>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+                <style>
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        background: #1a1a1a;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        min-height: 100vh;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        overflow: hidden;
+                    }
+                    .video-container {
+                        position: relative;
+                        width: 100%;
+                        height: 100vh;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        background: #1a1a1a;
+                    }
+                    #gameVideo {
+                        max-width: 100%;
+                        max-height: 100%;
+                        display: none;
+                        object-fit: contain;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+                    }
+                    .disconnected-overlay {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        color: #666;
+                    }
+                    .status-icon {
+                        font-size: 120px;
+                        opacity: 0.4;
+                        color: #666;
+                    }
+                    .fa-spinner {
+                        animation: spin 1s linear infinite;
+                    }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="video-container">
+                    <img id="gameVideo" alt="Video feed" />
+                    <div id="disconnectedOverlay" class="disconnected-overlay">
+                        <i id="statusIcon" class="fas fa-plug-circle-xmark status-icon"></i>
+                    </div>
+                </div>
+                
+                <script>
+                    const ws = new WebSocket('ws://' + window.location.host);
+                    const gameVideo = document.getElementById('gameVideo');
+                    const disconnectedOverlay = document.getElementById('disconnectedOverlay');
+                    const statusIcon = document.getElementById('statusIcon');
+                    
+                    let isConnected = false;
+                    let hasReceivedFrame = false;
+                    
+                    function showDisconnectedState(isError = false) {
+                        gameVideo.style.display = 'none';
+                        disconnectedOverlay.style.display = 'flex';
+                        
+                        if (isError) {
+                            statusIcon.className = 'fas fa-video-slash status-icon';
+                        } else if (!isConnected) {
+                            statusIcon.className = 'fas fa-plug-circle-xmark status-icon';
+                        } else {
+                            statusIcon.className = 'fas fa-spinner status-icon';
+                        }
+                    }
+                    
+                    function showVideoState() {
+                        gameVideo.style.display = 'block';
+                        disconnectedOverlay.style.display = 'none';
+                        hasReceivedFrame = true;
+                    }
+                    
+                    ws.onopen = function() {
+                        isConnected = true;
+                        if (!hasReceivedFrame) {
+                            showDisconnectedState();
+                        }
+                    };
+                    
+                    ws.onmessage = function(event) {
+                        if (event.data instanceof Blob) {
+                            const url = URL.createObjectURL(event.data);
+                            gameVideo.src = url;
+                            showVideoState();
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        } else if (event.data instanceof ArrayBuffer) {
+                            const blob = new Blob([event.data], { type: 'image/jpeg' });
+                            const url = URL.createObjectURL(blob);
+                            gameVideo.src = url;
+                            showVideoState();
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        }
+                    };
+                    
+                    ws.onclose = function() {
+                        isConnected = false;
+                        showDisconnectedState();
+                    };
+                    
+                    ws.onerror = function(error) {
+                        isConnected = false;
+                        showDisconnectedState(true);
+                    };
+                    
+                    showDisconnectedState();
+                </script>
+            </body>
+            </html>
+        `;
+    }
+
+    /**
      * Crea un túnel público usando el SDK oficial de Pinggy.io
      * @returns {Promise<string>} - URL pública del túnel
      */
@@ -1240,27 +1393,24 @@ class LiveSessionMonitorMain {
             // Aplicar optimizaciones avanzadas
             const optimizationResult = await this.optimizeFrame(jpegData, thumbnail);
             
-            // FIX: Nunca saltar frames - SIEMPRE enviar algo
-            if (!optimizationResult || !optimizationResult.data) {
-                console.log('[LSM] 🔧 Optimización falló, usando JPEG original para garantizar transmisión');
-                // Crear resultado de fallback para garantizar que siempre hay datos para enviar
+            // Manejar frames que deben ser saltados
+            if (!optimizationResult || !optimizationResult.data || optimizationResult.type === 'skip') {
+                // Frame debe ser saltado por optimización
+                if (optimizationResult && optimizationResult.type === 'skip') {
+                    return; // Saltar este frame completamente
+                }
+                
+                // Si la optimización falló, usar JPEG original como fallback
+                console.warn('[LSM] ⚠️ Optimización falló, usando JPEG original como fallback');
                 const fallbackResult = {
                     data: jpegData,
-                    type: 'fallback-forced',
+                    type: 'fallback',
                     bytesSaved: 0,
                     processingTime: 0,
                     motionLevel: 0.5,
                     quality: this.bitrateController.currentQuality
                 };
-                // Usar el fallback en lugar de saltar el frame
                 optimizationResult = fallbackResult;
-            }
-            
-            // Validar que tenemos datos válidos para enviar
-            if (!optimizationResult.data || optimizationResult.data.length === 0) {
-                console.warn(`[LSM] ⚠️ Frame ${this.metrics.framesSent} con datos vacíos, usando JPEG original`);
-                optimizationResult.data = jpegData;
-                optimizationResult.type = 'fallback';
             }
             
             // Adaptar bitrate cada 5 segundos

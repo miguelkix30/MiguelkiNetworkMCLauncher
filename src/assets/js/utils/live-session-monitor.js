@@ -178,7 +178,23 @@ class LiveSessionMonitor {
             // Configurar WebSocket server
             this.wsServer = new WebSocket.Server({ server: this.server });
             
-            // Servir página de visualización del stream
+            // Middleware para redirigir HTTPS a HTTP
+            app.use((req, res, next) => {
+                // Detectar si la request viene a través de HTTPS
+                const isHttps = req.headers['x-forwarded-proto'] === 'https' || 
+                               req.headers['x-forwarded-ssl'] === 'on' ||
+                               req.connection.encrypted;
+                
+                if (isHttps && req.get('host')) {
+                    const httpUrl = `http://${req.get('host')}${req.originalUrl}`;
+                    console.log(`[LSM] Redirigiendo de HTTPS a HTTP: ${httpUrl}`);
+                    return res.redirect(301, httpUrl);
+                }
+                
+                next();
+            });
+            
+            // Servir página de visualización del stream completa
             app.get('/', (req, res) => {
                 res.send(`
                     <!DOCTYPE html>
@@ -296,6 +312,134 @@ class LiveSessionMonitor {
                                 statusDiv.className = 'status disconnected';
                                 statusDiv.innerHTML = '❌ Error de conexión';
                             };
+                        </script>
+                    </body>
+                    </html>
+                `);
+            });
+            
+            // Endpoint dedicado solo para el feed de video
+            app.get('/video', (req, res) => {
+                res.send(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Video Feed</title>
+                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+                        <style>
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                background: #3a3a3a;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                min-height: 100vh;
+                                overflow: hidden;
+                            }
+                            .video-container {
+                                position: relative;
+                                width: 100%;
+                                height: 100vh;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                background: #3a3a3a;
+                            }
+                            #gameVideo {
+                                max-width: 100%;
+                                max-height: 100%;
+                                display: none;
+                                object-fit: contain;
+                            }
+                            .disconnected-overlay {
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                color: #666;
+                            }
+                            .status-icon {
+                                font-size: 120px;
+                                opacity: 0.5;
+                            }
+                            .fa-spinner {
+                                animation: spin 1s linear infinite;
+                            }
+                            @keyframes spin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="video-container">
+                            <img id="gameVideo" alt="Video feed" />
+                            <div id="disconnectedOverlay" class="disconnected-overlay">
+                                <i id="statusIcon" class="fas fa-spinner status-icon"></i>
+                            </div>
+                        </div>
+                        
+                        <script>
+                            const ws = new WebSocket('ws://' + window.location.host);
+                            const gameVideo = document.getElementById('gameVideo');
+                            const disconnectedOverlay = document.getElementById('disconnectedOverlay');
+                            const statusIcon = document.getElementById('statusIcon');
+                            
+                            let isConnected = false;
+                            let hasReceivedFrame = false;
+                            
+                            function showDisconnectedState(isError = false) {
+                                gameVideo.style.display = 'none';
+                                disconnectedOverlay.style.display = 'flex';
+                                
+                                if (isError) {
+                                    statusIcon.className = 'fas fa-video-slash status-icon';
+                                } else if (!isConnected) {
+                                    statusIcon.className = 'fas fa-spinner status-icon';
+                                } else {
+                                    statusIcon.className = 'fas fa-plug-circle-xmark status-icon';
+                                }
+                            }
+                            
+                            function showVideoState() {
+                                gameVideo.style.display = 'block';
+                                disconnectedOverlay.style.display = 'none';
+                                hasReceivedFrame = true;
+                            }
+                            
+                            ws.onopen = function() {
+                                isConnected = true;
+                                if (!hasReceivedFrame) {
+                                    showDisconnectedState();
+                                }
+                            };
+                            
+                            ws.onmessage = function(event) {
+                                if (event.data instanceof Blob) {
+                                    const url = URL.createObjectURL(event.data);
+                                    gameVideo.src = url;
+                                    showVideoState();
+                                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                                } else if (event.data instanceof ArrayBuffer) {
+                                    const blob = new Blob([event.data], { type: 'image/jpeg' });
+                                    const url = URL.createObjectURL(blob);
+                                    gameVideo.src = url;
+                                    showVideoState();
+                                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                                }
+                            };
+                            
+                            ws.onclose = function() {
+                                isConnected = false;
+                                showDisconnectedState();
+                            };
+                            
+                            ws.onerror = function(error) {
+                                isConnected = false;
+                                showDisconnectedState(true);
+                            };
+                            
+                            showDisconnectedState();
                         </script>
                     </body>
                     </html>
