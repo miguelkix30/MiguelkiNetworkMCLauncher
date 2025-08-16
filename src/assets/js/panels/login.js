@@ -2,7 +2,7 @@
  * @author MiguelkiNetwork (based on work by Luuxis)
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-const { Authenticator } = require("minecraft-launcher-core");
+const { Authenticator } = require("miguelkinetworkmclauncher-core");
 const { ipcRenderer } = require("electron");
 
 import {
@@ -636,7 +636,7 @@ class Login {
 	 */
 	async createOfflineAccount(username, popupLogin) {
 		try {
-			// Create offline account using minecraft-launcher-core
+			// Create offline account using miguelkinetworkmclauncher-core
 			// When no password is provided, getAuth creates an offline account
 			const offlineAuth = await Authenticator.getAuth(username);
 

@@ -47,7 +47,7 @@ import {
   migrateDiscordToken
 } from "./MKLib.js";
 const { Auth } = require("msmc");
-const { Authenticator } = require("minecraft-launcher-core");
+const { Authenticator } = require("miguelkinetworkmclauncher-core");
 import AZauth from "./utils/azauth.js";
 
 const { ipcRenderer } = require("electron");
@@ -1658,7 +1658,7 @@ class Launcher {
               
               try {
                 if (account.meta.online == false || account.meta.offline) {
-                  // Use minecraft-launcher-core for offline accounts
+                  // Use miguelkinetworkmclauncher-core for offline accounts
                   let refresh_accounts;
                   
                   // Ensure username is within Minecraft's 16-character limit

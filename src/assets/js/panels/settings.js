@@ -3,9 +3,15 @@
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 
-import { changePanel, accountSelect, database, Slider, config, setStatus, popup, appdata, clickableHead, getTermsAndConditions, setPerformanceMode, isPerformanceModeEnabled, getDiscordUsername, getDiscordPFP, setDiscordUsername, localization } from '../utils.js'
+import { changePanel, accountSelect, database, config, setStatus, popup, appdata, clickableHead, getTermsAndConditions, isPerformanceModeEnabled, getDiscordUsername, getDiscordPFP, setDiscordUsername, localization } from '../utils.js'
 import { deleteDiscordToken } from '../MKLib.js'
-import { listAvailableJavaInstallations, cleanupUnusedJava, getRuntimePath, getGameStatus } from '../utils/java-manager.js';
+import { 
+    listAvailableJavaInstallations, 
+    cleanupUnusedJava, 
+    getRuntimePath, 
+    getGameStatus,
+    cleanupCorruptedJavaInstallations
+} from '../utils/java-manager.js';
 
 const os = require('os');
 const { shell, ipcRenderer, dialog } = require('electron');
@@ -984,9 +990,12 @@ class Settings {
             
             console.log('🔍 Obteniendo instalaciones de Java...');
             
-            // Obtener instalaciones de Java disponibles
-            const installations = await listAvailableJavaInstallations();
+            // Obtener instalaciones de Java disponibles (sin auto-limpieza para mostrar las corruptas)
+            const installations = await listAvailableJavaInstallations(false);
             
+            // Separar instalaciones válidas y corruptas
+            const validInstallations = installations.filter(inst => !inst.corrupted);
+            const corruptedInstallations = installations.filter(inst => inst.corrupted);
             
             let infoHTML = `
                 <div class="java-info-title">🔧 ${localization.t('java.java_management')}</div>
@@ -998,18 +1007,54 @@ class Settings {
                 </div>
             `;
             
-            if (installations.length > 0) {
-                infoHTML += `<div class="java-installations-title">📦 ${localization.t('java.java_installed_versions_title')}:</div>`;
+            // Mostrar instalaciones corruptas con alerta
+            if (corruptedInstallations.length > 0) {
+                infoHTML += `
+                    <div class="java-corrupted-section">
+                        <div class="java-corrupted-title">⚠️ ${localization.t('java.java_corrupted_installations')} (${corruptedInstallations.length})</div>
+                        <div class="java-corrupted-description">
+                            ${localization.t('java.java_corrupted_description')}
+                        </div>
+                        <div class="java-corrupted-list">
+                `;
+                
+                for (const installation of corruptedInstallations) {
+                    const sizeInfo = installation.directory && await this.getDirectorySize(installation.directory) || 'Desconocido';
+                    
+                    infoHTML += `
+                        <div class="java-corrupted-item">
+                            <div class="java-corrupted-header">
+                                <span class="java-corrupted-version">❌ ${installation.version}</span>
+                                <span class="java-corrupted-size">${sizeInfo}</span>
+                            </div>
+                            <div class="java-corrupted-error">${installation.error || 'Error desconocido'}</div>
+                            <div class="java-corrupted-path">${installation.directory}</div>
+                        </div>
+                    `;
+                }
+                
+                infoHTML += `
+                        </div>
+                        <div class="java-corrupted-buttons">
+                            <button class="java-clean-corrupted-btn" id="java-clean-corrupted-btn">🧹 ${localization.t('java.java_clean_corrupted')}</button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Mostrar instalaciones válidas
+            if (validInstallations.length > 0) {
+                infoHTML += `<div class="java-installations-title">✅ ${localization.t('java.java_installed_versions_title')} (${validInstallations.length}):</div>`;
                 infoHTML += `<div class="java-installations-list">`;
                 
-                for (const installation of installations) {
+                for (const installation of validInstallations) {
                     const javaVersionStr = `Java ${installation.javaVersion.major}`;
                     const sizeInfo = await this.getDirectorySize(installation.directory);
                     
                     infoHTML += `
                         <div class="java-installation-item">
                             <div class="java-installation-header">
-                                <span class="java-version">${javaVersionStr}</span>
+                                <span class="java-version">✅ ${javaVersionStr}</span>
                                 <span class="java-size">${sizeInfo}</span>
                             </div>
                             <div class="java-installation-path">${installation.path}</div>
@@ -1021,11 +1066,15 @@ class Settings {
                 }
                 
                 infoHTML += `</div>`;
-                
-                // Agregar botón de limpieza
+            }
+            
+            // Agregar botones de gestión
+            const hasAnyInstallations = validInstallations.length > 0 || corruptedInstallations.length > 0;
+            
+            if (hasAnyInstallations) {
                 infoHTML += `
                     <div class="java-management-buttons">
-                        <button class="java-cleanup-btn" id="java-cleanup-btn">🗑️ ${localization.t('java.java_delete_installations')}</button>
+                        ${validInstallations.length > 0 ? `<button class="java-cleanup-btn" id="java-cleanup-btn">🗑️ ${localization.t('java.java_delete_installations')}</button>` : ''}
                         <button class="java-refresh-btn" id="java-refresh-btn">🔄 ${localization.t('java.java_installed_refresh')}</button>
                     </div>
                 `;
@@ -1045,6 +1094,7 @@ class Settings {
             // Agregar event listeners para los botones
             const cleanupBtn = document.getElementById('java-cleanup-btn');
             const refreshBtn = document.getElementById('java-refresh-btn');
+            const cleanCorruptedBtn = document.getElementById('java-clean-corrupted-btn');
             
             if (cleanupBtn) {
                 cleanupBtn.addEventListener('click', () => this.showJavaCleanupDialog());
@@ -1052,6 +1102,10 @@ class Settings {
             
             if (refreshBtn) {
                 refreshBtn.addEventListener('click', () => this.displayJavaInfo());
+            }
+            
+            if (cleanCorruptedBtn) {
+                cleanCorruptedBtn.addEventListener('click', () => this.cleanCorruptedJavaInstallations());
             }
             
         } catch (error) {
@@ -1237,6 +1291,101 @@ class Settings {
         }
     }
 
+    /**
+     * Limpia automáticamente las instalaciones de Java corruptas
+     */
+    async cleanCorruptedJavaInstallations() {
+        try {
+            console.log('🧹 Iniciando limpieza de instalaciones corruptas...');
+            
+            // Mostrar popup de confirmación
+            const confirmPopup = new popup();
+            const confirmResult = await new Promise(resolve => {
+                confirmPopup.openPopup({
+                    title: localization.t('java.java_clean_corrupted_confirm_title'),
+                    content: localization.t('java.java_clean_corrupted_confirm_message'),
+                    color: "var(--color)",
+                    options: true,
+                    callback: (result) => resolve(result)
+                });
+            });
+
+            if (confirmResult === 'cancel') {
+                console.log('❌ Limpieza de instalaciones corruptas cancelada por el usuario');
+                return;
+            }
+            
+            // Mostrar popup de progreso
+            const progressPopup = new popup();
+            progressPopup.openPopup({
+                title: localization.t('java.java_cleaning_corrupted'),
+                content: `<div class="popup-progress">
+                    <div class="popup-progress-bar">
+                        <div class="popup-progress-fill"></div>
+                    </div>
+                    <div class="popup-progress-text">${localization.t('java.java_scanning_corrupted')}</div>
+                </div>`,
+                color: "var(--color)",
+                options: false
+            });
+            
+            // Ejecutar limpieza
+            const result = await cleanupCorruptedJavaInstallations();
+            
+            progressPopup.closePopup();
+            
+            let contentMsg = '';
+            if (result.cleaned > 0) {
+                contentMsg = `✅ ${localization.t('java.java_cleanup_corrupted_success')}<br><br>`;
+                contentMsg += `🗑️ Eliminadas: ${result.cleaned} instalaciones corruptas<br>`;
+                contentMsg += `🔍 Verificadas: ${result.total} instalaciones en total<br>`;
+                
+                // Mostrar popup de éxito
+                popup.openPopup({
+                    title: localization.t('java.java_cleanup_corrupted_complete'),
+                    content: contentMsg,
+                    color: "var(--color)",
+                    options: true
+                });
+            } else if (result.total > 0) {
+                contentMsg = `✅ ${localization.t('java.java_no_corrupted_found')}<br><br>`;
+                contentMsg += `🔍 Se verificaron ${result.total} instalaciones y todas están válidas.`;
+                
+                popup.openPopup({
+                    title: localization.t('java.java_scan_complete'),
+                    content: contentMsg,
+                    color: "green",
+                    options: true
+                });
+            } else {
+                popup.openPopup({
+                    title: localization.t('java.java_no_installations'),
+                    content: localization.t('java.java_no_installations_message'),
+                    color: "var(--color)",
+                    options: true
+                });
+            }
+            
+            // Actualizar la información mostrada
+            setTimeout(() => {
+                this.displayJavaInfo();
+            }, 1000);
+            
+        } catch (error) {
+            console.error('❌ Error limpiando instalaciones corruptas:', error);
+            
+            popup.openPopup({
+                title: localization.t('java.java_cleanup_error'),
+                content: `❌ ${localization.t('java.java_cleanup_error')}: ${error.message}`,
+                color: "red",
+                options: true
+            });
+        }
+    }
+
+    /**
+     * Realiza un escaneo completo y profundo de las instalaciones de Java
+     */
     async resolution() {
         let configClient = await this.db.readData('configClient')
         let resolution = configClient?.game_config?.screen_size || { width: 1920, height: 1080 };

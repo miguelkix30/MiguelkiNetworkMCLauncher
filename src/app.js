@@ -1,5 +1,5 @@
 const { app, ipcMain, BrowserWindow } = require('electron');
-const { Authenticator } = require('minecraft-launcher-core');
+const { Authenticator } = require('miguelkinetworkmclauncher-core');
 const { autoUpdater } = require('electron-updater');
 const pkg = require('../package.json');
 const path = require('path');
@@ -574,7 +574,7 @@ ipcMain.handle('get-launcher-config', async (event, options) => {
         // Asegurar que la configuración tenga el gameDirectory correcto
         if (!launchConfig.gameDirectory && !launchConfig.directory) {
             console.log('Configuración sin gameDirectory, estableciendo basado en rootPath');
-            // Para minecraft-launcher-core, necesitamos establecer el gameDirectory
+            // Para miguelkinetworkmclauncher-core, necesitamos establecer el gameDirectory
             launchConfig.gameDirectory = rootPath;
         }
         

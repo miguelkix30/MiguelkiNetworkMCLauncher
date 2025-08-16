@@ -637,9 +637,10 @@
     border: 1px solid rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(15.5px);
-    transition: all 0.2s, border 0.2s;
-    padding: 0.5rem;
-    height: 3.2rem;
+    transition: all 0.2s, border 0.2s, height 0.3s ease;
+    padding: 0.75rem 0.5rem;
+    min-height: 3.2rem;
+    height: auto;
     min-width: 200px;
 }
 
@@ -699,6 +700,49 @@
 @keyframes slide {
     0% { left: -100%; }
     100% { left: 100%; }
+}
+
+/* Sub-progress bar styles */
+.sub-progress-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 0.3rem;
+    transition: opacity 0.3s ease;
+    width: 100%;
+}
+
+.sub-progress-text {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.2rem;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 15rem;
+}
+
+.sub-progress-bar {
+    appearance: none;
+    height: 6px;
+    width: 15rem;
+    align-self: center;
+    transition: all 0.2s ease;
+}
+
+.sub-progress-bar::-webkit-progress-bar {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.sub-progress-bar::-webkit-progress-value {
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 6px;
+    transition: width 0.2s ease;
 }
 
 .button-container {
