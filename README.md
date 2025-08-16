@@ -233,15 +233,15 @@ Para ver el reporte detallado con la matriz completa de compatibilidad, consulta
 
 ## 🎮 Compatibilidad de Loaders
 
-> **Última actualización:** 30 de julio de 2025  
-> **Total de pruebas:** 330 | **Exitosas:** 177 (53.6%)
+> **Última actualización:** 16 de agosto de 2025  
+> **Total de pruebas:** 330 | **Exitosas:** 180 (54.5%)
 
 ### 📊 Resumen por Loader
 
 | Loader | Compatibilidad | Versiones Soportadas |
 |--------|----------------|---------------------|
 | **VANILLA** | 84.8% | 56/66 |
-| **FORGE** | 60.6% | 40/66 |
+| **FORGE** | 65.2% | 43/66 |
 | **NEOFORGE** | 10.6% | 7/66 |
 | **FABRIC** | 59.1% | 39/66 |
 | **QUILT** | 53.0% | 35/66 |
@@ -260,12 +260,12 @@ Para ver el reporte detallado con la matriz completa de compatibilidad, consulta
 | 1.8.7 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
 | 1.8.8 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
 | 1.8.9 | ❌ | ❌ | ❌ | ❌ | ❌ | 0/5 | |
-| 1.9 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
+| 1.9 | ✅ | ✅ | ❌ | ❌ | ❌ | 2/5 | |
 | 1.9.1 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
 | 1.9.2 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
 | 1.9.3 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
-| 1.9.4 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
-| 1.10 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
+| 1.9.4 | ✅ | ✅ | ❌ | ❌ | ❌ | 2/5 | |
+| 1.10 | ✅ | ✅ | ❌ | ❌ | ❌ | 2/5 | |
 | 1.10.1 | ✅ | ❌ | ❌ | ❌ | ❌ | 1/5 | |
 | 1.10.2 | ✅ | ✅ | ❌ | ❌ | ❌ | 2/5 | |
 | 1.11 | ✅ | ✅ | ❌ | ❌ | ❌ | 2/5 | |
