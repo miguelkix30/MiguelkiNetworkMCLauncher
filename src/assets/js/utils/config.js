@@ -11,14 +11,15 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const hwid = machineIdSync();
+import { getConfig, getLauncherKey } from '../MKLib.js';
 
 let url = pkg.user ? `${pkg.url}/${pkg.user}` : pkg.url
 let key;
 
-let config = `${url}/launcher/config-launcher/config.php`;
 let news = `${url}/launcher/news-launcher/news.json`;
 
-async function getLauncherKey() {
+// Función local getLauncherKey para compatibilidad hacia atrás con getInstanceList
+async function getLocalLauncherKey() {
     if (!key) {
       const files = [
         path.join(__dirname, '../package.json'),
@@ -35,23 +36,12 @@ async function getLauncherKey() {
     return key;
   };
 
-let Launcherkey = await getLauncherKey();
+let Launcherkey = await getLocalLauncherKey();
 
 class Config {
     GetConfig() {
-        return new Promise((resolve, reject) => {
-            let configUrl = `${config}?checksum=${Launcherkey}`;
-            nodeFetch(configUrl, {
-                headers: {
-                    'User-Agent': 'MiguelkiNetworkMCLauncher'
-                }
-            }).then(async config => {
-                if (config.status === 200) return resolve(config.json());
-                else return reject({ error: { code: config.statusText, message: 'server not accessible' } });
-            }).catch(error => {
-                return reject({ error });
-            });
-        });
+        // Use the new protected function from MKLib.js
+        return getConfig();
     }
 
     async getInstanceList() {

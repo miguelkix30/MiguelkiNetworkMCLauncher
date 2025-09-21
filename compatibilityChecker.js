@@ -86,19 +86,14 @@ class ComprehensiveCompatibilityManager {
         const startTime = Date.now();
         
         try {
-            // Paso 1: Verificar dependencias
             await this.checkDependencies();
             
-            // Paso 2: Ejecutar verificación de compatibilidad
             await this.runCompatibilityCheck();
             
-            // Paso 3: Generar reporte de compatibilidad
             await this.generateCompatibilityReport();
             
-            // Paso 4: Actualizar README con los resultados
             await this.updateReadmeWithResults();
             
-            // Paso 5: Cleanup
             await this.cleanup();
             
             const endTime = Date.now();
