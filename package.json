@@ -1,9 +1,9 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "productname": "Miguelki Network MC Launcher",
-    "version": "3.4.5",
+    "version": "3.4.6",
     "sub_version": "",
-    "changelog": "Mejoras en el sistema de descarga de java.",
+    "changelog": "Arreglo de bugs.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
