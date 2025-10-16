@@ -11,7 +11,7 @@ import {
 	setInstanceBackground,
 	pkg,
 	popup,
-	toggleModsForInstance,
+	toggleModsForInstance, //Desactualizado
 	discordAccount,
 	toggleMusic,
 	fadeOutAudio,
@@ -38,8 +38,8 @@ import { downloadAssets } from "../utils/instance-manager.js";
 import { getJavaForMinecraft, setGameInProgress, setGameFinished, getJavaVersion } from "../utils/java-manager.js";
 import MinecraftStatus from "../utils/minecraft-status.js";
 
-const path = require("path");
-const fs = require("fs");
+const path = require("node:path");
+const fs = require("node:fs");
 
 const clientId = pkg.discord_client_id;
 const DiscordRPC = require("discord-rpc");
@@ -50,7 +50,6 @@ let rpcActive = true;
 let LogBan = false;
 let playing = false;
 let username;
-let discordUrl = pkg.discord_url;
 DiscordRPC.register(clientId);
 
 async function setActivity() {
@@ -345,6 +344,14 @@ class Home {
 		}`;
 
 		let newsElement = document.querySelector(".news-list");
+		let res = await config.GetConfig();
+		if (!res.news_enabled) {
+			console.log("Noticias deshabilitadas en la configuración.");
+			newsElement.style.visibility = "hidden";
+			return;
+		}
+
+		
 		let news = await config
 			.getNews()
 			.then((res) => res)
