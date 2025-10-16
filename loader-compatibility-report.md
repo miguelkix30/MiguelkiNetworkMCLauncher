@@ -1,6 +1,6 @@
 # Reporte de Compatibilidad de Loaders de Minecraft
 
-**Generado el:** 16 de octubre de 2025, 11:06  
+**Generado el:** 16 de octubre de 2025, 18:23  
 **Versiones probadas:** 66  
 **Loaders probados:** vanilla, forge, neoforge, fabric, quilt  
 **Total de pruebas:** 330  
@@ -94,4 +94,4 @@
 ## 📝 Notas Técnicas
 
 - **Timeout por prueba**: 30 segundos
-- **Timestamp**: 2025-10-16T11:06:46.505Z
+- **Timestamp**: 2025-10-16T18:23:40.331Z
