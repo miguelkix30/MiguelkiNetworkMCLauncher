@@ -1475,6 +1475,56 @@ ${error.message}`,
 				fs.mkdirSync(dir, { recursive: true });
 			}
 		}
+
+			try {
+				const instanceIconPath = path.join(instanceGameDirectory, 'icon.png');
+				const iconSource = options.icon || null;
+				if (iconSource) {
+					if (typeof iconSource === 'string' && iconSource.startsWith('data:')) {
+						const matches = iconSource.match(/^data:(image\/[a-zA-Z+]+);base64,(.*)$/);
+						if (matches && matches[2]) {
+							const buffer = Buffer.from(matches[2], 'base64');
+							fs.writeFileSync(instanceIconPath, buffer);
+						}
+					} else if (typeof iconSource === 'string' && (iconSource.startsWith('http://') || iconSource.startsWith('https://'))) {
+						try {
+							const fetch = require('node-fetch');
+							const resp = await fetch(iconSource, { timeout: 10000 });
+							if (resp.ok) {
+								const buffer = await resp.buffer();
+								fs.writeFileSync(instanceIconPath, buffer);
+							}
+						} catch (err) {
+							console.error('Error descargando icono de instancia:', err);
+						}
+					} else if (typeof iconSource === 'string') {
+						try {
+							const fetch = require('node-fetch');
+							let urlCandidate = iconSource;
+							if (!iconSource.match(/^\w+:\/\//)) {
+								urlCandidate = `${pkg.url.replace(/\/$/, '')}/${iconSource.replace(/^\//, '')}`;
+							}
+							const resp = await fetch(urlCandidate, { timeout: 10000 });
+							if (resp.ok) {
+								const buffer = await resp.buffer();
+								fs.writeFileSync(instanceIconPath, buffer);
+							}
+						} catch (err) {
+							console.error('Error descargando icono de instancia (ruta relativa):', err);
+						}
+					}
+				} else {
+					if (fs.existsSync(instanceIconPath)) {
+						try {
+							fs.unlinkSync(instanceIconPath);
+						} catch (err) {
+							console.error('Error eliminando icon.png de la instancia:', err);
+						}
+					}
+				}
+			} catch (err) {
+				console.error('Error manejando icono de instancia:', err);
+			}
 		
 		// ======== CONFIGURACIÓN ESPECÍFICA PARA VERSIONES LEGACY ========
 		// Añadir argumentos JVM específicos para versiones antiguas de Minecraft
