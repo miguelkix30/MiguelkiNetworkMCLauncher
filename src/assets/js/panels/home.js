@@ -2869,7 +2869,18 @@ ${error.message}`,
 						throw new Error(`Error en la respuesta: ${response.status}`);
 					}
 
-					const data = await response.json();
+					// Validar que la respuesta tiene contenido
+					const responseText = await response.text();
+					if (!responseText || responseText.trim() === '') {
+						throw new Error('Respuesta vacía del servidor');
+					}
+					
+					let data;
+					try {
+						data = JSON.parse(responseText);
+					} catch (jsonError) {
+						throw new Error(`Error parseando respuesta del servidor: ${jsonError.message}`);
+					}
 
 					if (data.status === "open") {
 						if (
@@ -3264,14 +3275,24 @@ ${error.message}`,
 					const response = await fetch(
 						`${pkg.url}/api/instance-code.php?code=${code}&user=${username}`,
 						{
-							headers: {
-								"User-Agent": "MiguelkiNetworkMCLauncher",
-							},
-						}
-					);
-					const result = await response.json();
-
-					const popupMessage = new popup();
+						headers: {
+							"User-Agent": "MiguelkiNetworkMCLauncher",
+						},
+					}
+				);
+					
+					// Validar que la respuesta tiene contenido
+					const responseText = await response.text();
+					if (!responseText || responseText.trim() === '') {
+						throw new Error('Respuesta vacía del servidor');
+					}
+					
+					let result;
+					try {
+						result = JSON.parse(responseText);
+					} catch (jsonError) {
+						throw new Error(`Error al procesar la respuesta: ${jsonError.message}`);
+					}					const popupMessage = new popup();
 					popupMessage.openPopup({
 						title: result.success ? "Éxito" : "Error",
 						content: result.message,

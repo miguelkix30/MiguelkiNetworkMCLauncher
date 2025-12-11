@@ -60,7 +60,21 @@ class Config {
                 return [];
             }
             
-            let instances = await response.json();
+            // Verificar que la respuesta tiene contenido antes de parsear
+            const responseText = await response.text();
+            if (!responseText || responseText.trim() === '') {
+                console.error('Empty response received from server');
+                return [];
+            }
+            
+            let instances;
+            try {
+                instances = JSON.parse(responseText);
+            } catch (jsonError) {
+                console.error('Error parsing JSON response:', jsonError.message);
+                console.error('Response text:', responseText.substring(0, 200));
+                return [];
+            }
             
             if (!instances || typeof instances !== 'object') {
                 console.error("Invalid instance data received:", instances);
@@ -112,7 +126,18 @@ class Config {
         } else {
             return new Promise((resolve, reject) => {
                 nodeFetch(news).then(async config => {
-                    if (config.status === 200) return resolve(config.json());
+                    if (config.status === 200) {
+                        try {
+                            const responseText = await config.text();
+                            if (!responseText || responseText.trim() === '') {
+                                return reject({ error: { code: 'EMPTY_RESPONSE', message: 'Empty response from server' } });
+                            }
+                            const jsonData = JSON.parse(responseText);
+                            return resolve(jsonData);
+                        } catch (jsonError) {
+                            return reject({ error: { code: 'JSON_PARSE_ERROR', message: jsonError.message } });
+                        }
+                    }
                     else return reject({ error: { code: config.statusText, message: 'server not accessible' } });
                 }).catch(error => {
                     return reject({ error });

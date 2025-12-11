@@ -1263,7 +1263,19 @@ async function getTermsAndConditions() {
         }
 
         const termsContent = await termsResponse.text();
-        const metaInfo = await metaResponse.json();
+        const metaResponseText = await metaResponse.text();
+        
+        let metaInfo;
+        try {
+            if (!metaResponseText || metaResponseText.trim() === '') {
+                metaInfo = { lastModified: 'desconocida' };
+            } else {
+                metaInfo = JSON.parse(metaResponseText);
+            }
+        } catch (jsonError) {
+            console.warn('Error parseando metaInfo, usando valores por defecto:', jsonError.message);
+            metaInfo = { lastModified: 'desconocida' };
+        }
 
         const htmlContent = marked(termsContent);
         const lastModified = metaInfo.lastModified || 'desconocida';
@@ -1723,7 +1735,19 @@ async function getExecutionKey() {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const data = await response.json();
+    // Validar que la respuesta tiene contenido
+    const responseText = await response.text();
+    if (!responseText || responseText.trim() === '') {
+      throw new Error('Empty response from server');
+    }
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (jsonError) {
+      throw new Error(`Error parsing JSON response: ${jsonError.message}`);
+    }
+    
     return data;
   } catch (error) {
     console.error("Error getting execution key:", error);
