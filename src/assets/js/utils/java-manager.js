@@ -1099,8 +1099,10 @@ async function findJavaExecutable(extractPath) {
             if (parentDir === 'bin') {
                 // Verificar que el archivo realmente existe
                 if (fs.existsSync(javaFile)) {
-                    // Hacer ejecutable en sistemas Unix
-                    makeExecutable(javaFile);
+                    // Hacer ejecutable en sistemas Unix (makeExecutable ya verifica el SO)
+                    if (process.platform !== 'win32') {
+                        makeExecutable(javaFile);
+                    }
                     return javaFile;
                 } else {
                     console.warn(`⚠️ El archivo encontrado no existe realmente: ${javaFile}`);
@@ -1111,7 +1113,10 @@ async function findJavaExecutable(extractPath) {
         // Si no se encuentra en bin, usar el primer resultado válido
         for (const javaFile of javaFiles) {
             if (fs.existsSync(javaFile)) {
-                makeExecutable(javaFile);
+                // Hacer ejecutable en sistemas Unix (makeExecutable ya verifica el SO)
+                if (process.platform !== 'win32') {
+                    makeExecutable(javaFile);
+                }
                 return javaFile;
             } else {
             }

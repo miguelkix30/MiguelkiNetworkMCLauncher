@@ -42,6 +42,9 @@ async function extractZip(archivePath, extractPath) {
         // Extraer todos los archivos
         zip.extractAllTo(extractPath, true);
         
+        // Esperar un momento para que el antivirus termine de analizar los archivos
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
         // En sistemas Unix, asegurar que los archivos binarios sean ejecutables
         if (process.platform !== 'win32') {
             const javaExecutables = findFilesRecursive(extractPath, /^java$/);
@@ -237,11 +240,18 @@ function findFilesRecursive(dir, pattern, maxDepth = 5, currentDepth = 0) {
  * Hace un archivo ejecutable (Unix/Linux/Mac)
  */
 function makeExecutable(filePath) {
+    // Solo ejecutar en sistemas Unix/Linux/Mac
     if (process.platform === 'win32') {
         return; // No necesario en Windows
     }
     
     try {
+        // Verificar que el archivo existe antes de cambiar permisos
+        if (!fs.existsSync(filePath)) {
+            console.warn(`File does not exist, skipping chmod: ${filePath}`);
+            return;
+        }
+        
         fs.chmodSync(filePath, 0o755);
     } catch (error) {
         console.warn(`Could not make file executable: ${filePath}`, error);
