@@ -1,7 +1,7 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "productname": "Miguelki Network MC Launcher",
-    "version": "3.4.9",
+    "version": "3.4.10",
     "sub_version": "",
     "changelog": "Actualizada la compatibilidad con el anticheat.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
