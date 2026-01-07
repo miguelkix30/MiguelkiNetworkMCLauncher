@@ -233,7 +233,7 @@ Para ver el reporte detallado con la matriz completa de compatibilidad, consulta
 
 ## 🎮 Compatibilidad de Loaders
 
-> **Última actualización:** 11 de diciembre de 2025  
+> **Última actualización:** 7 de enero de 2026  
 > **Total de pruebas:** 330 | **Exitosas:** 180 (54.5%)
 
 ### 📊 Resumen por Loader
