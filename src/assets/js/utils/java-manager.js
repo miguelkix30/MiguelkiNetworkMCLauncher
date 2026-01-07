@@ -76,27 +76,27 @@ const JAVA_DOWNLOAD_URLS = {
             }
         }
     },
-    // OpenJDK 21 para versiones futuras
+    // OpenJDK 21 para versiones futuras (actualizado a 21.0.9+10)
     java21: {
         win32: {
             x64: {
-                url: 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_windows_hotspot_21.0.4_7.zip',
+                url: 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.9%2B10/OpenJDK21U-jre_x64_windows_hotspot_21.0.9_10.zip',
                 hash: null
             }
         },
         darwin: {
             x64: {
-                url: 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_mac_hotspot_21.0.4_7.tar.gz',
+                url: 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.9%2B10/OpenJDK21U-jre_x64_mac_hotspot_21.0.9_10.tar.gz',
                 hash: null
             },
             arm64: {
-                url: 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_aarch64_mac_hotspot_21.0.4_7.tar.gz',
+                url: 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.9%2B10/OpenJDK21U-jre_aarch64_mac_hotspot_21.0.9_10.tar.gz',
                 hash: null
             }
         },
         linux: {
             x64: {
-                url: 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.4_7.tar.gz',
+                url: 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.9%2B10/OpenJDK21U-jre_x64_linux_hotspot_21.0.9_10.tar.gz',
                 hash: null
             }
         }
@@ -857,10 +857,25 @@ async function downloadAndInstallJava(minecraftVersion, progressCallback = null,
             }
             
             // Encontrar el ejecutable de Java
+            console.log(`🔍 Buscando ejecutable de Java en el directorio extraído: ${extractedPath}`);
             const javaExecutable = await findJavaExecutable(extractedPath);
             if (!javaExecutable) {
+                // Intentar listar el contenido del directorio para depuración
+                try {
+                    const contents = fs.readdirSync(extractedPath);
+                    console.log(`📁 Contenido después de extracción (primeros 10):`, contents.slice(0, 10));
+                } catch (listError) {
+                    console.warn(`⚠️ No se pudo listar el contenido del directorio extraído:`, listError);
+                }
                 throw new Error('No se pudo encontrar el ejecutable de Java después de la extracción');
             }
+            
+            // Verificar que el ejecutable realmente existe antes de continuar
+            if (!fs.existsSync(javaExecutable)) {
+                throw new Error(`El ejecutable de Java encontrado no existe en el filesystem: ${javaExecutable}`);
+            }
+            
+            console.log(`✅ Ejecutable de Java encontrado: ${javaExecutable}`);
             
             // VERIFICACIÓN MEJORADA: Probar funcionamiento del Java descargado
             if (statusCallback) statusCallback(`Verificando funcionamiento de ${requiredJava}...`);
@@ -934,7 +949,17 @@ async function getDownloadInfo(javaVersion, platform, arch) {
     // Para Windows, preferir formato ZIP para evitar problemas de extracción
     const isWindows = platform === 'win32';
     
-    // Intentar con URLs dinámicas de la API de Adoptium
+    // PRIORIDAD 1: Siempre usar URLs estáticas para evitar problemas de redirección y estructura de directorios inconsistente
+    console.log(`📋 Usando URLs estáticas para Java ${javaVersionNumber}`);
+    const staticInfo = getStaticDownloadInfo(javaVersion, platform, arch);
+    
+    if (staticInfo && staticInfo.url) {
+        console.log(`✅ URL estática encontrada para Java ${javaVersionNumber}: ${staticInfo.url}`);
+        return staticInfo;
+    }
+    
+    // PRIORIDAD 2: Intentar con URLs dinámicas de la API de Adoptium solo si no hay URL estática
+    console.log(`⚠️ No hay URL estática para Java ${javaVersionNumber}, intentando API dinámica...`);
     try {
         const apiUrl = `https://api.adoptium.net/v3/binary/latest/${javaVersionNumber}/ga/${platformKey}/${archKey}/jre/hotspot/normal/eclipse`;
         
@@ -945,14 +970,17 @@ async function getDownloadInfo(javaVersion, platform, arch) {
             method: 'HEAD',
             headers: {
                 'User-Agent': 'MiguelkiNetworkMCLauncher'
-            }
+            },
+            redirect: 'follow' // Seguir redirecciones automáticamente
         });
         
         if (response.ok) {
-            console.log(`✅ URL de descarga obtenida desde API: ${apiUrl}`);
+            // Obtener la URL final después de las redirecciones
+            const finalUrl = response.url || apiUrl;
+            console.log(`✅ URL de descarga obtenida desde API: ${finalUrl}`);
             
             return {
-                url: apiUrl,
+                url: finalUrl,
                 hash: null, // Se obtendrá dinámicamente más tarde
                 dynamic: true
             };
@@ -963,16 +991,8 @@ async function getDownloadInfo(javaVersion, platform, arch) {
         console.warn(`⚠️ Error accediendo a API de Adoptium: ${error.message}`);
     }
     
-    // Fallback a URLs estáticas si la API falla
-    console.log(`📋 Usando URLs estáticas para Java ${javaVersionNumber}`);
-    const staticInfo = getStaticDownloadInfo(javaVersion, platform, arch);
-    
-    if (!staticInfo) {
-        // Si tampoco hay URLs estáticas, devolver error específico
-        throw new Error(`No hay descargas disponibles para Java ${javaVersionNumber} en ${platform}-${arch}.<br><br>Esto puede deberse a:<br>- Plataforma no soportada: ${platform}<br>- Arquitectura no soportada: ${arch}<br>- URLs de descarga desactualizadas<br><br>Plataformas soportadas: Windows (x64), macOS (x64, arm64), Linux (x64)<br>Versiones soportadas: Java 8, 17, 21<br>Verifica tu configuración de sistema y conexión a internet.`);
-    }
-    
-    return staticInfo;
+    // Si llegamos aquí, no hay descarga disponible
+    throw new Error(`No hay descargas disponibles para Java ${javaVersionNumber} en ${platform}-${arch}.<br><br>Esto puede deberse a:<br>- Plataforma no soportada: ${platform}<br>- Arquitectura no soportada: ${arch}<br>- URLs de descarga desactualizadas<br><br>Plataformas soportadas: Windows (x64), macOS (x64, arm64), Linux (x64)<br>Versiones soportadas: Java 8, 17, 21<br>Verifica tu configuración de sistema y conexión a internet.`);
 }
 
 /**
@@ -1084,13 +1104,24 @@ async function findJavaExecutable(extractPath) {
     
     // Buscar recursivamente en toda la estructura de directorios
     try {
+        console.log(`🔍 Buscando '${javaExecutableName}' en: ${extractPath}`);
         const javaFiles = findFilesRecursive(extractPath, new RegExp(`^${javaExecutableName}$`), 10);
         
         if (javaFiles.length === 0) {
             console.log(`❌ No se encontró ningún ejecutable de Java en: ${extractPath}`);
+            
+            // Intentar listar el contenido del directorio para depuración
+            try {
+                const contents = fs.readdirSync(extractPath);
+                console.log(`📁 Contenido del directorio ${extractPath}:`, contents.slice(0, 10));
+            } catch (listError) {
+                console.warn(`⚠️ No se pudo listar el contenido del directorio:`, listError);
+            }
+            
             return null;
         }
         
+        console.log(`📋 Se encontraron ${javaFiles.length} ejecutable(s) de Java:`, javaFiles);
         
         // Priorizar ejecutables en directorios 'bin'
         for (const javaFile of javaFiles) {
@@ -1099,6 +1130,7 @@ async function findJavaExecutable(extractPath) {
             if (parentDir === 'bin') {
                 // Verificar que el archivo realmente existe
                 if (fs.existsSync(javaFile)) {
+                    console.log(`✅ Ejecutable de Java encontrado en bin: ${javaFile}`);
                     // Hacer ejecutable en sistemas Unix (makeExecutable ya verifica el SO)
                     if (process.platform !== 'win32') {
                         makeExecutable(javaFile);
@@ -1111,17 +1143,21 @@ async function findJavaExecutable(extractPath) {
         }
         
         // Si no se encuentra en bin, usar el primer resultado válido
+        console.log(`⚠️ No se encontró ejecutable en directorio 'bin', buscando en cualquier ubicación...`);
         for (const javaFile of javaFiles) {
             if (fs.existsSync(javaFile)) {
+                console.log(`✅ Ejecutable de Java encontrado (fuera de bin): ${javaFile}`);
                 // Hacer ejecutable en sistemas Unix (makeExecutable ya verifica el SO)
                 if (process.platform !== 'win32') {
                     makeExecutable(javaFile);
                 }
                 return javaFile;
             } else {
+                console.warn(`⚠️ El archivo encontrado no existe: ${javaFile}`);
             }
         }
         
+        console.error(`❌ Ninguno de los ${javaFiles.length} ejecutables encontrados existe realmente`);
         return null;
         
     } catch (error) {
@@ -1135,16 +1171,41 @@ async function findJavaExecutable(extractPath) {
  */
 async function findExistingJava(javaVersionPath) {
     if (!fs.existsSync(javaVersionPath)) {
+        console.log(`❌ Directorio de Java no existe: ${javaVersionPath}`);
         return null;
     }
     
+    console.log(`🔍 Buscando ejecutable de Java en: ${javaVersionPath}`);
     const executable = await findJavaExecutable(javaVersionPath);
     
     if (executable) {
+        // Verificación adicional: asegurar que el archivo realmente existe y es accesible
+        try {
+            if (fs.existsSync(executable)) {
+                // En Windows, verificar que el archivo es accesible
+                if (process.platform === 'win32') {
+                    try {
+                        fs.accessSync(executable, fs.constants.F_OK | fs.constants.R_OK);
+                    } catch (accessError) {
+                        console.error(`❌ El ejecutable de Java no es accesible: ${executable}`, accessError);
+                        return null;
+                    }
+                }
+                console.log(`✅ Ejecutable de Java encontrado y verificado: ${executable}`);
+                return executable;
+            } else {
+                console.error(`❌ El ejecutable de Java encontrado no existe en el filesystem: ${executable}`);
+                return null;
+            }
+        } catch (error) {
+            console.error(`❌ Error verificando ejecutable de Java: ${executable}`, error);
+            return null;
+        }
     } else {
+        console.log(`❌ No se encontró ejecutable de Java en: ${javaVersionPath}`);
     }
     
-    return executable;
+    return null;
 }
 
 /**
@@ -1186,15 +1247,36 @@ async function getJavaForMinecraft(minecraftVersion, currentJavaPath = null, pro
         const existingJava = await findExistingJava(javaVersionPath);
         
         if (existingJava) {
-            // Verificar que es exactamente la versión requerida, no solo compatible
-            const javaVersionInfo = await getJavaVersion(existingJava);
-            const requiredMajorVersion = parseInt(requiredJava.replace('java', ''));
-            
-            if (javaVersionInfo.major === requiredMajorVersion) {
-                console.log(`✅ Java ${requiredJava} (versión exacta) ya está disponible: ${existingJava}`);
-                return existingJava;
+            // Verificar que el ejecutable realmente existe antes de usarlo
+            if (!fs.existsSync(existingJava)) {
+                console.error(`❌ El ejecutable de Java encontrado ya no existe: ${existingJava}`);
+                console.log(`🧹 Limpiando instalación corrupta de ${requiredJava}...`);
+                await cleanupFailedJavaInstallation(javaVersionPath, requiredJava);
             } else {
-                console.log(`⚠️ Java en ${javaVersionPath} no es la versión exacta requerida (encontrado: Java ${javaVersionInfo.major}, requerido: Java ${requiredMajorVersion})`);
+                // Verificar que es exactamente la versión requerida, no solo compatible
+                try {
+                    const javaVersionInfo = await getJavaVersion(existingJava);
+                    const requiredMajorVersion = parseInt(requiredJava.replace('java', ''));
+                    
+                    if (javaVersionInfo.major === requiredMajorVersion) {
+                        console.log(`✅ Java ${requiredJava} (versión exacta) ya está disponible: ${existingJava}`);
+                        // Verificación final: asegurar que el ejecutable es accesible
+                        try {
+                            fs.accessSync(existingJava, fs.constants.F_OK | fs.constants.R_OK);
+                            return existingJava;
+                        } catch (accessError) {
+                            console.error(`❌ Java existe pero no es accesible: ${existingJava}`, accessError);
+                            console.log(`🧹 Limpiando instalación inaccesible de ${requiredJava}...`);
+                            await cleanupFailedJavaInstallation(javaVersionPath, requiredJava);
+                        }
+                    } else {
+                        console.log(`⚠️ Java en ${javaVersionPath} no es la versión exacta requerida (encontrado: Java ${javaVersionInfo.major}, requerido: Java ${requiredMajorVersion})`);
+                    }
+                } catch (versionError) {
+                    console.error(`❌ Error obteniendo versión de Java de ${existingJava}:`, versionError);
+                    console.log(`🧹 Limpiando instalación defectuosa de ${requiredJava}...`);
+                    await cleanupFailedJavaInstallation(javaVersionPath, requiredJava);
+                }
             }
         }
         

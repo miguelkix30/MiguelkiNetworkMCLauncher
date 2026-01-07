@@ -1,9 +1,9 @@
 {
     "name": "MiguelkiNetwork-MCLauncher",
     "productname": "Miguelki Network MC Launcher",
-    "version": "3.4.10",
+    "version": "3.4.11",
     "sub_version": "",
-    "changelog": "Actualizada la compatibilidad con el anticheat.",
+    "changelog": "Arreglos en el gestor de Java.",
     "description": "Launcher de minecraft para los servidores de Miguelki Network",
     "main": "src/app.js",
     "author": {
@@ -28,7 +28,7 @@
     },
     "dependencies": {
         "adm-zip": "^0.5.10",
-        "axios": "^0.27.2",
+        "axios": "^1.13.2",
         "azuriom-auth": "^1.0.1",
         "detect-gpu": "^5.0.70",
         "discord-rpc": "^4.0.1",
